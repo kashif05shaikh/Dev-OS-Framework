@@ -1,0 +1,1000 @@
+You are a Senior Full Stack Engineer, Product Designer, System Architect, and UX Engineer.
+
+You are NOT redesigning my project.
+
+You are transforming it into a production-ready Developer Operating System (DevOS).
+
+The current project already has authentication and a sidebar layout.
+
+DO NOT rebuild everything from scratch.
+
+Instead, replace every placeholder, fake card, hardcoded value, dummy data, and static UI with fully functional live modules.
+
+This project should feel like VS Code + Raycast + GitHub + Notion + LeetCode + Vercel merged into one operating system for developers.
+
+======================================================
+
+MOST IMPORTANT RULE
+
+======================================================
+
+I DO NOT WANT
+
+• Fake cards
+• Placeholder widgets
+• Empty pages
+• Dummy statistics
+• Hardcoded numbers
+• Mock data
+• Static charts
+• Fake heatmaps
+• Empty buttons
+• Empty CRUD pages
+
+EVERY PAGE MUST ACTUALLY WORK.
+
+Every button should perform an action.
+
+Every card should display live user data.
+
+Everything should be stored in the backend.
+
+======================================================
+
+PROJECT GOAL
+
+======================================================
+
+DevOS should become the one website a developer opens every morning.
+
+Instead of opening
+
+GitHub
+
+LeetCode
+
+Codeforces
+
+CodeChef
+
+YouTube
+
+LinkedIn
+
+Resume
+
+Vercel
+
+Render
+
+VS Code
+
+ChatGPT
+
+Claude
+
+Gemini
+
+Notion
+
+Google Drive
+
+Google Calendar
+
+I should open only DevOS.
+
+DevOS becomes my dashboard for everything.
+
+======================================================
+
+AUTHENTICATION
+
+======================================================
+
+Authentication already exists.
+
+Improve it.
+
+Features
+
+Email Login
+
+Google Login
+
+GitHub Login
+
+Remember me
+
+Forgot Password
+
+Email Verification
+
+Profile Photo
+
+Username
+
+Theme Preference
+
+Timezone
+
+Logout Everywhere
+
+Session Management
+
+======================================================
+
+HOME DASHBOARD
+
+======================================================
+
+Replace the existing dashboard completely.
+
+Dashboard must automatically show
+
+Good Morning message
+
+Current Time
+
+Weather
+
+Today's Date
+
+Upcoming Contests
+
+Study Progress
+
+Today's Study Hours
+
+Today's Coding Hours
+
+Current Coding Streak
+
+Current Github Streak
+
+Current Leetcode Streak
+
+Current Codeforces Rating
+
+Current CodeChef Rating
+
+Github Commits Today
+
+Open Pull Requests
+
+Repositories
+
+Deployment Status
+
+Latest Vercel Deployments
+
+Latest Render Deployments
+
+Running Courses
+
+Upcoming Revision
+
+Daily Goals
+
+Today's Tasks
+
+AI Usage
+
+Prompt Count
+
+Projects Progress
+
+Resume ATS Score
+
+Upcoming Interviews
+
+Upcoming Deadlines
+
+Calendar
+
+Quick Launch
+
+Productivity Score
+
+Everything updates automatically.
+
+======================================================
+
+GLOBAL SEARCH
+
+======================================================
+
+CTRL + K
+
+Must search
+
+Notes
+
+Projects
+
+Courses
+
+Resources
+
+Coding Problems
+
+Github Repositories
+
+Companies
+
+Jobs
+
+Resume
+
+AI Prompts
+
+Settings
+
+Everything.
+
+======================================================
+
+LEARNING HUB
+
+======================================================
+
+This is NOT a Notes app.
+
+This is my entire learning management system.
+
+Categories
+
+DSA
+
+OS
+
+DBMS
+
+CN
+
+OOPS
+
+System Design
+
+Development
+
+React
+
+Node
+
+Backend
+
+Frontend
+
+AI
+
+Machine Learning
+
+DevOps
+
+Cloud
+
+Interview
+
+Each category contains
+
+Folders
+
+Playlists
+
+Resources
+
+Progress
+
+Topics
+
+Bookmarks
+
+Questions
+
+Revision Dates
+
+Each topic supports
+
+YouTube Playlist
+
+Single YouTube Video
+
+Google Drive Folder
+
+PDF
+
+GitHub Repository
+
+Website
+
+Blog
+
+Documentation
+
+Notes
+
+Markdown
+
+Videos should automatically show
+
+Thumbnail
+
+Duration
+
+Channel
+
+Playlist Length
+
+Last Watched
+
+Continue Watching
+
+Progress Bar
+
+Remember current timestamp.
+
+======================================================
+
+NOTES
+
+======================================================
+
+Replace current notes completely.
+
+Need
+
+Rich Text
+
+Markdown
+
+Code Blocks
+
+Mermaid
+
+Latex
+
+Images
+
+Videos
+
+Tables
+
+Checklist
+
+Tags
+
+Folder Tree
+
+Drag Drop
+
+Pin
+
+Archive
+
+Autosave
+
+Version History
+
+AI Summary
+
+AI Explain
+
+AI Rewrite
+
+Everything saved to backend.
+
+======================================================
+
+CODING PROFILES
+
+======================================================
+
+This is the biggest module.
+
+Support
+
+Leetcode
+
+Codeforces
+
+CodeChef
+
+AtCoder
+
+CSES
+
+GeeksForGeeks
+
+HackerRank
+
+HackerEarth
+
+InterviewBit
+
+BinarySearch
+
+Project Euler
+
+Coding Ninjas
+
+Users should connect using
+
+Username
+
+Handle
+
+OAuth where available
+
+No API Keys required unless platform requires.
+
+Automatically fetch
+
+Rating
+
+Solved Problems
+
+Contest Rating
+
+Badges
+
+Language Distribution
+
+Submissions
+
+Accepted
+
+Recent Activity
+
+Contest History
+
+Profile Picture
+
+Rank
+
+Country
+
+College
+
+======================================================
+
+HEATMAPS
+
+======================================================
+
+This is mandatory.
+
+Every coding platform must have contribution heatmap.
+
+Exactly like GitHub.
+
+Automatically generated from submission history.
+
+Green intensity based on submission count.
+
+Selectable
+
+Last Month
+
+3 Months
+
+6 Months
+
+1 Year
+
+Custom Range
+
+NO STATIC IMAGE.
+
+Must be generated dynamically.
+
+======================================================
+
+GITHUB
+
+======================================================
+
+Github integration should fetch
+
+Repositories
+
+Stars
+
+Forks
+
+Followers
+
+Following
+
+Contribution Graph
+
+Commits
+
+Languages
+
+Issues
+
+PRs
+
+Pinned Repositories
+
+Organizations
+
+Contribution Calendar
+
+Activity Timeline
+
+Repository Insights
+
+Latest Releases
+
+======================================================
+
+PROJECTS
+
+======================================================
+
+Current page is empty.
+
+Replace completely.
+
+Each project
+
+Title
+
+Description
+
+Github
+
+Live Demo
+
+Tech Stack
+
+Status
+
+Progress
+
+Priority
+
+Deadline
+
+Tasks
+
+Commits
+
+Contributors
+
+Deployment
+
+Screenshots
+
+Notes
+
+Files
+
+Tags
+
+Project Analytics
+
+Automatically sync commits from GitHub.
+
+Show deployment status
+
+Vercel
+
+Render
+
+Railway
+
+Netlify
+
+Firebase
+
+Supabase
+
+======================================================
+
+AI HUB
+
+======================================================
+
+New page.
+
+Contains
+
+ChatGPT
+
+Claude
+
+Gemini
+
+DeepSeek
+
+Cursor
+
+Copilot
+
+Perplexity
+
+Windsurf
+
+Lovable
+
+Bolt
+
+v0
+
+Replit AI
+
+OpenRouter
+
+No API keys required initially.
+
+Users simply connect accounts or save links.
+
+Need
+
+Prompt Vault
+
+Prompt Categories
+
+Favorite Prompts
+
+Prompt History
+
+Quick Launch
+
+Recent Conversations
+
+AI Usage Analytics
+
+======================================================
+
+DEV TOOLS
+
+======================================================
+
+Connect
+
+Github
+
+Gitlab
+
+Bitbucket
+
+VS Code
+
+Vercel
+
+Render
+
+Railway
+
+Netlify
+
+Firebase
+
+Supabase
+
+Docker Hub
+
+MongoDB Atlas
+
+PlanetScale
+
+Neon
+
+Cloudinary
+
+Each card should show
+
+Status
+
+Last Deployment
+
+Latest Build
+
+Open Dashboard
+
+Quick Launch
+
+======================================================
+
+SOCIAL
+
+======================================================
+
+LinkedIn
+
+Twitter
+
+YouTube
+
+Discord
+
+Reddit
+
+Portfolio
+
+Hashnode
+
+Medium
+
+Dev.to
+
+Show
+
+Followers
+
+Posts
+
+Latest Activity
+
+Quick Open
+
+======================================================
+
+JOB TRACKER
+
+======================================================
+
+Kanban
+
+Wishlist
+
+Applied
+
+OA
+
+Assessment
+
+Interview 1
+
+Interview 2
+
+HR
+
+Offer
+
+Rejected
+
+Accepted
+
+Each card
+
+Company
+
+Role
+
+Package
+
+Location
+
+Resume Version
+
+Deadline
+
+Referral
+
+Interview Notes
+
+Links
+
+Status
+
+======================================================
+
+RESUME
+
+======================================================
+
+Resume Vault
+
+Multiple resumes
+
+ATS Score
+
+Keyword Analysis
+
+Export PDF
+
+Cover Letter Generator
+
+Version History
+
+======================================================
+
+RESOURCE VAULT
+
+======================================================
+
+Automatically fetch preview
+
+GitHub
+
+YouTube
+
+Medium
+
+Dev.to
+
+Hashnode
+
+Blogs
+
+PDFs
+
+Articles
+
+Show
+
+Thumbnail
+
+Author
+
+Reading Time
+
+Category
+
+Tags
+
+======================================================
+
+ANALYTICS
+
+======================================================
+
+Beautiful charts.
+
+No fake charts.
+
+Daily Coding
+
+Weekly Coding
+
+Monthly Coding
+
+Study Hours
+
+Github Activity
+
+Deployment History
+
+AI Usage
+
+Learning Progress
+
+Projects
+
+Jobs
+
+Resume
+
+======================================================
+
+SETTINGS
+
+======================================================
+
+Theme
+
+Dark
+
+Light
+
+AMOLED
+
+Accent Color
+
+Notification
+
+Timezone
+
+Language
+
+Connected Accounts
+
+Security
+
+======================================================
+
+DESIGN
+
+======================================================
+
+Current UI is too empty.
+
+Make it feel premium.
+
+Inspired by
+
+Linear
+
+Raycast
+
+Arc Browser
+
+Notion
+
+Vercel
+
+GitHub
+
+Cursor IDE
+
+Dark Mode
+
+Black
+
+Dark Gray
+
+Red Accent
+
+Glass Effects
+
+Smooth Animations
+
+Floating Cards
+
+Hover Effects
+
+Page Transitions
+
+Micro Interactions
+
+Animated Charts
+
+Skeleton Loaders
+
+Infinite Scroll
+
+Beautiful Empty States
+
+Responsive
+
+======================================================
+
+BACKEND
+
+======================================================
+
+Everything must use backend.
+
+Every CRUD operation.
+
+Every chart.
+
+Every statistic.
+
+Every project.
+
+Every note.
+
+Every resource.
+
+Everything persisted.
+
+======================================================
+
+IMPORTANT
+
+======================================================
+
+Never use hardcoded values.
+
+Never leave buttons without functionality.
+
+Never create placeholder pages.
+
+Never create fake charts.
+
+Every module must be production-ready.
+
+Whenever possible, integrate with official public APIs or OAuth. If an API is unavailable, use the user's public username/handle and document the limitation rather than fabricating data.
+
+Treat this as building a commercial SaaS product that thousands of developers could use daily.
+
+Do not stop after improving the UI.
+
+Your priority is functionality first, polish second.
+
+Build the entire application module-by-module until every page is fully operational.
