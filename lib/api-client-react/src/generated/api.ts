@@ -2334,6 +2334,71 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getDeleteNoteMutationOptions(options));
     }
 
+export const getDuplicateNoteUrl = (id: number,) => {
+
+
+
+
+  return `/api/notes/${id}/duplicate`
+}
+
+export const duplicateNote = async (id: number, options?: RequestInit): Promise<Note> => {
+
+  return customFetch<Note>(getDuplicateNoteUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDuplicateNoteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateNote>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof duplicateNote>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['duplicateNote'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof duplicateNote>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  duplicateNote(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DuplicateNoteMutationResult = NonNullable<Awaited<ReturnType<typeof duplicateNote>>>
+
+    export type DuplicateNoteMutationError = ErrorType<unknown>
+
+    export const useDuplicateNote = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateNote>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof duplicateNote>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDuplicateNoteMutationOptions(options));
+    }
+
 export const getListNoteVersionsUrl = (id: number,) => {
 
 

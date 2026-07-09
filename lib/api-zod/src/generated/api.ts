@@ -626,6 +626,23 @@ export const DeleteNoteParams = zod.object({
 export const DeleteNoteResponse = zod.void()
 
 
+export const DuplicateNoteParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DuplicateNoteResponse = zod.object({
+  "id": zod.number(),
+  "folderId": zod.number().nullish(),
+  "title": zod.string(),
+  "contentMarkdown": zod.string(),
+  "tags": zod.array(zod.string()),
+  "pinned": zod.boolean(),
+  "archived": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const ListNoteVersionsParams = zod.object({
   "id": zod.coerce.number()
 })

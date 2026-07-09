@@ -144,6 +144,24 @@ router.delete("/notes/:id", requireAuth, async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+router.post("/notes/:id/duplicate", requireAuth, async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  const [note] = await db
+    .select()
+    .from(notesTable)
+    .where(and(eq(notesTable.id, id), eq(notesTable.userId, req.userId)));
+  if (!note) {
+    res.status(404).json({ error: "Note not found" });
+    return;
+  }
+  const { id: _id, createdAt: _ca, updatedAt: _ua, ...rest } = note;
+  const [dup] = await db
+    .insert(notesTable)
+    .values({ ...rest, title: `${note.title} (copy)`, pinned: false })
+    .returning();
+  res.status(201).json(dup);
+});
+
 router.get("/notes/:id/versions", requireAuth, async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const [note] = await db.select({ id: notesTable.id }).from(notesTable).where(and(eq(notesTable.id, id), eq(notesTable.userId, req.userId)));
