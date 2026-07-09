@@ -501,22 +501,6 @@ paths:
       responses:
         "204":
           description: No Content
-  /notes/{id}/duplicate:
-    post:
-      operationId: duplicateNote
-      tags: [notes]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Note" }
-
   /notes/{id}/versions:
     get:
       operationId: listNoteVersions

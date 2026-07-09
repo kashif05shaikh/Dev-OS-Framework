@@ -78,7 +78,6 @@
     "@clerk/react": "^6.11.4",
     "@clerk/themes": "^2.4.57",
     "@types/lodash": "^4.17.24",
-    "lodash": "^4.18.1",
-    "react-markdown": "^10.1.0"
+    "lodash": "^4.18.1"
   }
 }
