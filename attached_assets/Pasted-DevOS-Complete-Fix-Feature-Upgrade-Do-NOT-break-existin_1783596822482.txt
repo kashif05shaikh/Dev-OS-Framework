@@ -1,0 +1,84 @@
+DevOS Complete Fix & Feature Upgrade (Do NOT break existing functionality)
+
+IMPORTANT RULES
+- Do NOT redesign the UI. Keep the same black minimal theme.
+- Keep all current routes. Do NOT remove any existing feature.
+- Everything must use real backend/database. No hardcoded values.
+- Every CRUD operation must be live.
+- Every page must have proper loading, empty, success and error states.
+- Every destructive action needs a confirmation modal.
+- Every entity should support Create, Edit, Delete, Duplicate (where applicable), Search, Sort, Filter.
+
+NOTES MODULE
+Reorganize completely. Fix: cannot delete/edit folders, confusing selection, wrong notes opening, no edit/delete note.
+Hierarchy: Subject → Folder → Note (e.g. DSA → Arrays → Prefix Sum, Sliding Window)
+Left panel: Subjects → Folders → Notes → Editor, selection stays highlighted.
+Add: rename/delete folder, rename/delete subject, move note, duplicate note, delete note, edit note title, markdown, autosave.
+
+LEARNING HUB
+Hierarchy: Subject → Folder → Resource (Youtube, Documentation, Course, PDF, GitHub, Playlist)
+Each resource: edit, delete, favorite, progress %, completed checkbox.
+
+CODING PROFILES
+Leetcode: Rating, Ranking, Solved (Easy/Medium/Hard), Contest Rating, Contest History
+Codeforces: Rating, Max Rating, Rank, Solved Problems, Contests, Last Contest, Contribution — fix wrong solved count
+CodeChef: fix broken API — Rating, Stars, Global Rank, Country Rank, Problems Solved, Contest History
+AtCoder: solved count
+Github: Repositories, Followers, Following, Stars, Contributions, Languages, Activity graph
+Hackerrank: fix fetching — Badges, Skills, Problems solved
+GeeksforGeeks: fix fetching — Institute Rank, Score, Solved, Coding Score
+Replace profile pictures with official platform logos. Improve DevOS rating calculation.
+
+PROJECTS
+Fix: cannot add links, description not editable, planning status not editable, no delete task, progress bar broken.
+Structure: Project → Tech Stack → Links → Kanban → Progress
+Fields: Github, Frontend URL, Backend URL, Database URL, Deployment URL, Figma, Documentation — all editable.
+Allow delete, drag tasks. Task card: edit, delete, deadline, priority, assignee.
+Progress = Completed Tasks / Total Tasks, auto-calculated, progress bar shown. Planning badge and description editable.
+
+JOB BOARD
+Show company logo per job card. Card fields: Company Logo, Role, Location, Salary, Deadline, Status, Notes, Application Link, Job Description, Progress bar.
+Pipeline: Wishlist → Applied → OA → Interview → HR → Offer → Rejected
+
+RESUME HUB
+Make static buttons functional: Upload Resume, dropdown to switch resumes, mark Primary, Delete, Rename, Version History.
+AI Analysis: ATS Score, Missing Keywords, Strengths, Weaknesses, Suggested Improvements.
+One-click: Fix Resume, Tailor for Job, Download Updated Resume.
+
+AI PROMPTS
+Logo per AI: ChatGPT, Claude, Gemini, Cursor, Copilot, Perplexity, Grok, Le Chat, DeepSeek.
+Add: Categories, Favorites, Tags, Search, Duplicate, Delete, Usage Counter, Last Used, Copy Button — all editable.
+
+DEV TOOLS
+Replace API-key-only integrations with email-based where supported, connect via account email.
+Show: Connected/Disconnected, Sync Status, Last Sync.
+Add VS Code integration: Open Current Project, Open Folder, Launch VS Code.
+Tools: Github, Vercel, Netlify, Railway, Render, Firebase, Supabase, Cloudinary, Docker Hub, MongoDB Atlas, VS Code.
+
+NETWORK
+Fix broken profile fetching. Support: LinkedIn, Github, Twitter/X, Instagram, Reddit, Medium, Dev.to, Hashnode, Portfolio.
+Each: Followers, Following, Posts, Engagement, Profile Image, Bio, Sync button — live data.
+
+CALENDAR
+Pull automatic events from: Coding Contests, Learning deadlines, Projects, Job interviews, Task deadlines, Goals, Focus sessions.
+Auto-appear, editable, deletable, drag and drop. Views: Month, Week, Agenda.
+
+GOALS & HABITS
+Target types: Academic, Coding, DSA, Development, Exercise, Reading, Custom.
+Each: Daily/Weekly/Monthly, Hours, Progress, Completion %, Progress Bar.
+Action list: Edit, Delete, Reorder.
+
+FOCUS TIMER
+Add: Edit/Delete/Rename session, Session Notes, Tags, Pomodoro, Stopwatch, Countdown, Distraction count, Daily summary, Weekly summary.
+
+ANALYTICS
+Replace broken graphs with professional dashboard: Daily bar chart (coding/study/focus hours), Projects, Contest activity, Subjects (time per topic), Heatmap, Weekly/Monthly graphs, Pie charts, Progress trends.
+
+SETTINGS
+Appearance (Light/Dark/System, color themes: Black/Blue/Purple/Green), Profile (Account/Email/Password), Notifications, Privacy, Export/Import Data, Backup, Delete Account, Login/Logout, Session Management, Connected Devices.
+
+GLOBAL SEARCH
+Search across: Notes, Projects, Jobs, Prompts, Learning, Calendar, Goals, Profiles.
+
+FINAL PASS
+Fix every broken button, edit/delete action, API call, loading/empty state, fetch. Ensure all backend endpoints work, frontend reflects backend instantly. No placeholders — production-ready. Manually verify every module for broken buttons, dead links, missing CRUD, incorrect fetches, or static UI before considering complete.
