@@ -1,8 +1,44 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import profileRouter from "./profile";
+import notificationsRouter from "./notifications";
+import learningRouter from "./learning";
+import notesRouter from "./notes";
+import codingRouter from "./coding";
+import projectsRouter from "./projects";
+import jobsRouter from "./jobs";
+import resumesRouter from "./resumes";
+import resourcesRouter from "./resources";
+import aiRouter from "./ai";
+import devtoolsRouter from "./devtools";
+import networkRouter from "./network";
+import calendarRouter from "./calendar";
+import goalsRouter from "./goals";
+import focusRouter from "./focus";
+import searchRouter from "./search";
+import analyticsRouter from "./analytics";
+import dashboardRouter from "./dashboard";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(profileRouter);
+router.use(notificationsRouter);
+router.use(learningRouter);
+router.use(notesRouter);
+router.use(codingRouter);
+router.use(projectsRouter);
+router.use(jobsRouter);
+router.use(resumesRouter);
+router.use(resourcesRouter);
+router.use(aiRouter);
+router.use(devtoolsRouter);
+router.use(networkRouter);
+router.use(calendarRouter);
+router.use(goalsRouter);
+router.use(focusRouter);
+router.use(searchRouter);
+router.use(analyticsRouter);
+router.use(dashboardRouter);
 
 export default router;

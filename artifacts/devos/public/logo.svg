@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <rect width="256" height="256" fill="transparent" />
+  <path d="M72 96L128 144L72 192" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="144" y="168" width="64" height="24" fill="currentColor" rx="4" />
+  <path d="M48 48H208C221.255 48 232 58.7452 232 72V208C232 221.255 221.255 232 208 232H48C34.7452 232 24 221.255 24 208V72C24 58.7452 34.7452 48 48 48Z" stroke="currentColor" stroke-width="16" fill="none" />
+</svg>

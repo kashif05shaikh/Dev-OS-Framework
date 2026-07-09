@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "DevOS"
+version = "1.0.0"
+id = "artifacts/devos"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24667
+
+[services.development]
+run = "pnpm --filter @workspace/devos run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/devos", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/devos/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24667"
+BASE_PATH = "/"
