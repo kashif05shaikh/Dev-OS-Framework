@@ -23,6 +23,7 @@ export const promptsTable = pgTable("prompts", {
   tool: text("tool"),
   favorite: boolean("favorite").notNull().default(false),
   usageCount: integer("usage_count").notNull().default(0),
+  tags: text("tags").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

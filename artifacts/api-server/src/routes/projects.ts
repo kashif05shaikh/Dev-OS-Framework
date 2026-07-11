@@ -7,6 +7,20 @@ import { toDateOnlyString } from "../lib/dateOnly";
 
 const router: IRouter = Router();
 
+async function recalculateProjectProgress(projectId: number, userId: string): Promise<void> {
+  const tasks = await db
+    .select({ status: projectTasksTable.status })
+    .from(projectTasksTable)
+    .where(and(eq(projectTasksTable.projectId, projectId), eq(projectTasksTable.userId, userId)));
+  const progressPercent = tasks.length === 0
+    ? 0
+    : Math.round((tasks.filter((task) => task.status === "done").length / tasks.length) * 100);
+  await db
+    .update(projectsTable)
+    .set({ progressPercent })
+    .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
+}
+
 router.get("/projects", requireAuth, async (req, res): Promise<void> => {
   const rows = await db.select().from(projectsTable).where(eq(projectsTable.userId, req.userId));
   res.json(rows);
@@ -88,10 +102,19 @@ router.post("/project-tasks", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const [project] = await db
+    .select({ id: projectsTable.id })
+    .from(projectsTable)
+    .where(and(eq(projectsTable.id, parsed.data.projectId), eq(projectsTable.userId, req.userId)));
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
   const [task] = await db
     .insert(projectTasksTable)
     .values({ ...parsed.data, userId: req.userId })
     .returning();
+  await recalculateProjectProgress(task.projectId, req.userId);
   res.status(201).json(task);
 });
 
@@ -111,6 +134,7 @@ router.patch("/project-tasks/:id", requireAuth, async (req, res): Promise<void> 
     res.status(404).json({ error: "Task not found" });
     return;
   }
+  await recalculateProjectProgress(task.projectId, req.userId);
   res.json(task);
 });
 
@@ -124,6 +148,7 @@ router.delete("/project-tasks/:id", requireAuth, async (req, res): Promise<void>
     res.status(404).json({ error: "Task not found" });
     return;
   }
+  await recalculateProjectProgress(task.projectId, req.userId);
   res.sendStatus(204);
 });
 

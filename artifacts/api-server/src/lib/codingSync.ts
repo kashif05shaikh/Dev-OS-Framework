@@ -99,6 +99,13 @@ async function syncLeetcode(handle: string): Promise<CodingSyncResult> {
         submitStatsGlobal { acSubmissionNum { difficulty count } }
       }
       userContestRanking(username: $username) { rating topPercentage }
+      userContestRankingHistory(username: $username) {
+        attended
+        rating
+        ranking
+        trendDirection
+        contest { title startTime }
+      }
     }`,
     variables: { username: handle },
   };
@@ -126,29 +133,55 @@ async function syncLeetcode(handle: string): Promise<CodingSyncResult> {
       reputation: user.profile?.reputation,
       bySeverity: user.submitStatsGlobal?.acSubmissionNum,
       contestTopPercentage: contest?.topPercentage,
+      contestHistory: (data?.data?.userContestRankingHistory ?? [])
+        .filter((entry: any) => entry.attended)
+        .map((entry: any) => ({
+          title: entry.contest?.title,
+          startTime: entry.contest?.startTime,
+          rating: entry.rating,
+          ranking: entry.ranking,
+          trendDirection: entry.trendDirection,
+        })),
     },
   };
 }
 
 async function syncCodeforces(handle: string): Promise<CodingSyncResult> {
-  const data = await fetchJson(
-    `https://codeforces.com/api/user.info?handles=${encodeURIComponent(handle)}`,
-  );
+  const encodedHandle = encodeURIComponent(handle);
+  const [data, submissionsData, ratingsData] = await Promise.all([
+    fetchJson(`https://codeforces.com/api/user.info?handles=${encodedHandle}`),
+    fetchJson(`https://codeforces.com/api/user.status?handle=${encodedHandle}&from=1&count=10000`),
+    fetchJson(`https://codeforces.com/api/user.rating?handle=${encodedHandle}`),
+  ]);
   const user = data?.result?.[0];
   if (!user) throw new Error("User not found");
+  const solved = new Set(
+    (submissionsData?.result ?? [])
+      .filter((submission: any) => submission.verdict === "OK")
+      .map((submission: any) => `${submission.problem?.contestId ?? "gym"}:${submission.problem?.index ?? submission.problem?.name}`),
+  );
+  const contests = (ratingsData?.result ?? []).map((contest: any) => ({
+    contestName: contest.contestName,
+    ratingUpdateTimeSeconds: contest.ratingUpdateTimeSeconds,
+    rank: contest.rank,
+    oldRating: contest.oldRating,
+    newRating: contest.newRating,
+  }));
   return {
     ok: true,
     avatarUrl: user.titlePhoto ?? null,
     rank: user.rank ?? null,
     rating: user.rating ?? null,
     maxRating: user.maxRating ?? null,
-    solvedCount: null,
+    solvedCount: solved.size,
     country: user.country ?? null,
     profileUrl: profileUrlFor("codeforces", handle),
     statsJson: {
       maxRank: user.maxRank,
       contribution: user.contribution,
       friendOfCount: user.friendOfCount,
+      contestHistory: contests,
+      lastContest: contests.at(-1) ?? null,
     },
   };
 }

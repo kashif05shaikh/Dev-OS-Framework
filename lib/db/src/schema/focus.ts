@@ -10,6 +10,11 @@ export const focusSessionsTable = pgTable("focus_sessions", {
   durationMinutes: integer("duration_minutes"),
   label: text("label"),
   category: text("category").notNull().default("study"),
+  mode: text("mode").notNull().default("stopwatch"),
+  targetMinutes: integer("target_minutes"),
+  notes: text("notes"),
+  tags: text("tags").array().notNull().default([]),
+  distractionCount: integer("distraction_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

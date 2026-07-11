@@ -10,6 +10,8 @@ export const socialLinksTable = pgTable("social_links", {
   url: text("url").notNull(),
   followers: integer("followers"),
   postCount: integer("post_count"),
+  following: integer("following"),
+  bio: text("bio"),
   lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   dataJson: jsonb("data_json").$type<Record<string, unknown> | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db, noteFoldersTable, notesTable, noteVersionsTable } from "@workspace/db";
 import {
   CreateNoteFolderBody,
@@ -23,6 +23,16 @@ router.post("/note-folders", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  if (parsed.data.parentId !== undefined) {
+    const [parent] = await db
+      .select({ id: noteFoldersTable.id })
+      .from(noteFoldersTable)
+      .where(and(eq(noteFoldersTable.id, parsed.data.parentId), eq(noteFoldersTable.userId, req.userId)));
+    if (!parent) {
+      res.status(400).json({ error: "Parent subject not found" });
+      return;
+    }
+  }
   const [folder] = await db
     .insert(noteFoldersTable)
     .values({ ...parsed.data, userId: req.userId })
@@ -36,6 +46,20 @@ router.patch("/note-folders/:id", requireAuth, async (req, res): Promise<void> =
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
+  }
+  if (parsed.data.parentId !== undefined && parsed.data.parentId !== null) {
+    if (parsed.data.parentId === id) {
+      res.status(400).json({ error: "A folder cannot be its own parent" });
+      return;
+    }
+    const [parent] = await db
+      .select({ id: noteFoldersTable.id, parentId: noteFoldersTable.parentId })
+      .from(noteFoldersTable)
+      .where(and(eq(noteFoldersTable.id, parsed.data.parentId), eq(noteFoldersTable.userId, req.userId)));
+    if (!parent || parent.parentId !== null) {
+      res.status(400).json({ error: "Folders can only be moved under a subject" });
+      return;
+    }
   }
   const [folder] = await db
     .update(noteFoldersTable)
@@ -51,14 +75,31 @@ router.patch("/note-folders/:id", requireAuth, async (req, res): Promise<void> =
 
 router.delete("/note-folders/:id", requireAuth, async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
-  const [folder] = await db
-    .delete(noteFoldersTable)
-    .where(and(eq(noteFoldersTable.id, id), eq(noteFoldersTable.userId, req.userId)))
-    .returning();
-  if (!folder) {
+  const folders = await db
+    .select({ id: noteFoldersTable.id, parentId: noteFoldersTable.parentId })
+    .from(noteFoldersTable)
+    .where(eq(noteFoldersTable.userId, req.userId));
+  if (!folders.some((folder) => folder.id === id)) {
     res.status(404).json({ error: "Folder not found" });
     return;
   }
+
+  // The current schema supports a two-level Subject -> Folder hierarchy.
+  // Delete the selected folder and its children atomically so notes never
+  // become orphaned when a subject is removed.
+  const folderIds = [id, ...folders.filter((folder) => folder.parentId === id).map((folder) => folder.id)];
+  await db.transaction(async (tx) => {
+    const notes = await tx
+      .select({ id: notesTable.id })
+      .from(notesTable)
+      .where(and(eq(notesTable.userId, req.userId), inArray(notesTable.folderId, folderIds)));
+    const noteIds = notes.map((note) => note.id);
+    if (noteIds.length > 0) {
+      await tx.delete(noteVersionsTable).where(inArray(noteVersionsTable.noteId, noteIds));
+      await tx.delete(notesTable).where(and(eq(notesTable.userId, req.userId), inArray(notesTable.id, noteIds)));
+    }
+    await tx.delete(noteFoldersTable).where(and(eq(noteFoldersTable.userId, req.userId), inArray(noteFoldersTable.id, folderIds)));
+  });
   res.sendStatus(204);
 });
 

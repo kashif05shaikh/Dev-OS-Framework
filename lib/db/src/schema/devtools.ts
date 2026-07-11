@@ -10,6 +10,8 @@ export const devToolConnectionsTable = pgTable("dev_tool_connections", {
   service: text("service").notNull(),
   accessToken: text("access_token").notNull(),
   accountLabel: text("account_label"),
+  connectionEmail: text("connection_email"),
+  authMethod: text("auth_method").notNull().default("token"),
   lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   syncStatus: text("sync_status").notNull().default("pending"),
   errorMessage: text("error_message"),

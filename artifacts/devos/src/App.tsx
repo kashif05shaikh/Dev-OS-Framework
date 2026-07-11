@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
+import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { shadcn } from '@clerk/themes';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClientProvider, useQueryClient, QueryClient } from "@tanstack/react-query";
@@ -122,6 +123,33 @@ function SignUpPage() {
   );
 }
 
+/**
+ * Registers a Clerk session token getter with the shared API fetch client so
+ * every API call includes `Authorization: Bearer <token>`.  This is required
+ * because cookie-based Clerk auth doesn't work cross-domain in the Replit
+ * proxied setup — the dev-browser cookie is scoped to Clerk's domain and
+ * never reaches this app's API server.
+ */
+function ClerkAuthTokenSync() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      if (!isSignedIn) return null;
+      try {
+        return await getToken();
+      } catch {
+        return null;
+      }
+    });
+    return () => {
+      setAuthTokenGetter(null);
+    };
+  }, [getToken, isSignedIn]);
+
+  return null;
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const qc = useQueryClient();
@@ -200,6 +228,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <ClerkAuthTokenSync />
         <ClerkQueryClientCacheInvalidator />
         <Switch>
           <Route path="/" component={HomeRedirect} />

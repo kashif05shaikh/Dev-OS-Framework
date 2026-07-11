@@ -45,6 +45,7 @@ export const topicsTable = pgTable("topics", {
   priority: text("priority").notNull().default("medium"),
   deadline: date("deadline", { mode: "string" }),
   completed: boolean("completed").notNull().default(false),
+  favorite: boolean("favorite").notNull().default(false),
   progressPercent: integer("progress_percent").notNull().default(0),
   revisionCount: integer("revision_count").notNull().default(0),
   studyTimeMinutes: integer("study_time_minutes").notNull().default(0),

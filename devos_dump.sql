@@ -1,0 +1,1817 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict nq6tf9LRMtaqMDKlxP35Z7EkAu5ELm6KGhMdnwkPAuhcY1i2jEKkOGgn6pcfv77
+
+-- Dumped from database version 16.10
+-- Dumped by pg_dump version 16.10
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: ai_tool_favorites; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_tool_favorites (
+    user_id text NOT NULL,
+    tool_id text NOT NULL
+);
+
+
+--
+-- Name: calendar_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.calendar_events (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    title text NOT NULL,
+    type text DEFAULT 'custom'::text NOT NULL,
+    start_at timestamp with time zone NOT NULL,
+    end_at timestamp with time zone,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: calendar_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.calendar_events_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: calendar_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.calendar_events_id_seq OWNED BY public.calendar_events.id;
+
+
+--
+-- Name: coding_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.coding_profiles (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    platform text NOT NULL,
+    username_or_handle text NOT NULL,
+    profile_url text NOT NULL,
+    avatar_url text,
+    rating integer,
+    rank text,
+    solved_count integer,
+    max_rating integer,
+    country text,
+    last_synced_at timestamp with time zone,
+    sync_status text DEFAULT 'pending'::text NOT NULL,
+    error_message text,
+    stats_json jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: coding_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.coding_profiles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: coding_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.coding_profiles_id_seq OWNED BY public.coding_profiles.id;
+
+
+--
+-- Name: daily_goals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.daily_goals (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    date date NOT NULL,
+    study_minutes_target integer DEFAULT 60 NOT NULL,
+    coding_minutes_target integer DEFAULT 60 NOT NULL,
+    study_minutes_actual integer DEFAULT 0 NOT NULL,
+    coding_minutes_actual integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: daily_goals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.daily_goals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: daily_goals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.daily_goals_id_seq OWNED BY public.daily_goals.id;
+
+
+--
+-- Name: daily_tasks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.daily_tasks (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    title text NOT NULL,
+    done boolean DEFAULT false NOT NULL,
+    date date NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: daily_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.daily_tasks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: daily_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.daily_tasks_id_seq OWNED BY public.daily_tasks.id;
+
+
+--
+-- Name: dev_tool_connections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dev_tool_connections (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    service text NOT NULL,
+    access_token text NOT NULL,
+    account_label text,
+    last_synced_at timestamp with time zone,
+    sync_status text DEFAULT 'pending'::text NOT NULL,
+    error_message text,
+    data_json jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: dev_tool_connections_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dev_tool_connections_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dev_tool_connections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dev_tool_connections_id_seq OWNED BY public.dev_tool_connections.id;
+
+
+--
+-- Name: focus_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.focus_sessions (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    ended_at timestamp with time zone,
+    duration_minutes integer,
+    label text,
+    category text DEFAULT 'study'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: focus_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.focus_sessions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: focus_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.focus_sessions_id_seq OWNED BY public.focus_sessions.id;
+
+
+--
+-- Name: github_repos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.github_repos (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    coding_profile_id integer NOT NULL,
+    name text NOT NULL,
+    full_name text NOT NULL,
+    description text,
+    url text NOT NULL,
+    stars integer DEFAULT 0 NOT NULL,
+    forks integer DEFAULT 0 NOT NULL,
+    language text,
+    pushed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: github_repos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.github_repos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: github_repos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.github_repos_id_seq OWNED BY public.github_repos.id;
+
+
+--
+-- Name: habit_checkins; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.habit_checkins (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    habit_id integer NOT NULL,
+    date date NOT NULL
+);
+
+
+--
+-- Name: habit_checkins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.habit_checkins_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: habit_checkins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.habit_checkins_id_seq OWNED BY public.habit_checkins.id;
+
+
+--
+-- Name: habits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.habits (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    name text NOT NULL,
+    color text DEFAULT '#22c55e'::text NOT NULL,
+    current_streak integer DEFAULT 0 NOT NULL,
+    longest_streak integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: habits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.habits_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: habits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.habits_id_seq OWNED BY public.habits.id;
+
+
+--
+-- Name: job_interviews; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_interviews (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    job_id integer NOT NULL,
+    round_name text NOT NULL,
+    scheduled_at timestamp with time zone NOT NULL,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: job_interviews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.job_interviews_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: job_interviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.job_interviews_id_seq OWNED BY public.job_interviews.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    company text NOT NULL,
+    role text NOT NULL,
+    package_amount text,
+    location text,
+    recruiter_name text,
+    recruiter_email text,
+    referral boolean DEFAULT false NOT NULL,
+    notes text,
+    links text[] DEFAULT '{}'::text[] NOT NULL,
+    status text DEFAULT 'wishlist'::text NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    resume_version_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: learning_folders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.learning_folders (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    subject_id integer NOT NULL,
+    parent_folder_id integer,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: learning_folders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.learning_folders_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: learning_folders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.learning_folders_id_seq OWNED BY public.learning_folders.id;
+
+
+--
+-- Name: note_folders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.note_folders (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    parent_id integer,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: note_folders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.note_folders_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: note_folders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.note_folders_id_seq OWNED BY public.note_folders.id;
+
+
+--
+-- Name: note_versions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.note_versions (
+    id integer NOT NULL,
+    note_id integer NOT NULL,
+    content_markdown text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: note_versions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.note_versions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: note_versions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.note_versions_id_seq OWNED BY public.note_versions.id;
+
+
+--
+-- Name: notes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notes (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    folder_id integer,
+    title text NOT NULL,
+    content_markdown text DEFAULT ''::text NOT NULL,
+    tags text[] DEFAULT '{}'::text[] NOT NULL,
+    pinned boolean DEFAULT false NOT NULL,
+    archived boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notes_id_seq OWNED BY public.notes.id;
+
+
+--
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notifications (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    type text NOT NULL,
+    title text NOT NULL,
+    message text NOT NULL,
+    related_url text,
+    read boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notifications_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
+-- Name: profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profiles (
+    user_id text NOT NULL,
+    display_name text,
+    theme text DEFAULT 'dark'::text NOT NULL,
+    accent_color text DEFAULT '#7c3aed'::text NOT NULL,
+    timezone text DEFAULT 'UTC'::text NOT NULL,
+    dashboard_layout jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: project_tasks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_tasks (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    project_id integer NOT NULL,
+    title text NOT NULL,
+    status text DEFAULT 'todo'::text NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: project_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_tasks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_tasks_id_seq OWNED BY public.project_tasks.id;
+
+
+--
+-- Name: projects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.projects (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    name text NOT NULL,
+    description text,
+    github_url text,
+    live_url text,
+    tech_stack text[] DEFAULT '{}'::text[] NOT NULL,
+    status text DEFAULT 'planning'::text NOT NULL,
+    priority text DEFAULT 'medium'::text NOT NULL,
+    progress_percent integer DEFAULT 0 NOT NULL,
+    frontend text,
+    backend text,
+    database text,
+    deployment text,
+    deadline date,
+    notes text,
+    tags text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.projects_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.projects_id_seq OWNED BY public.projects.id;
+
+
+--
+-- Name: prompt_categories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.prompt_categories (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    name text NOT NULL,
+    color text DEFAULT '#7c3aed'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: prompt_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.prompt_categories_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: prompt_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.prompt_categories_id_seq OWNED BY public.prompt_categories.id;
+
+
+--
+-- Name: prompts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.prompts (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    category_id integer,
+    title text NOT NULL,
+    content text NOT NULL,
+    tool text,
+    favorite boolean DEFAULT false NOT NULL,
+    usage_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: prompts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.prompts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: prompts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.prompts_id_seq OWNED BY public.prompts.id;
+
+
+--
+-- Name: resources; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.resources (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    title text NOT NULL,
+    url text NOT NULL,
+    type text NOT NULL,
+    thumbnail_url text,
+    author text,
+    reading_time_minutes integer,
+    category text,
+    tags text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: resources_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.resources_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: resources_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.resources_id_seq OWNED BY public.resources.id;
+
+
+--
+-- Name: resumes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.resumes (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    version_name text NOT NULL,
+    content_text text,
+    skills text[] DEFAULT '{}'::text[] NOT NULL,
+    education jsonb,
+    experience jsonb,
+    certificates jsonb,
+    ats_score integer,
+    keyword_analysis jsonb,
+    is_primary boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: resumes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.resumes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: resumes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.resumes_id_seq OWNED BY public.resumes.id;
+
+
+--
+-- Name: social_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.social_links (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    platform text NOT NULL,
+    handle text,
+    url text NOT NULL,
+    followers integer,
+    post_count integer,
+    last_synced_at timestamp with time zone,
+    data_json jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: social_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.social_links_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: social_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.social_links_id_seq OWNED BY public.social_links.id;
+
+
+--
+-- Name: subjects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subjects (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    name text NOT NULL,
+    color text DEFAULT '#7c3aed'::text NOT NULL,
+    icon text DEFAULT 'book'::text NOT NULL,
+    is_default boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: subjects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subjects_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subjects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subjects_id_seq OWNED BY public.subjects.id;
+
+
+--
+-- Name: topics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.topics (
+    id integer NOT NULL,
+    user_id text NOT NULL,
+    subject_id integer NOT NULL,
+    folder_id integer,
+    title text NOT NULL,
+    type text NOT NULL,
+    url text,
+    thumbnail_url text,
+    duration_seconds integer,
+    channel text,
+    author text,
+    description text,
+    priority text DEFAULT 'medium'::text NOT NULL,
+    deadline date,
+    completed boolean DEFAULT false NOT NULL,
+    progress_percent integer DEFAULT 0 NOT NULL,
+    revision_count integer DEFAULT 0 NOT NULL,
+    study_time_minutes integer DEFAULT 0 NOT NULL,
+    last_watched_at timestamp with time zone,
+    tags text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: topics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.topics_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: topics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.topics_id_seq OWNED BY public.topics.id;
+
+
+--
+-- Name: calendar_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.calendar_events ALTER COLUMN id SET DEFAULT nextval('public.calendar_events_id_seq'::regclass);
+
+
+--
+-- Name: coding_profiles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coding_profiles ALTER COLUMN id SET DEFAULT nextval('public.coding_profiles_id_seq'::regclass);
+
+
+--
+-- Name: daily_goals id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_goals ALTER COLUMN id SET DEFAULT nextval('public.daily_goals_id_seq'::regclass);
+
+
+--
+-- Name: daily_tasks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_tasks ALTER COLUMN id SET DEFAULT nextval('public.daily_tasks_id_seq'::regclass);
+
+
+--
+-- Name: dev_tool_connections id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dev_tool_connections ALTER COLUMN id SET DEFAULT nextval('public.dev_tool_connections_id_seq'::regclass);
+
+
+--
+-- Name: focus_sessions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.focus_sessions ALTER COLUMN id SET DEFAULT nextval('public.focus_sessions_id_seq'::regclass);
+
+
+--
+-- Name: github_repos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_repos ALTER COLUMN id SET DEFAULT nextval('public.github_repos_id_seq'::regclass);
+
+
+--
+-- Name: habit_checkins id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habit_checkins ALTER COLUMN id SET DEFAULT nextval('public.habit_checkins_id_seq'::regclass);
+
+
+--
+-- Name: habits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habits ALTER COLUMN id SET DEFAULT nextval('public.habits_id_seq'::regclass);
+
+
+--
+-- Name: job_interviews id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_interviews ALTER COLUMN id SET DEFAULT nextval('public.job_interviews_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: learning_folders id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.learning_folders ALTER COLUMN id SET DEFAULT nextval('public.learning_folders_id_seq'::regclass);
+
+
+--
+-- Name: note_folders id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_folders ALTER COLUMN id SET DEFAULT nextval('public.note_folders_id_seq'::regclass);
+
+
+--
+-- Name: note_versions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_versions ALTER COLUMN id SET DEFAULT nextval('public.note_versions_id_seq'::regclass);
+
+
+--
+-- Name: notes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notes ALTER COLUMN id SET DEFAULT nextval('public.notes_id_seq'::regclass);
+
+
+--
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
+-- Name: project_tasks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_tasks ALTER COLUMN id SET DEFAULT nextval('public.project_tasks_id_seq'::regclass);
+
+
+--
+-- Name: projects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects ALTER COLUMN id SET DEFAULT nextval('public.projects_id_seq'::regclass);
+
+
+--
+-- Name: prompt_categories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.prompt_categories ALTER COLUMN id SET DEFAULT nextval('public.prompt_categories_id_seq'::regclass);
+
+
+--
+-- Name: prompts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.prompts ALTER COLUMN id SET DEFAULT nextval('public.prompts_id_seq'::regclass);
+
+
+--
+-- Name: resources id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.resources ALTER COLUMN id SET DEFAULT nextval('public.resources_id_seq'::regclass);
+
+
+--
+-- Name: resumes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.resumes ALTER COLUMN id SET DEFAULT nextval('public.resumes_id_seq'::regclass);
+
+
+--
+-- Name: social_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.social_links ALTER COLUMN id SET DEFAULT nextval('public.social_links_id_seq'::regclass);
+
+
+--
+-- Name: subjects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subjects ALTER COLUMN id SET DEFAULT nextval('public.subjects_id_seq'::regclass);
+
+
+--
+-- Name: topics id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.topics ALTER COLUMN id SET DEFAULT nextval('public.topics_id_seq'::regclass);
+
+
+--
+-- Data for Name: ai_tool_favorites; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.ai_tool_favorites (user_id, tool_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: calendar_events; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.calendar_events (id, user_id, title, type, start_at, end_at, notes, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: coding_profiles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.coding_profiles (id, user_id, platform, username_or_handle, profile_url, avatar_url, rating, rank, solved_count, max_rating, country, last_synced_at, sync_status, error_message, stats_json, created_at) FROM stdin;
+3	user_3GG2SrPE4o6JK9RREHMd20l3EbG	leetcode	Kashif05	https://leetcode.com/Kashif05	https://assets.leetcode.com/users/Kashif05/avatar_1781968938.png	1539	#541162	274	1539	\N	2026-07-10 06:43:17.586+00	ok	\N	{"bySeverity": [{"count": 274, "difficulty": "All"}, {"count": 144, "difficulty": "Easy"}, {"count": 117, "difficulty": "Medium"}, {"count": 13, "difficulty": "Hard"}], "reputation": 0, "contestTopPercentage": 34.52}	2026-07-09 08:05:04.857252+00
+4	user_3GG2SrPE4o6JK9RREHMd20l3EbG	codeforces	KASHIF.AIBA	https://codeforces.com/profile/KASHIF.AIBA	https://userpic.codeforces.org/5142115/title/f131e31471872f5d.jpg	1463	specialist	\N	1470	India	2026-07-10 06:43:20.84+00	ok	\N	{"maxRank": "specialist", "contribution": 0, "friendOfCount": 6}	2026-07-09 08:05:26.689699+00
+11	user_3GG2SrPE4o6JK9RREHMd20l3EbG	github	https://github.com/kashif05shaikh/	https://github.com/https://github.com/kashif05shaikh/	\N	\N	\N	\N	\N	\N	2026-07-10 06:43:25.118+00	error	HTTP 404	{}	2026-07-09 08:40:28.220414+00
+6	user_3GG2SrPE4o6JK9RREHMd20l3EbG	codechef	kashif_shaikh	https://www.codechef.com/users/kashif_shaikh	\N	\N	\N	\N	\N	\N	2026-07-09 08:06:43.827+00	error	Unsupported platform	{}	2026-07-09 08:06:43.822635+00
+7	user_3GG2SrPE4o6JK9RREHMd20l3EbG	atcoder	KASHIF5AIBA	https://atcoder.jp/users/KASHIF5AIBA	\N	31	\N	\N	31	\N	2026-07-09 08:37:21.619+00	ok	\N	{"contestsCount": 3}	2026-07-09 08:37:21.13899+00
+9	user_3GG2SrPE4o6JK9RREHMd20l3EbG	hackerrank	Kashif Shaikh	https://www.hackerrank.com/Kashif Shaikh	\N	\N	\N	\N	\N	\N	2026-07-09 08:38:37.147+00	error	This platform has no public API. Profile link is saved, but stats cannot be fetched automatically.	{}	2026-07-09 08:38:37.143742+00
+10	user_3GG2SrPE4o6JK9RREHMd20l3EbG	geeksforgeeks	 KASHIF AIBA	https://www.geeksforgeeks.org/user/ KASHIF AIBA	\N	\N	\N	\N	\N	\N	2026-07-09 08:39:15.667+00	error	This platform has no public API. Profile link is saved, but stats cannot be fetched automatically.	{}	2026-07-09 08:39:15.66395+00
+\.
+
+
+--
+-- Data for Name: daily_goals; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.daily_goals (id, user_id, date, study_minutes_target, coding_minutes_target, study_minutes_actual, coding_minutes_actual) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2026-07-09	350	120	0	3
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2026-07-10	60	60	0	0
+\.
+
+
+--
+-- Data for Name: daily_tasks; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.daily_tasks (id, user_id, title, done, date, "position", created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	DSA	t	2026-07-09	0	2026-07-09 08:13:39.626907+00
+\.
+
+
+--
+-- Data for Name: dev_tool_connections; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.dev_tool_connections (id, user_id, service, access_token, account_label, last_synced_at, sync_status, error_message, data_json, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: focus_sessions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.focus_sessions (id, user_id, started_at, ended_at, duration_minutes, label, category, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2026-07-09 08:14:09.047346+00	2026-07-09 08:14:10.824+00	1	\N	coding	2026-07-09 08:14:09.047346+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2026-07-09 09:01:19.685985+00	2026-07-09 09:01:22.763+00	1	\N	coding	2026-07-09 09:01:19.685985+00
+3	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2026-07-09 09:01:31.263227+00	2026-07-09 09:01:32.093+00	1	DP	coding	2026-07-09 09:01:31.263227+00
+\.
+
+
+--
+-- Data for Name: github_repos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.github_repos (id, user_id, coding_profile_id, name, full_name, description, url, stars, forks, language, pushed_at, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: habit_checkins; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.habit_checkins (id, user_id, habit_id, date) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1	2026-07-09
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2	2026-07-09
+\.
+
+
+--
+-- Data for Name: habits; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.habits (id, user_id, name, color, current_streak, longest_streak, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	DEV	#f97316	1	1	2026-07-09 08:13:47.749633+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	DEV\\	#f97316	1	1	2026-07-09 08:13:56.886279+00
+\.
+
+
+--
+-- Data for Name: job_interviews; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.job_interviews (id, user_id, job_id, round_name, scheduled_at, notes, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.jobs (id, user_id, company, role, package_amount, location, recruiter_name, recruiter_email, referral, notes, links, status, "position", resume_version_id, created_at, updated_at) FROM stdin;
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	GOOGLE	SDE	\N	NYC	\N	\N	f	\N	{}	wishlist	0	\N	2026-07-09 08:45:56.189166+00	2026-07-09 08:45:56.189166+00
+\.
+
+
+--
+-- Data for Name: learning_folders; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.learning_folders (id, user_id, subject_id, parent_folder_id, name, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1	\N	CN	2026-07-09 08:26:06.09008+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1	\N	CN	2026-07-09 08:27:21.697021+00
+\.
+
+
+--
+-- Data for Name: note_folders; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.note_folders (id, user_id, parent_id, name, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	DSA	2026-07-09 08:02:43.209272+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	CN	2026-07-09 08:29:52.408417+00
+3	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	OS	2026-07-09 08:29:54.658936+00
+4	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	DBMS	2026-07-09 08:29:57.680169+00
+\.
+
+
+--
+-- Data for Name: note_versions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.note_versions (id, note_id, content_markdown, created_at) FROM stdin;
+4	6		2026-07-09 08:31:52.425566+00
+6	8		2026-07-09 08:32:23.997415+00
+7	8	CACHE 	2026-07-09 08:32:30.570769+00
+\.
+
+
+--
+-- Data for Name: notes; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.notes (id, user_id, folder_id, title, content_markdown, tags, pinned, archived, created_at, updated_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	Untitled Note		{}	f	f	2026-07-09 08:02:46.810171+00	2026-07-09 08:02:46.810171+00
+6	user_3GG2SrPE4o6JK9RREHMd20l3EbG	4	Untitled Note	FILE SYSTEM	{}	t	f	2026-07-09 08:31:45.051895+00	2026-07-09 08:31:53.887+00
+8	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2	Untitled Note	LOAD BALANCING	{}	t	f	2026-07-09 08:32:14.187867+00	2026-07-09 08:32:31.96+00
+\.
+
+
+--
+-- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.notifications (id, user_id, type, title, message, related_url, read, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.profiles (user_id, display_name, theme, accent_color, timezone, dashboard_layout, created_at) FROM stdin;
+user_3GG2SrPE4o6JK9RREHMd20l3EbG		amoled	#7c3aed	UTC	\N	2026-07-09 07:53:10.313354+00
+\.
+
+
+--
+-- Data for Name: project_tasks; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.project_tasks (id, user_id, project_id, title, status, "position", created_at) FROM stdin;
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	2	FRONTEND	done	0	2026-07-09 08:42:15.283394+00
+\.
+
+
+--
+-- Data for Name: projects; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.projects (id, user_id, name, description, github_url, live_url, tech_stack, status, priority, progress_percent, frontend, backend, database, deployment, deadline, notes, tags, created_at, updated_at) FROM stdin;
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	BITE HUB	\N	\N	\N	{}	planning	medium	0	\N	\N	\N	\N	\N	\N	{}	2026-07-09 08:41:58.79699+00	2026-07-09 08:41:58.79699+00
+\.
+
+
+--
+-- Data for Name: prompt_categories; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.prompt_categories (id, user_id, name, color, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: prompts; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.prompts (id, user_id, category_id, title, content, tool, favorite, usage_count, created_at, updated_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	\N	DEVOS FIX	FIX THE PROJEXT	CHATGPT	t	1	2026-07-09 08:49:58.936755+00	2026-07-09 08:50:10.437+00
+\.
+
+
+--
+-- Data for Name: resources; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.resources (id, user_id, title, url, type, thumbnail_url, author, reading_time_minutes, category, tags, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: resumes; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.resumes (id, user_id, version_name, content_text, skills, education, experience, certificates, ats_score, keyword_analysis, is_primary, created_at, updated_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1		{}	\N	\N	\N	\N	\N	t	2026-07-09 08:10:41.744646+00	2026-07-09 08:10:41.744646+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	SDE		{}	\N	\N	\N	\N	\N	f	2026-07-09 08:48:10.727946+00	2026-07-09 08:48:10.727946+00
+\.
+
+
+--
+-- Data for Name: social_links; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.social_links (id, user_id, platform, handle, url, followers, post_count, last_synced_at, data_json, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	linkedin	\N	https://www.linkedin.com/in/kashifshaikh05/	\N	\N	\N	\N	2026-07-09 08:12:55.802467+00
+\.
+
+
+--
+-- Data for Name: subjects; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.subjects (id, user_id, name, color, icon, is_default, created_at) FROM stdin;
+1	user_3GG2SrPE4o6JK9RREHMd20l3EbG	system design	#3b82f6	📚	f	2026-07-09 08:00:53.05592+00
+2	user_3GG2SrPE4o6JK9RREHMd20l3EbG	DSA	#3b82f6	📚	f	2026-07-09 08:27:30.320052+00
+\.
+
+
+--
+-- Data for Name: topics; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.topics (id, user_id, subject_id, folder_id, title, type, url, thumbnail_url, duration_seconds, channel, author, description, priority, deadline, completed, progress_percent, revision_count, study_time_minutes, last_watched_at, tags, created_at, updated_at) FROM stdin;
+3	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1	\N	SYSTEM DES 1	youtube_video	https://www.youtube.com/watch?v=AK0hu0Zxua4&list=PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT	\N	\N	\N	\N	\N	medium	\N	f	0	0	0	\N	{}	2026-07-09 08:29:05.314499+00	2026-07-09 08:29:05.314499+00
+4	user_3GG2SrPE4o6JK9RREHMd20l3EbG	1	\N	LECT 2 	youtube_video	https://www.youtube.com/watch?v=AK0hu0Zxua4&list=PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT	\N	\N	\N	\N	\N	medium	\N	f	0	0	0	\N	{}	2026-07-09 08:29:16.098772+00	2026-07-09 08:29:16.098772+00
+\.
+
+
+--
+-- Name: calendar_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.calendar_events_id_seq', 1, true);
+
+
+--
+-- Name: coding_profiles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.coding_profiles_id_seq', 11, true);
+
+
+--
+-- Name: daily_goals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.daily_goals_id_seq', 2, true);
+
+
+--
+-- Name: daily_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.daily_tasks_id_seq', 1, true);
+
+
+--
+-- Name: dev_tool_connections_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.dev_tool_connections_id_seq', 1, true);
+
+
+--
+-- Name: focus_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.focus_sessions_id_seq', 3, true);
+
+
+--
+-- Name: github_repos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.github_repos_id_seq', 1, false);
+
+
+--
+-- Name: habit_checkins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.habit_checkins_id_seq', 2, true);
+
+
+--
+-- Name: habits_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.habits_id_seq', 2, true);
+
+
+--
+-- Name: job_interviews_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.job_interviews_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 2, true);
+
+
+--
+-- Name: learning_folders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.learning_folders_id_seq', 2, true);
+
+
+--
+-- Name: note_folders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.note_folders_id_seq', 4, true);
+
+
+--
+-- Name: note_versions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.note_versions_id_seq', 8, true);
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.notes_id_seq', 9, true);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.notifications_id_seq', 1, false);
+
+
+--
+-- Name: project_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.project_tasks_id_seq', 2, true);
+
+
+--
+-- Name: projects_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.projects_id_seq', 2, true);
+
+
+--
+-- Name: prompt_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.prompt_categories_id_seq', 1, false);
+
+
+--
+-- Name: prompts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.prompts_id_seq', 1, true);
+
+
+--
+-- Name: resources_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.resources_id_seq', 1, false);
+
+
+--
+-- Name: resumes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.resumes_id_seq', 2, true);
+
+
+--
+-- Name: social_links_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.social_links_id_seq', 1, true);
+
+
+--
+-- Name: subjects_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.subjects_id_seq', 2, true);
+
+
+--
+-- Name: topics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.topics_id_seq', 4, true);
+
+
+--
+-- Name: ai_tool_favorites ai_tool_favorites_user_id_tool_id_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_tool_favorites
+    ADD CONSTRAINT ai_tool_favorites_user_id_tool_id_pk PRIMARY KEY (user_id, tool_id);
+
+
+--
+-- Name: calendar_events calendar_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.calendar_events
+    ADD CONSTRAINT calendar_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: coding_profiles coding_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coding_profiles
+    ADD CONSTRAINT coding_profiles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daily_goals daily_goals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_goals
+    ADD CONSTRAINT daily_goals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daily_tasks daily_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_tasks
+    ADD CONSTRAINT daily_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dev_tool_connections dev_tool_connections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dev_tool_connections
+    ADD CONSTRAINT dev_tool_connections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: focus_sessions focus_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.focus_sessions
+    ADD CONSTRAINT focus_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: github_repos github_repos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_repos
+    ADD CONSTRAINT github_repos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: habit_checkins habit_checkins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habit_checkins
+    ADD CONSTRAINT habit_checkins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: habits habits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habits
+    ADD CONSTRAINT habits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_interviews job_interviews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_interviews
+    ADD CONSTRAINT job_interviews_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: learning_folders learning_folders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.learning_folders
+    ADD CONSTRAINT learning_folders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: note_folders note_folders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_folders
+    ADD CONSTRAINT note_folders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: note_versions note_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_versions
+    ADD CONSTRAINT note_versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notes notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: project_tasks project_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_tasks
+    ADD CONSTRAINT project_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT projects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: prompt_categories prompt_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.prompt_categories
+    ADD CONSTRAINT prompt_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: prompts prompts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.prompts
+    ADD CONSTRAINT prompts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: resources resources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.resources
+    ADD CONSTRAINT resources_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: resumes resumes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.resumes
+    ADD CONSTRAINT resumes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: social_links social_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.social_links
+    ADD CONSTRAINT social_links_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: subjects subjects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subjects
+    ADD CONSTRAINT subjects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: topics topics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.topics
+    ADD CONSTRAINT topics_pkey PRIMARY KEY (id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict nq6tf9LRMtaqMDKlxP35Z7EkAu5ELm6KGhMdnwkPAuhcY1i2jEKkOGgn6pcfv77
+

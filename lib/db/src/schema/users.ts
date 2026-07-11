@@ -11,6 +11,7 @@ export const profilesTable = pgTable("profiles", {
   accentColor: text("accent_color").notNull().default("#7c3aed"),
   timezone: text("timezone").notNull().default("UTC"),
   dashboardLayout: jsonb("dashboard_layout").$type<Record<string, unknown> | null>(),
+  preferences: jsonb("preferences").$type<Record<string, unknown> | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

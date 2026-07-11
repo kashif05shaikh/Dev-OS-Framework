@@ -10,6 +10,8 @@ export const calendarEventsTable = pgTable("calendar_events", {
   startAt: timestamp("start_at", { withTimezone: true }).notNull(),
   endAt: timestamp("end_at", { withTimezone: true }),
   notes: text("notes"),
+  sourceType: text("source_type"),
+  sourceId: integer("source_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
