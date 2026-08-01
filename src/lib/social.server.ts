@@ -616,8 +616,50 @@ async function fetchLinkedin(handle: string): Promise<SocialSnapshot> {
       "That is not a LinkedIn username. Copy the last part of your profile URL (linkedin.com/in/…), for example kashif-shaikh-05.",
     );
   }
+
+  const profileUrl = `https://www.linkedin.com/in/${vanity}`;
+  // LinkedIn gates most profiles behind auth, but public ones still expose
+  // Open Graph metadata through a read proxy.
+  try {
+    const response = await fetch(`https://r.jina.ai/${profileUrl}`, {
+      headers: { "x-return-format": "html", ...UA },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (response.ok) {
+      const html = await response.text();
+      const meta = (property: string) => {
+        const match = html.match(new RegExp(`og:${property}" content="([^"]*)"`, "i"));
+        return match ? decode(match[1]!) : null;
+      };
+      const title = meta("title");
+      if (title) {
+        const name = title.split(/ [-|] /)[0]?.trim() || vanity;
+        const headline = title.includes(" - ")
+          ? title.split(" - ").slice(1).join(" - ").replace(/ \| LinkedIn$/, "").trim()
+          : null;
+        const followers = parseCount(
+          (html.match(/([\d.,KMB]+)\s+followers/i) ?? [])[1]?.trim(),
+        );
+        const connections = parseCount(
+          (html.match(/([\d.,KMB]+)\+?\s+connections/i) ?? [])[1]?.trim(),
+        );
+        return {
+          ...empty("linkedin", vanity, profileUrl),
+          display_name: name,
+          avatar_url: meta("image"),
+          bio: clean(meta("description")) ?? clean(headline),
+          followers,
+          following: connections,
+          extra: { headline, postsLabel: "Posts" },
+        };
+      }
+    }
+  } catch {
+    // fall through to the link-only snapshot
+  }
+
   return {
-    ...empty("linkedin", vanity, `https://www.linkedin.com/in/${vanity}`),
+    ...empty("linkedin", vanity, profileUrl),
     extra: {
       note: "LinkedIn does not expose profile data without an approved Marketing API partnership, so DevOS keeps the verified link only.",
       unavailable: true,
