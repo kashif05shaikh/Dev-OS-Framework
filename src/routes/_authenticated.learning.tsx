@@ -140,7 +140,7 @@ function LearningPage() {
         .select()
         .single();
       assertOk(error);
-      return data;
+      return data!;
     },
     onSuccess: (data) => {
       invalidate();
