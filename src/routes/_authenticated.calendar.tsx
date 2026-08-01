@@ -152,6 +152,12 @@ function toDraft(e: CalendarEvent): EventDraft {
 function CalendarPage() {
   const qc = useQueryClient();
   const events = useQuery(calendarEventsQuery());
+  const fetchContests = useServerFn(getUpcomingContests);
+  const contests = useQuery({
+    queryKey: ["upcoming_contests"],
+    queryFn: () => fetchContests(),
+    staleTime: 15 * 60 * 1000,
+  });
 
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -161,6 +167,31 @@ function CalendarPage() {
 
   const findCachedRow = (id: string): { id: string } =>
     (qc.getQueryData<CalendarEvent[]>(["calendar_events"]) ?? []).find((r) => r.id === id) ?? { id };
+
+  const addContest = useMutation({
+    mutationFn: async (contest: UpcomingContest) =>
+      runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const start = new Date(contest.startsAt);
+        const { error } = await supabase.from("calendar_events").insert({
+          user_id,
+          title: contest.name,
+          description: `${CODING_PLATFORM_LABEL[contest.platform] ?? contest.platform} contest · ${contest.durationMinutes} min`,
+          kind: "contest",
+          event_date: toIso(start),
+          all_day: false,
+          start_time: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          url: contest.url,
+          color: EVENT_KIND_COLOR["contest"] ?? "#34d399",
+        });
+        assertOk(error);
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["calendar_events"] });
+      toast.success("Contest added to your calendar");
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
 
   const saveEvent = useMutation({
     mutationFn: async (value: EventDraft) => {
