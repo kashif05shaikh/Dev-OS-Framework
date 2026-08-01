@@ -173,6 +173,196 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_milestones: {
+        Row: {
+          created_at: string
+          done: boolean
+          due_date: string | null
+          goal_id: string
+          id: string
+          position: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          goal_id: string
+          id?: string
+          position?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          goal_id?: string
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_milestones_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          category: string
+          created_at: string
+          current_value: number
+          description: string | null
+          due_date: string | null
+          id: string
+          pinned: boolean
+          position: number
+          priority: string
+          status: string
+          target_value: number
+          title: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_value?: number
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          pinned?: boolean
+          position?: number
+          priority?: string
+          status?: string
+          target_value?: number
+          title: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_value?: number
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          pinned?: boolean
+          position?: number
+          priority?: string
+          status?: string
+          target_value?: number
+          title?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          count: number
+          created_at: string
+          habit_id: string
+          id: string
+          log_date: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          habit_id: string
+          id?: string
+          log_date?: string
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          habit_id?: string
+          id?: string
+          log_date?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          archived: boolean
+          best_streak: number
+          color: string
+          created_at: string
+          current_streak: number
+          description: string | null
+          frequency: string
+          icon: string
+          id: string
+          name: string
+          position: number
+          target_per_period: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          best_streak?: number
+          color?: string
+          created_at?: string
+          current_streak?: number
+          description?: string | null
+          frequency?: string
+          icon?: string
+          id?: string
+          name: string
+          position?: number
+          target_per_period?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          best_streak?: number
+          color?: string
+          created_at?: string
+          current_streak?: number
+          description?: string | null
+          frequency?: string
+          icon?: string
+          id?: string
+          name?: string
+          position?: number
+          target_per_period?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           applied_on: string | null
