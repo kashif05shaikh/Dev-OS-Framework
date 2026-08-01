@@ -57,6 +57,9 @@ export const PROFILE_URL_TEMPLATE: Record<string, (u: string) => string> = {
   atcoder: (u) => `https://atcoder.jp/users/${u}`,
 };
 
+/** Platforms whose stats DevOS can fetch automatically from the public APIs. */
+export const SYNCABLE_PLATFORMS = ["leetcode", "codeforces", "codechef", "github"] as const;
+
 export const RESUME_SECTION_KINDS = [
   "experience",
   "education",

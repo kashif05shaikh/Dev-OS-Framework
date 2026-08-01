@@ -1,7 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Braces, ExternalLink, Flame, MoreHorizontal, Pencil, Plus, Search, Trash2, Trophy } from "lucide-react";
+import {
+  Braces,
+  ExternalLink,
+  Flame,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Trophy,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
@@ -21,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   assertOk,
   codingProfilesQuery,
@@ -34,8 +47,10 @@ import {
   CODING_PLATFORM_COLOR,
   CODING_PLATFORM_LABEL,
   PROFILE_URL_TEMPLATE,
+  SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/profiles")({
   head: () => ({
@@ -116,21 +131,75 @@ function resolveUrl(draft: ProfileDraft): string | null {
   return template && username ? template(username) : null;
 }
 
+function canSync(platform: string): boolean {
+  return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
+}
+
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
+  const fetchStats = useServerFn(fetchCodingStats);
 
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const findCachedRow = (id: string): { id: string } | undefined =>
     (qc.getQueryData<CodingProfile[]>(["coding_profiles"]) ?? []).find((row) => row.id === id);
 
+  const fillFromPlatform = useMutation({
+    mutationFn: async (value: ProfileDraft) =>
+      fetchStats({ data: { platform: value.platform, username: value.username.trim() } }),
+    onSuccess: (stats) => {
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              profile_url: current.profile_url.trim() || (stats.profile_url ?? ""),
+              rating: stats.rating === null ? "" : String(stats.rating),
+              rank_label: stats.rank_label ?? current.rank_label,
+              problems_solved: String(stats.problems_solved),
+              contests_attended: String(stats.contests_attended),
+              current_streak: String(stats.current_streak),
+              max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
+            }
+          : current,
+      );
+      toast.success("Stats fetched");
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
+
+  const syncProfile = useMutation({
+    mutationFn: async (profile: CodingProfile) => {
+      const stats = await fetchStats({
+        data: { platform: profile.platform, username: profile.username },
+      });
+      await updateRow("coding_profiles", profile, {
+        profile_url: profile.profile_url ?? stats.profile_url,
+        rating: stats.rating,
+        rank_label: stats.rank_label ?? profile.rank_label,
+        problems_solved: stats.problems_solved,
+        contests_attended: stats.contests_attended,
+        current_streak: stats.current_streak,
+        max_streak: Math.max(stats.max_streak, profile.max_streak),
+        last_synced_at: new Date().toISOString(),
+      });
+    },
+    onMutate: (profile) => setSyncingId(profile.id),
+    onSuccess: (_d, profile) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      toast.success(`${CODING_PLATFORM_LABEL[profile.platform] ?? profile.platform} synced`);
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+    onSettled: () => setSyncingId(null),
+  });
+
   const saveProfile = useMutation({
     mutationFn: async (value: ProfileDraft) => {
-      const payload = {
+      let payload = {
         platform: value.platform,
         username: value.username.trim(),
         profile_url: resolveUrl(value),
@@ -143,6 +212,30 @@ function ProfilesPage() {
         notes: value.notes.trim() || null,
         last_synced_at: new Date().toISOString(),
       };
+
+      // New profile on a supported platform: pull the live stats automatically.
+      if (!value.id && canSync(value.platform)) {
+        try {
+          const stats = await fetchStats({
+            data: { platform: value.platform, username: payload.username },
+          });
+          payload = {
+            ...payload,
+            profile_url: payload.profile_url ?? stats.profile_url,
+            rating: stats.rating,
+            rank_label: stats.rank_label ?? payload.rank_label,
+            problems_solved: stats.problems_solved,
+            contests_attended: stats.contests_attended,
+            current_streak: stats.current_streak,
+            max_streak: Math.max(stats.max_streak, payload.max_streak),
+          };
+        } catch (error) {
+          toast.warning(
+            `Saved, but live stats could not be fetched: ${describeError(error)}`,
+          );
+        }
+      }
+
       if (value.id) {
         await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, payload);
         return;
@@ -293,6 +386,17 @@ function ProfilesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                        {canSync(p.platform) ? (
+                          <DropdownMenuItem
+                            disabled={syncingId === p.id}
+                            onClick={() => syncProfile.mutate(p)}
+                          >
+                            <RefreshCw
+                              className={cn("size-3.5", syncingId === p.id && "animate-spin")}
+                            />
+                            {syncingId === p.id ? "Syncing…" : "Sync now"}
+                          </DropdownMenuItem>
+                        ) : null}
                           <DropdownMenuItem onClick={() => setDraft(toDraft(p))}>
                             <Pencil className="size-3.5" />
                             Edit
@@ -348,6 +452,11 @@ function ProfilesPage() {
                         <Flame className="size-3.5" />
                         {p.current_streak}d streak · best {p.max_streak}d
                       </span>
+                      {p.last_synced_at ? (
+                        <span className="ml-auto">
+                          synced {new Date(p.last_synced_at).toLocaleDateString()}
+                        </span>
+                      ) : null}
                     </div>
 
                     {p.notes ? (
@@ -406,6 +515,31 @@ function ProfilesPage() {
                     onChange={(e) => setDraft({ ...draft, username: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                <p className="mr-auto text-[11px] text-muted-foreground">
+                  {canSync(draft.platform)
+                    ? "Rating, rank, problems solved, contests and streak are fetched automatically."
+                    : "Automatic sync isn't available for this platform — fill the numbers in manually."}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  disabled={
+                    !canSync(draft.platform) ||
+                    !draft.username.trim() ||
+                    fillFromPlatform.isPending
+                  }
+                  onClick={() => fillFromPlatform.mutate(draft)}
+                >
+                  <RefreshCw
+                    className={cn("size-3.5", fillFromPlatform.isPending && "animate-spin")}
+                  />
+                  {fillFromPlatform.isPending ? "Fetching…" : "Fetch stats"}
+                </Button>
               </div>
 
               <div className="space-y-1.5">
