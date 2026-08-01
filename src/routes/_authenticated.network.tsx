@@ -69,6 +69,27 @@ export const Route = createFileRoute("/_authenticated/network")({
 
 type Draft = { platform: string; handle: string; editing?: SocialAccount };
 
+/** Manual stat entry for platforms that block automated profile reads. */
+type StatsDraft = {
+  account: SocialAccount;
+  display_name: string;
+  bio: string;
+  avatar_url: string;
+  followers: string;
+  following: string;
+  posts: string;
+};
+
+/** Platforms whose public data cannot be read from a server (login-walled). */
+const MANUAL_PLATFORMS = new Set(["instagram", "linkedin"]);
+
+function toNumber(value: string): number | null {
+  const trimmed = value.trim().replace(/[,\s]/g, "");
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+}
+
 function compact(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   if (value < 1000) return String(value);
@@ -97,6 +118,7 @@ function NetworkPage() {
   const fetchProfile = useServerFn(fetchSocialProfile);
 
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [stats, setStats] = useState<StatsDraft | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
 
@@ -121,23 +143,34 @@ function NetworkPage() {
   const available = SOCIAL_PLATFORMS.filter((p) => !connectedIds.has(p.id));
 
   async function persistSnapshot(userId: string, snapshot: SocialSnapshot) {
+    // Never wipe manually entered stats with an empty (blocked) snapshot.
+    const existing = byPlatform.get(snapshot.platform);
+    const existingExtra = extraOf(existing);
+    const keepManual =
+      Boolean(existingExtra["manual"]) &&
+      snapshot.followers === null &&
+      snapshot.following === null &&
+      snapshot.posts === null;
+
     await runWithRetry(async () => {
       const { error } = await supabase.from("social_profile_cache").upsert(
         {
           user_id: userId,
           platform: snapshot.platform,
           handle: snapshot.handle,
-          display_name: snapshot.display_name,
-          avatar_url: snapshot.avatar_url,
-          bio: snapshot.bio,
+          display_name: snapshot.display_name ?? (keepManual ? existing?.display_name : null),
+          avatar_url: snapshot.avatar_url ?? (keepManual ? existing?.avatar_url : null),
+          bio: snapshot.bio ?? (keepManual ? existing?.bio : null),
           location: snapshot.location,
           website: snapshot.website,
           verified: snapshot.verified,
-          followers: snapshot.followers,
-          following: snapshot.following,
-          posts: snapshot.posts,
+          followers: keepManual ? (existing?.followers ?? null) : snapshot.followers,
+          following: keepManual ? (existing?.following ?? null) : snapshot.following,
+          posts: keepManual ? (existing?.posts ?? null) : snapshot.posts,
           joined_at: snapshot.joined_at,
-          extra_json: snapshot.extra as never,
+          extra_json: (keepManual
+            ? { ...snapshot.extra, manual: true }
+            : snapshot.extra) as never,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,platform" },
@@ -145,6 +178,48 @@ function NetworkPage() {
       assertOk(error);
     });
   }
+
+  const saveStats = useMutation({
+    mutationFn: async (value: StatsDraft) => {
+      const userId = await requireUserId();
+      const meta = socialPlatform(value.account.platform);
+      await runWithRetry(async () => {
+        const { error } = await supabase.from("social_profile_cache").upsert(
+          {
+            user_id: userId,
+            platform: value.account.platform,
+            handle: value.account.username,
+            display_name: value.display_name.trim() || null,
+            avatar_url: value.avatar_url.trim() || null,
+            bio: value.bio.trim() || null,
+            followers: toNumber(value.followers),
+            following: toNumber(value.following),
+            posts: toNumber(value.posts),
+            extra_json: {
+              manual: true,
+              postsLabel: "Posts",
+              note: `${meta?.label ?? value.account.platform} blocks automated profile reads, so these numbers are the ones you entered.`,
+            } as never,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,platform" },
+        );
+        assertOk(error);
+      });
+      await updateRow("social_accounts", value.account, {
+        status: "connected",
+        last_error: null,
+        last_synced: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      setStats(null);
+      void qc.invalidateQueries({ queryKey: ["social_accounts"] });
+      void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
+      toast.success("Stats saved");
+    },
+    onError: (error: unknown) => toast.error(describeError(error)),
+  });
 
   const connect = useMutation({
     mutationFn: async (value: Draft) => {
