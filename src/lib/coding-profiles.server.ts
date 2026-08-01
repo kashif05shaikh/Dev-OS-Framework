@@ -139,15 +139,19 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
   const html = await response.text();
 
   const stats = base("codechef", username, url);
-  const rating = /class="rating-number"[^>]*>(\d+)/.exec(html);
+  const rating = /class="rating-number">\s*([\d]+)/.exec(html);
   if (rating?.[1]) stats.rating = Number.parseInt(rating[1], 10);
-  const stars = /class="rating">\s*(\d★)/.exec(html);
-  if (stars?.[1]) stats.rank_label = stars[1];
-  const solved = /Total Problems Solved:\s*<\/h3>?\s*(\d+)|Total Problems Solved:\s*(\d+)/.exec(html);
-  const solvedValue = solved?.[1] ?? solved?.[2];
-  if (solvedValue) stats.problems_solved = Number.parseInt(solvedValue, 10);
-  const contests = /contest-participated-count[^>]*>\s*<b>(\d+)<\/b>/.exec(html);
+
+  const starBlock = /class="rating-star">([\s\S]{0,600}?)<\/div>/.exec(html);
+  const starCount = starBlock?.[1] ? (starBlock[1].match(/&#9733;/g) ?? []).length : 0;
+  if (starCount > 0) stats.rank_label = `${starCount}\u2605`;
+
+  const solved = /Total Problems Solved:\s*(?:<\/?[^>]+>\s*)*(\d+)/.exec(html);
+  if (solved?.[1]) stats.problems_solved = Number.parseInt(solved[1], 10);
+
+  const contests = /No\. of Contests Participated:\s*<b>(\d+)<\/b>/.exec(html);
   if (contests?.[1]) stats.contests_attended = Number.parseInt(contests[1], 10);
+
   return stats;
 }
 
