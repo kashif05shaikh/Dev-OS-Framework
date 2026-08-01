@@ -364,8 +364,7 @@ function PromptsPage() {
                       <a
                         key={target.id}
                         href={target.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        target="_top"
                         title={`Open in ${target.label}`}
                         aria-label={`Open in ${target.label}`}
                         onClick={() => openIn(p, target)}

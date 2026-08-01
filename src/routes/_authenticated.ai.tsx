@@ -100,8 +100,7 @@ function AiWorkspacePage() {
                 <a
                   key={p.id}
                   href={p.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_top"
                   onClick={() => launch(p)}
                   title={`Open ${p.label}`}
                   className="group flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs font-medium transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10"
@@ -157,7 +156,7 @@ function AiWorkspacePage() {
                           <div>Opened {usage?.count ?? 0}×</div>
                         </div>
                         <Button size="sm" asChild onClick={() => launch(p)}>
-                          <a href={p.url} target="_blank" rel="noopener noreferrer">
+                          <a href={p.url} target="_top">
                             <Rocket className="size-4" />
                             Open
                           </a>
@@ -185,7 +184,7 @@ function AiWorkspacePage() {
                       {formatLastUsed(state.usage[p.id]?.lastUsedAt)}
                     </span>
                     <Button variant="ghost" size="sm" asChild onClick={() => launch(p)}>
-                      <a href={p.url} target="_blank" rel="noopener noreferrer">
+                      <a href={p.url} target="_top">
                         Open
                       </a>
                     </Button>
