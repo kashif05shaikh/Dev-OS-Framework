@@ -1,11 +1,5 @@
 import { useState } from "react";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { AI_MODEL_TARGETS, type AiModelTarget } from "@/lib/ai-models";
 import { cn } from "@/lib/utils";
 
@@ -23,41 +17,24 @@ function ModelIcon({ model }: { model: AiModelTarget }) {
   );
 }
 
-/** Row of model buttons opening each model's chat in a new tab. */
-export function AiModelLauncher({
-  onLaunch,
-  getHref,
-  className,
-}: {
-  onLaunch?: (model: AiModelTarget) => void;
-  getHref?: (model: AiModelTarget) => string;
-  className?: string;
-}) {
+/** Simple text links to each AI model homepage. */
+export function AiModelLauncher({ className }: { className?: string }) {
   return (
-    <TooltipProvider delayDuration={150}>
-      <div className={cn("flex flex-wrap items-center gap-1", className)}>
+    <div className={cn("flex flex-wrap items-center gap-3", className)}>
       {AI_MODEL_TARGETS.map((model) => (
-        <Tooltip key={model.id}>
-          <TooltipTrigger asChild>
-            <a
-              href={getHref ? getHref(model) : model.url("")}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Open ${model.label}`}
-              onClick={() => onLaunch?.(model)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs transition-colors hover:bg-accent"
-              style={{ color: model.color }}
-            >
-              <ModelIcon model={model} />
-              <span className="text-foreground">{model.label}</span>
-            </a>
-          </TooltipTrigger>
-          <TooltipContent>
-            Open {model.label}
-          </TooltipContent>
-        </Tooltip>
+        <a
+          key={model.id}
+          href={model.url("")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ModelIcon model={model} />
+          <span className="font-semibold uppercase tracking-wide">{model.label}</span>
+          <span className="text-border">-</span>
+          <span>{model.linkText}</span>
+        </a>
       ))}
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }
