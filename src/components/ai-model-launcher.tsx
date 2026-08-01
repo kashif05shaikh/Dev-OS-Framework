@@ -17,7 +17,7 @@ function ModelIcon({ model }: { model: AiModelTarget }) {
   );
 }
 
-/** Simple text link for each AI model homepage. */
+/** Simple text links to each AI model homepage. */
 export function AiModelLauncher({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
@@ -32,7 +32,7 @@ export function AiModelLauncher({ className }: { className?: string }) {
           <ModelIcon model={model} />
           <span className="font-semibold uppercase tracking-wide">{model.label}</span>
           <span className="text-border">-</span>
-          <span>{model.url("").replace(/^https?:\/\//, "").replace(/\/+$/, "")}</span>
+          <span>{model.linkText}</span>
         </a>
       ))}
     </div>

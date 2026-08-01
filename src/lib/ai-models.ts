@@ -9,6 +9,8 @@ export type AiModelTarget = {
   url: (prompt: string) => string;
   /** True when the prompt is prefilled in the URL (otherwise the user pastes it). */
   prefills: boolean;
+  /** Short label shown next to the model name in the navbar. */
+  linkText: string;
 };
 
 export const AI_MODEL_TARGETS: AiModelTarget[] = [
@@ -19,6 +21,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#10a37f",
     url: () => "https://chatgpt.com/",
     prefills: false,
+    linkText: "ChatGPT",
   },
   {
     id: "claude",
@@ -27,6 +30,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#d97757",
     url: () => "https://claude.ai/new",
     prefills: false,
+    linkText: "New chat - Claude",
   },
   {
     id: "gemini",
@@ -35,6 +39,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#8ab4f8",
     url: () => "https://gemini.google.com/app",
     prefills: false,
+    linkText: "Gemini",
   },
   {
     id: "perplexity",
@@ -43,6 +48,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#20b8cd",
     url: () => "https://www.perplexity.ai/",
     prefills: false,
+    linkText: "Perplexity",
   },
   {
     id: "grok",
@@ -51,6 +57,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#e5e7eb",
     url: () => "https://grok.com/",
     prefills: false,
+    linkText: "Grok",
   },
   {
     id: "deepseek",
@@ -59,6 +66,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#4d6bfe",
     url: () => "https://chat.deepseek.com/",
     prefills: false,
+    linkText: "DeepSeek",
   },
   {
     id: "copilot",
@@ -67,6 +75,7 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#a78bfa",
     url: () => "https://copilot.microsoft.com/",
     prefills: false,
+    linkText: "Copilot",
   },
   {
     id: "mistral",
@@ -75,5 +84,6 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     color: "#fa520f",
     url: () => "https://chat.mistral.ai/chat",
     prefills: false,
+    linkText: "Le Chat",
   },
 ];
