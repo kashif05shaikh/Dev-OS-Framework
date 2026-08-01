@@ -178,6 +178,43 @@ export const subjectsQuery = () =>
       ),
   });
 
+export const profileQuery = () =>
+  queryOptions({
+    queryKey: ["profile"],
+    queryFn: async (): Promise<Profile | null> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      assertOk(error);
+      if (data) return data as Profile;
+      const created = await supabase
+        .from("profiles")
+        .upsert({ id: userId })
+        .select("*")
+        .maybeSingle();
+      assertOk(created.error);
+      return (created.data as Profile | null) ?? null;
+    },
+  });
+
+const _subjectsQueryLegacy = () =>
+  queryOptions({
+    queryKey: ["subjects"],
+    queryFn: async (): Promise<Subject[]> =>
+      unwrap(
+        await supabase
+          .from("subjects")
+          .select("*")
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
 export const noteFoldersQuery = () =>
   queryOptions({
     queryKey: ["note_folders"],
