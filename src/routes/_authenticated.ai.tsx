@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_PLATFORMS, type AiPlatform } from "@/lib/ai-models";
 import { formatLastUsed, useAiWorkspace } from "@/lib/ai-usage";
-import { openExternal } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai")({
