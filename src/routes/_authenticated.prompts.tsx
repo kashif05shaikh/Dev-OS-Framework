@@ -225,12 +225,10 @@ function PromptsPage() {
   };
 
   const openIn = (
-    event: React.MouseEvent<HTMLAnchorElement>,
+    _event: React.MouseEvent<HTMLAnchorElement>,
     prompt: AiPrompt,
     target: AiPlatform,
   ) => {
-    event.preventDefault();
-    openExternal(target.url);
     navigator.clipboard
       ?.writeText(prompt.body)
       .then(() => toast.success(`Prompt copied! Paste it into ${target.label}.`))

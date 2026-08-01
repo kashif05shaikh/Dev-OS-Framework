@@ -37,10 +37,10 @@ function AiWorkspacePage() {
   const { state, toggleFavorite, recordUse } = useAiWorkspace();
   const [search, setSearch] = useState("");
 
-  const launch = (event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
-    event.preventDefault();
+  // Let the browser handle the navigation natively via the anchor's
+  // target="_blank" — we only record local usage stats here.
+  const launch = (_event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
     recordUse(p.id);
-    openExternal(p.url);
   };
 
   const filtered = useMemo(() => {
