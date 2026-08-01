@@ -58,6 +58,7 @@ import {
   learningResourcesQuery,
   requireUserId,
   runWithRetry,
+  updateRow,
   subjectsQuery,
 } from "@/lib/devos-queries";
 import {
@@ -122,6 +123,10 @@ function LearningPage() {
   const [draft, setDraft] = useState<ResourceDraft | null>(null);
 
   const subjectId = activeSubject ?? subjects.data?.[0]?.id ?? null;
+
+  /** Full row from the query cache — needed for the POST-upsert save fallback. */
+  const findCachedRow = (key: string, id: string): { id: string } | undefined =>
+    (qc.getQueryData<{ id: string }[]>([key]) ?? []).find((row) => row.id === id);
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["subjects"] });
