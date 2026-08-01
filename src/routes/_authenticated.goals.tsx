@@ -724,6 +724,33 @@ function GoalsPage() {
                           {GOAL_CATEGORY_LABEL[c]}
                         </SelectItem>
                       ))}
+                      <SelectItem value={CUSTOM}>Custom…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {draft.category === CUSTOM ? (
+                    <Input
+                      value={draft.customCategory}
+                      onChange={(e) => setDraft({ ...draft, customCategory: e.target.value })}
+                      placeholder="Custom category name"
+                      className="mt-1"
+                    />
+                  ) : null}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Cadence</Label>
+                  <Select
+                    value={draft.timeframe}
+                    onValueChange={(v) => setDraft({ ...draft, timeframe: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GOAL_TIMEFRAMES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {GOAL_TIMEFRAME_LABEL[t]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
