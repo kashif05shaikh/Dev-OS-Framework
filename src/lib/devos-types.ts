@@ -235,3 +235,58 @@ export const SUBJECT_COLORS = [
   "#f472b6",
   "#a3e635",
 ];
+export type Goal = Tables<"goals">;
+export type GoalMilestone = Tables<"goal_milestones">;
+export type Habit = Tables<"habits">;
+export type HabitLog = Tables<"habit_logs">;
+
+export const GOAL_CATEGORIES = [
+  "career",
+  "learning",
+  "coding",
+  "health",
+  "personal",
+  "finance",
+] as const;
+export type GoalCategory = (typeof GOAL_CATEGORIES)[number];
+
+export const GOAL_CATEGORY_LABEL: Record<string, string> = {
+  career: "Career",
+  learning: "Learning",
+  coding: "Coding",
+  health: "Health",
+  personal: "Personal",
+  finance: "Finance",
+};
+
+export const GOAL_STATUSES = ["active", "paused", "done", "dropped"] as const;
+export type GoalStatus = (typeof GOAL_STATUSES)[number];
+
+export const GOAL_STATUS_LABEL: Record<string, string> = {
+  active: "Active",
+  paused: "Paused",
+  done: "Completed",
+  dropped: "Dropped",
+};
+
+export const GOAL_PRIORITIES = ["low", "medium", "high"] as const;
+export const GOAL_PRIORITY_LABEL: Record<string, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+
+export const HABIT_FREQUENCIES = ["daily", "weekly"] as const;
+export const HABIT_FREQUENCY_LABEL: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+};
+
+export const HABIT_COLORS = [
+  "#8b5cf6",
+  "#22d3ee",
+  "#34d399",
+  "#fbbf24",
+  "#fb7185",
+  "#60a5fa",
+];

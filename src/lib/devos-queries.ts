@@ -16,6 +16,7 @@ import type {
   ResumeSection,
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
+import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -112,7 +113,11 @@ type UpdatableTable =
   | "resume_sections"
   | "resume_entries"
   | "ai_prompts"
-  | "calendar_events";
+  | "calendar_events"
+  | "goals"
+  | "goal_milestones"
+  | "habits"
+  | "habit_logs";
 
 /**
  * Update a row by id.
@@ -344,4 +349,60 @@ export const calendarEventsQuery = () =>
           .order("event_date", { ascending: true })
           .order("start_time", { ascending: true, nullsFirst: true }),
       ),
+  });
+export const goalsQuery = () =>
+  queryOptions({
+    queryKey: ["goals"],
+    queryFn: async (): Promise<Goal[]> =>
+      unwrap(
+        await supabase
+          .from("goals")
+          .select("*")
+          .order("pinned", { ascending: false })
+          .order("created_at", { ascending: false }),
+      ),
+  });
+
+export const goalMilestonesQuery = () =>
+  queryOptions({
+    queryKey: ["goal_milestones"],
+    queryFn: async (): Promise<GoalMilestone[]> =>
+      unwrap(
+        await supabase
+          .from("goal_milestones")
+          .select("*")
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const habitsQuery = () =>
+  queryOptions({
+    queryKey: ["habits"],
+    queryFn: async (): Promise<Habit[]> =>
+      unwrap(
+        await supabase
+          .from("habits")
+          .select("*")
+          .order("archived", { ascending: true })
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+/** Habit logs for the trailing `days` window (default 120 days). */
+export const habitLogsQuery = (days = 120) =>
+  queryOptions({
+    queryKey: ["habit_logs", days],
+    queryFn: async (): Promise<HabitLog[]> => {
+      const from = new Date();
+      from.setDate(from.getDate() - days);
+      return unwrap(
+        await supabase
+          .from("habit_logs")
+          .select("*")
+          .gte("log_date", from.toISOString().slice(0, 10))
+          .order("log_date", { ascending: false }),
+      );
+    },
   });
