@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { AiModelLauncher } from "@/components/ai-model-launcher";
+import { openExternal } from "@/lib/open-external";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
