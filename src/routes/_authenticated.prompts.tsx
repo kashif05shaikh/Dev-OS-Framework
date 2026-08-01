@@ -7,7 +7,6 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { AiModelLauncher } from "@/components/ai-model-launcher";
-import { openExternal } from "@/lib/open-external";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
@@ -189,25 +188,20 @@ function PromptsPage() {
     }
   };
 
-  const launchInModel = async (prompt: AiPrompt, model: AiModelTarget) => {
-    let copied = true;
-    try {
-      await navigator.clipboard.writeText(prompt.body);
-    } catch {
-      copied = false;
-    }
-    openExternal(model.url(prompt.body));
+  const launchInModel = (prompt: AiPrompt, model: AiModelTarget) => {
+    void navigator.clipboard.writeText(prompt.body).then(
+      () =>
+        toast.success(
+          model.prefills
+            ? `Opening ${model.label} with your prompt (also copied)`
+            : `Copied — paste it into ${model.label}`,
+        ),
+      () => toast.info(`Opening ${model.label} — copy the prompt manually`),
+    );
     patchPrompt.mutate({
       id: prompt.id,
       patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
     });
-    toast.success(
-      model.prefills
-        ? `Opening ${model.label} with your prompt${copied ? " (also copied)" : ""}`
-        : copied
-          ? `Copied — paste it into ${model.label}`
-          : `Opening ${model.label} — copy the prompt manually`,
-    );
   };
 
   const filtered = useMemo(() => {
@@ -355,7 +349,10 @@ function PromptsPage() {
                     <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/70">
                       Send to model
                     </p>
-                    <AiModelLauncher onLaunch={(model) => void launchInModel(p, model)} />
+                    <AiModelLauncher
+                      getHref={(model) => model.url(p.body)}
+                      onLaunch={(model) => launchInModel(p, model)}
+                    />
                   </div>
                 </article>
               ))}

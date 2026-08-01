@@ -26,9 +26,11 @@ function ModelIcon({ model }: { model: AiModelTarget }) {
 /** Row of model buttons: copies the prompt, then opens that model's chat. */
 export function AiModelLauncher({
   onLaunch,
+  getHref,
   className,
 }: {
   onLaunch: (model: AiModelTarget) => void;
+  getHref: (model: AiModelTarget) => string;
   className?: string;
 }) {
   return (
@@ -37,15 +39,17 @@ export function AiModelLauncher({
       {AI_MODEL_TARGETS.map((model) => (
         <Tooltip key={model.id}>
           <TooltipTrigger asChild>
-            <button
-              type="button"
+            <a
+              href={getHref(model)}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={`Copy prompt and open ${model.label}`}
               onClick={() => onLaunch(model)}
               className="flex size-7 items-center justify-center rounded-md border border-border bg-muted/40 transition-colors hover:bg-accent"
               style={{ color: model.color }}
             >
               <ModelIcon model={model} />
-            </button>
+            </a>
           </TooltipTrigger>
           <TooltipContent>
             Copy &amp; open {model.label}
