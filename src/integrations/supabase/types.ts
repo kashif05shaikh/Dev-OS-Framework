@@ -943,6 +943,114 @@ export type Database = {
         }
         Relationships: []
       }
+      social_accounts: {
+        Row: {
+          auto_sync: boolean
+          connected: boolean
+          created_at: string
+          id: string
+          last_error: string | null
+          last_synced: string | null
+          platform: string
+          position: number
+          profile_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          auto_sync?: boolean
+          connected?: boolean
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_synced?: string | null
+          platform: string
+          position?: number
+          profile_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          username?: string
+        }
+        Update: {
+          auto_sync?: boolean
+          connected?: boolean
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_synced?: string | null
+          platform?: string
+          position?: number
+          profile_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      social_profile_cache: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          extra_json: Json
+          followers: number | null
+          following: number | null
+          handle: string | null
+          id: string
+          joined_at: string | null
+          location: string | null
+          platform: string
+          posts: number | null
+          updated_at: string
+          user_id: string
+          verified: boolean | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          extra_json?: Json
+          followers?: number | null
+          following?: number | null
+          handle?: string | null
+          id?: string
+          joined_at?: string | null
+          location?: string | null
+          platform: string
+          posts?: number | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          extra_json?: Json
+          followers?: number | null
+          following?: number | null
+          handle?: string | null
+          id?: string
+          joined_at?: string | null
+          location?: string | null
+          platform?: string
+          posts?: number | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       subjects: {
         Row: {
           color: string

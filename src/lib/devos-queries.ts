@@ -119,7 +119,9 @@ type UpdatableTable =
   | "goal_milestones"
   | "habits"
   | "habit_logs"
-  | "focus_sessions";
+  | "focus_sessions"
+  | "social_accounts"
+  | "social_profile_cache";
 
 /**
  * Update a row by id.
