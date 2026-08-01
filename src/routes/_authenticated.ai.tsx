@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_PLATFORMS, type AiPlatform } from "@/lib/ai-models";
 import { formatLastUsed, useAiWorkspace } from "@/lib/ai-usage";
-import { openExternal } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai")({
@@ -37,10 +36,10 @@ function AiWorkspacePage() {
   const { state, toggleFavorite, recordUse } = useAiWorkspace();
   const [search, setSearch] = useState("");
 
-  const launch = (event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
-    event.preventDefault();
+  // Let the browser handle the navigation natively via the anchor's
+  // target="_blank" — we only record local usage stats here.
+  const launch = (_event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
     recordUse(p.id);
-    openExternal(p.url);
   };
 
   const filtered = useMemo(() => {

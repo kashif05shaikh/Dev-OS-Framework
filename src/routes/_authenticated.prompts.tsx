@@ -42,7 +42,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
 import { AiLogo } from "@/components/ai-logo";
 import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
-import { openExternal } from "@/lib/open-external";
 import { useAiWorkspace } from "@/lib/ai-usage";
 import {
   aiPromptsQuery,
@@ -225,12 +224,10 @@ function PromptsPage() {
   };
 
   const openIn = (
-    event: React.MouseEvent<HTMLAnchorElement>,
+    _event: React.MouseEvent<HTMLAnchorElement>,
     prompt: AiPrompt,
     target: AiPlatform,
   ) => {
-    event.preventDefault();
-    openExternal(target.url);
     navigator.clipboard
       ?.writeText(prompt.body)
       .then(() => toast.success(`Prompt copied! Paste it into ${target.label}.`))
