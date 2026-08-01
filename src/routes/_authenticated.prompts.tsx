@@ -29,7 +29,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
-import type { AiModelTarget } from "@/lib/ai-models";
 import {
   aiPromptsQuery,
   assertOk,
@@ -188,22 +187,6 @@ function PromptsPage() {
     }
   };
 
-  const launchInModel = (prompt: AiPrompt, model: AiModelTarget) => {
-    void navigator.clipboard.writeText(prompt.body).then(
-      () =>
-        toast.success(
-          model.prefills
-            ? `Opening ${model.label} with your prompt (also copied)`
-            : `Copied — paste it into ${model.label}`,
-        ),
-      () => toast.info(`Opening ${model.label} — copy the prompt manually`),
-    );
-    patchPrompt.mutate({
-      id: prompt.id,
-      patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
-    });
-  };
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (prompts.data ?? []).filter((p) => {
@@ -266,6 +249,13 @@ function PromptsPage() {
           New prompt
         </Button>
       </header>
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-2">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
+          AI models
+        </span>
+        <AiModelLauncher />
+      </div>
 
       <ScrollArea className="flex-1">
         <div className="p-6">
