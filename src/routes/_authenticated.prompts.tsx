@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { AiModelLauncher } from "@/components/ai-model-launcher";
+import { openExternal } from "@/lib/open-external";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
@@ -195,7 +196,7 @@ function PromptsPage() {
     } catch {
       copied = false;
     }
-    window.open(model.url(prompt.body), "_blank", "noopener,noreferrer");
+    openExternal(model.url(prompt.body));
     patchPrompt.mutate({
       id: prompt.id,
       patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
