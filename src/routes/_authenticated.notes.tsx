@@ -44,7 +44,15 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { noteFoldersQuery, notesQuery, requireUserId, subjectsQuery } from "@/lib/devos-queries";
+import {
+  assertOk,
+  describeError,
+  noteFoldersQuery,
+  notesQuery,
+  requireUserId,
+  runWithRetry,
+  subjectsQuery,
+} from "@/lib/devos-queries";
 import { SUBJECT_COLORS, type Note } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
 
@@ -110,17 +118,21 @@ function NotesPage() {
 
   const createSubject = useMutation({
     mutationFn: async (name: string) => {
-      const user_id = await requireUserId();
-      const position = subjects.data?.length ?? 0;
-      const color = SUBJECT_COLORS[position % SUBJECT_COLORS.length]!;
-      const { error } = await supabase.from("subjects").insert({ user_id, name, position, color });
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const position = subjects.data?.length ?? 0;
+        const color = SUBJECT_COLORS[position % SUBJECT_COLORS.length]!;
+        const { error } = await supabase
+          .from("subjects")
+          .insert({ user_id, name, position, color });
+        assertOk(error);
+      });
     },
     onSuccess: () => {
       invalidate();
       toast.success("Subject created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const renameRow = useMutation({
@@ -133,14 +145,16 @@ function NotesPage() {
       id: string;
       name: string;
     }) => {
-      const { error } = await supabase.from(table).update({ name }).eq("id", id);
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const { error } = await supabase.from(table).update({ name }).eq("id", id);
+        assertOk(error);
+      });
     },
     onSuccess: () => {
       invalidate();
       toast.success("Renamed");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const deleteRow = useMutation({
@@ -151,31 +165,35 @@ function NotesPage() {
       table: "subjects" | "note_folders" | "notes";
       id: string;
     }) => {
-      const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const { error } = await supabase.from(table).delete().eq("id", id);
+        assertOk(error);
+      });
     },
     onSuccess: () => {
       invalidate();
       toast.success("Deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const createFolder = useMutation({
     mutationFn: async ({ subjectId, name }: { subjectId: string; name: string }) => {
-      const user_id = await requireUserId();
-      const position = folders.data?.filter((f) => f.subject_id === subjectId).length ?? 0;
-      const { error } = await supabase
-        .from("note_folders")
-        .insert({ user_id, subject_id: subjectId, name, position });
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const position = folders.data?.filter((f) => f.subject_id === subjectId).length ?? 0;
+        const { error } = await supabase
+          .from("note_folders")
+          .insert({ user_id, subject_id: subjectId, name, position });
+        assertOk(error);
+      });
     },
     onSuccess: (_data, vars) => {
       invalidate();
       setExpandedSubjects((prev) => new Set(prev).add(vars.subjectId));
       toast.success("Folder created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const createNote = useMutation({
@@ -188,56 +206,80 @@ function NotesPage() {
       folderId: string | null;
       title: string;
     }) => {
-      const user_id = await requireUserId();
-      const { data, error } = await supabase
-        .from("notes")
-        .insert({ user_id, subject_id: subjectId, folder_id: folderId, title })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return await runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const { data, error } = await supabase
+          .from("notes")
+          .insert({ user_id, subject_id: subjectId, folder_id: folderId, title })
+          .select()
+          .single();
+        assertOk(error);
+        return data!;
+      });
     },
     onSuccess: (data) => {
       invalidate();
       selectNote(data.id);
       toast.success("Note created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const duplicateNote = useMutation({
     mutationFn: async (note: Note) => {
-      const user_id = await requireUserId();
-      const { data, error } = await supabase
-        .from("notes")
-        .insert({
-          user_id,
-          subject_id: note.subject_id,
-          folder_id: note.folder_id,
-          title: `${note.title} (copy)`,
-          content_markdown: note.content_markdown,
-          tags: note.tags,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      return await runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const { data, error } = await supabase
+          .from("notes")
+          .insert({
+            user_id,
+            subject_id: note.subject_id,
+            folder_id: note.folder_id,
+            title: `${note.title} (copy)`,
+            content_markdown: note.content_markdown,
+            tags: note.tags,
+          })
+          .select()
+          .single();
+        assertOk(error);
+        return data!;
+      });
     },
     onSuccess: (data) => {
       invalidate();
       selectNote(data.id);
       toast.success("Note duplicated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const updateNote = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Note> }) => {
-      const { error } = await supabase.from("notes").update(patch).eq("id", id);
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const { data, error } = await supabase
+          .from("notes")
+          .update(patch)
+          .eq("id", id)
+          .select("id")
+          .maybeSingle();
+        assertOk(error);
+        if (!data) throw new Error("This note no longer exists in the database.");
+      });
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["notes"] }),
-    onError: (e: Error) => toast.error(e.message),
+    // Optimistic: sidebar title/pin updates instantly, rolled back if the save fails.
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: ["notes"] });
+      const previous = qc.getQueryData<Note[]>(["notes"]);
+      qc.setQueryData<Note[]>(["notes"], (old) =>
+        (old ?? []).map((n) => (n.id === id ? { ...n, ...patch } : n)),
+      );
+      return { previous };
+    },
+    onError: (e: unknown, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["notes"], ctx.previous);
+      toast.error(describeError(e));
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["notes"] }),
   });
 
   /* ------------------------------ render ----------------------------- */
@@ -562,7 +604,7 @@ function NotesPage() {
             note={selectedNote}
             subjects={subjects.data ?? []}
             folders={folders.data ?? []}
-            onPatch={(patch) => updateNote.mutate({ id: selectedNote.id, patch })}
+            onPatch={(patch) => updateNote.mutateAsync({ id: selectedNote.id, patch })}
             onDuplicate={() => duplicateNote.mutate(selectedNote)}
             onDelete={() =>
               setConfirm({
@@ -730,7 +772,7 @@ function NoteEditor({
   note: Note;
   subjects: { id: string; name: string }[];
   folders: { id: string; name: string; subject_id: string }[];
-  onPatch: (patch: Partial<Note>) => void;
+  onPatch: (patch: Partial<Note>) => Promise<unknown>;
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
@@ -738,8 +780,34 @@ function NoteEditor({
   const [content, setContent] = useState(note.content_markdown);
   const [tagInput, setTagInput] = useState(note.tags.join(", "));
   const [preview, setPreview] = useState(false);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [status, setStatus] = useState<"idle" | "unsaved" | "saving" | "saved" | "error">("idle");
   const first = useRef(true);
+
+  const draftRef = useRef({ title, content, tagInput });
+  draftRef.current = { title, content, tagInput };
+
+  // Real save: only reports "Saved" once the database confirmed the write.
+  const save = async () => {
+    const { title: t, content: c, tagInput: tg } = draftRef.current;
+    setStatus("saving");
+    try {
+      await onPatch({
+        title: t.trim() || "Untitled",
+        content_markdown: c,
+        tags: tg
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      });
+      setStatus("saved");
+    } catch {
+      // The mutation already surfaced a human-readable toast.
+      setStatus("error");
+    }
+  };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
 
   // Debounced autosave for title / content / tags.
   useEffect(() => {
@@ -747,21 +815,30 @@ function NoteEditor({
       first.current = false;
       return;
     }
-    setStatus("saving");
-    const timer = setTimeout(() => {
-      onPatch({
-        title: title.trim() || "Untitled",
-        content_markdown: content,
-        tags: tagInput
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
-      setStatus("saved");
-    }, 700);
+    setStatus("unsaved");
+    const timer = setTimeout(() => void saveRef.current(), 700);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, tagInput]);
+
+  // Manual save with Cmd/Ctrl+S.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void saveRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Warn before losing unsaved edits.
+  useEffect(() => {
+    if (status !== "unsaved" && status !== "error") return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [status]);
 
   const moveValue = note.folder_id ? `folder:${note.folder_id}` : `subject:${note.subject_id}`;
 
@@ -775,9 +852,9 @@ function NoteEditor({
             if (kind === "folder") {
               const folder = folders.find((f) => f.id === id);
               if (!folder) return;
-              onPatch({ folder_id: folder.id, subject_id: folder.subject_id });
+              void onPatch({ folder_id: folder.id, subject_id: folder.subject_id });
             } else {
-              onPatch({ folder_id: null, subject_id: id });
+              void onPatch({ folder_id: null, subject_id: id });
             }
             toast.success("Note moved");
           }}
@@ -801,15 +878,36 @@ function NoteEditor({
           </SelectContent>
         </Select>
 
-        <span className="text-xs text-muted-foreground">
-          {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "Autosave on"}
+        <span
+          className={cn(
+            "text-xs",
+            status === "error" ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
+          {status === "saving"
+            ? "Saving…"
+            : status === "saved"
+              ? "Saved"
+              : status === "unsaved"
+                ? "Unsaved changes…"
+                : status === "error"
+                  ? "Not saved — retry"
+                  : "Autosave on"}
         </span>
+        <Button
+          variant={status === "error" ? "destructive" : "ghost"}
+          size="sm"
+          disabled={status === "saving"}
+          onClick={() => void save()}
+        >
+          {status === "saving" ? "Saving…" : "Save"}
+        </Button>
 
         <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onPatch({ pinned: !note.pinned })}
+            onClick={() => void onPatch({ pinned: !note.pinned })}
             aria-pressed={note.pinned}
           >
             <Star className={cn("size-4", note.pinned && "fill-primary text-primary")} />

@@ -13,6 +13,8 @@ export const RESOURCE_TYPES = [
   "course",
   "github",
   "article",
+  "website",
+  "blog",
 ] as const;
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
@@ -24,6 +26,8 @@ export const RESOURCE_TYPE_LABEL: Record<string, string> = {
   course: "Course",
   github: "GitHub",
   article: "Article",
+  website: "Website",
+  blog: "Blog",
 };
 
 export const SUBJECT_COLORS = [
