@@ -708,7 +708,7 @@ function NoteRow({
             <Copy className="size-4" /> Duplicate
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={onDelete}>
             <Trash2 className="size-4" /> Delete
           </DropdownMenuItem>
         </>
