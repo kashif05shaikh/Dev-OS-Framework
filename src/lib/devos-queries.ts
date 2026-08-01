@@ -80,6 +80,59 @@ export function assertOk(error: { message: string } | null): void {
   if (error) throw new Error(describeError(error));
 }
 
+function looksLikeNetworkFailure(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("failed to fetch") ||
+    m.includes("networkerror") ||
+    m.includes("load failed") ||
+    m.includes("network request failed")
+  );
+}
+
+type UpdatableTable = "subjects" | "notes" | "note_folders" | "learning_folders" | "learning_resources";
+
+/**
+ * Update a row by id.
+ *
+ * Some browser extensions, privacy tools and corporate proxies block the HTTP
+ * PATCH method outright, which surfaces as "Failed to fetch" even though the
+ * database is perfectly reachable. When that happens we retry the very same
+ * change as a POST upsert (full row + patch), which those tools allow.
+ */
+export async function updateRow(
+  table: UpdatableTable,
+  row: { id: string } & Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  await runWithRetry(async () => {
+    const attempt = await supabase
+      .from(table)
+      .update(patch as never)
+      .eq("id", row.id)
+      .select("id");
+
+    if (!attempt.error) {
+      if (!attempt.data || attempt.data.length === 0) {
+        throw new Error("This item no longer exists — it may have been deleted.");
+      }
+      return;
+    }
+
+    if (!looksLikeNetworkFailure(attempt.error.message)) {
+      throw new Error(describeError(attempt.error));
+    }
+
+    const merged = {
+      ...(row as Record<string, unknown>),
+      ...(patch as Record<string, unknown>),
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from(table).upsert(merged as never);
+    assertOk(error);
+  });
+}
+
 export const subjectsQuery = () =>
   queryOptions({
     queryKey: ["subjects"],

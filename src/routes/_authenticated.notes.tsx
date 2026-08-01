@@ -51,6 +51,7 @@ import {
   notesQuery,
   requireUserId,
   runWithRetry,
+  updateRow,
   subjectsQuery,
 } from "@/lib/devos-queries";
 import { SUBJECT_COLORS, type Note } from "@/lib/devos-types";
@@ -90,6 +91,10 @@ function NotesPage() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
+
+  /** Full row from the query cache — needed for the POST-upsert save fallback. */
+  const findCachedRow = (key: string, id: string): { id: string } | undefined =>
+    (qc.getQueryData<{ id: string }[]>([key]) ?? []).find((row) => row.id === id);
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["subjects"] });
@@ -145,10 +150,7 @@ function NotesPage() {
       id: string;
       name: string;
     }) => {
-      await runWithRetry(async () => {
-        const { error } = await supabase.from(table).update({ name }).eq("id", id);
-        assertOk(error);
-      });
+      await updateRow(table, findCachedRow(table, id) ?? { id }, { name });
     },
     onSuccess: () => {
       invalidate();
@@ -255,16 +257,7 @@ function NotesPage() {
 
   const updateNote = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Note> }) => {
-      await runWithRetry(async () => {
-        const { data, error } = await supabase
-          .from("notes")
-          .update(patch)
-          .eq("id", id)
-          .select("id")
-          .maybeSingle();
-        assertOk(error);
-        if (!data) throw new Error("This note no longer exists in the database.");
-      });
+      await updateRow("notes", findCachedRow("notes", id) ?? { id }, patch);
     },
     // Optimistic: sidebar title/pin updates instantly, rolled back if the save fails.
     onMutate: async ({ id, patch }) => {
