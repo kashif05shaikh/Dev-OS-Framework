@@ -241,22 +241,36 @@ export type Habit = Tables<"habits">;
 export type HabitLog = Tables<"habit_logs">;
 
 export const GOAL_CATEGORIES = [
-  "career",
-  "learning",
+  "academic",
   "coding",
-  "health",
-  "personal",
-  "finance",
+  "dsa",
+  "development",
+  "reading",
+  "exercise",
 ] as const;
 export type GoalCategory = (typeof GOAL_CATEGORIES)[number];
 
 export const GOAL_CATEGORY_LABEL: Record<string, string> = {
+  academic: "Academic",
+  coding: "Coding",
+  dsa: "DSA",
+  development: "Development",
+  reading: "Reading",
+  exercise: "Exercise",
+  // legacy values kept so older goals still render a friendly label
   career: "Career",
   learning: "Learning",
-  coding: "Coding",
   health: "Health",
   personal: "Personal",
   finance: "Finance",
+};
+
+export const GOAL_TIMEFRAMES = ["daily", "weekly", "monthly"] as const;
+export type GoalTimeframe = (typeof GOAL_TIMEFRAMES)[number];
+export const GOAL_TIMEFRAME_LABEL: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
 };
 
 export const GOAL_STATUSES = ["active", "paused", "done", "dropped"] as const;

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import {
   CalendarClock,
   Check,
+  ArrowDown,
+  ArrowUp,
   Pencil,
   Pin,
   Plus,
@@ -60,6 +62,8 @@ import {
   GOAL_PRIORITY_LABEL,
   GOAL_STATUSES,
   GOAL_STATUS_LABEL,
+  GOAL_TIMEFRAMES,
+  GOAL_TIMEFRAME_LABEL,
   type Goal,
   type GoalMilestone,
 } from "@/lib/devos-types";
@@ -104,6 +108,8 @@ type GoalDraft = {
   title: string;
   description: string;
   category: string;
+  customCategory: string;
+  timeframe: string;
   status: string;
   priority: string;
   target_value: string;
@@ -112,11 +118,15 @@ type GoalDraft = {
   due_date: string;
 };
 
+const CUSTOM = "__custom__";
+
 function emptyDraft(): GoalDraft {
   return {
     title: "",
     description: "",
-    category: "career",
+    category: "academic",
+    customCategory: "",
+    timeframe: "monthly",
     status: "active",
     priority: "medium",
     target_value: "100",
@@ -127,11 +137,14 @@ function emptyDraft(): GoalDraft {
 }
 
 function toDraft(goal: Goal): GoalDraft {
+  const known = (GOAL_CATEGORIES as readonly string[]).includes(goal.category);
   return {
     id: goal.id,
     title: goal.title,
     description: goal.description ?? "",
-    category: goal.category,
+    category: known ? goal.category : CUSTOM,
+    customCategory: known ? "" : goal.category,
+    timeframe: (goal as Goal & { timeframe?: string }).timeframe ?? "monthly",
     status: goal.status,
     priority: goal.priority,
     target_value: String(goal.target_value ?? 100),
@@ -156,6 +169,7 @@ function GoalsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [timeframeFilter, setTimeframeFilter] = useState("all");
   const [draft, setDraft] = useState<GoalDraft | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [milestoneInput, setMilestoneInput] = useState<Record<string, string>>({});
@@ -170,7 +184,11 @@ function GoalsPage() {
       const payload = {
         title: value.title.trim(),
         description: value.description.trim() || null,
-        category: value.category,
+        category:
+          value.category === CUSTOM
+            ? value.customCategory.trim().toLowerCase() || "custom"
+            : value.category,
+        timeframe: value.timeframe,
         status: value.status,
         priority: value.priority,
         target_value: Number(value.target_value) || 0,
@@ -272,15 +290,63 @@ function GoalsPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  const reorder = useMutation({
+    mutationFn: async (ordered: Goal[]) => {
+      for (let i = 0; i < ordered.length; i += 1) {
+        const row = ordered[i];
+        if (row && row.position !== i) {
+          await updateRow("goals", row, { position: i });
+        }
+      }
+    },
+    onMutate: async (ordered) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      qc.setQueryData<Goal[]>(
+        ["goals"],
+        ordered.map((g, i) => ({ ...g, position: i })),
+      );
+      return { previous };
+    },
+    onError: (e: unknown, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["goals"], ctx.previous);
+      toast.error(describeError(e));
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["goals"] }),
+  });
+
+  const moveGoal = (goalId: string, dir: -1 | 1) => {
+    const list = [...(goals.data ?? [])];
+    const from = list.findIndex((g) => g.id === goalId);
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= list.length) return;
+    const [item] = list.splice(from, 1);
+    if (!item) return;
+    list.splice(to, 0, item);
+    reorder.mutate(list);
+  };
+
+  const customCategories = useMemo(() => {
+    const known = new Set<string>(GOAL_CATEGORIES as readonly string[]);
+    return Array.from(
+      new Set((goals.data ?? []).map((g) => g.category).filter((c) => !known.has(c))),
+    );
+  }, [goals.data]);
+
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (goals.data ?? []).filter((g) => {
       if (statusFilter !== "all" && g.status !== statusFilter) return false;
       if (categoryFilter !== "all" && g.category !== categoryFilter) return false;
+      if (
+        timeframeFilter !== "all" &&
+        ((g as Goal & { timeframe?: string }).timeframe ?? "monthly") !== timeframeFilter
+      )
+        return false;
       if (!term) return true;
       return `${g.title} ${g.description ?? ""}`.toLowerCase().includes(term);
     });
-  }, [goals.data, search, statusFilter, categoryFilter]);
+  }, [goals.data, search, statusFilter, categoryFilter, timeframeFilter]);
 
   const stats = useMemo(() => {
     const all = goals.data ?? [];
@@ -321,6 +387,24 @@ function GoalsPage() {
             {GOAL_CATEGORIES.map((c) => (
               <SelectItem key={c} value={c}>
                 {GOAL_CATEGORY_LABEL[c]}
+              </SelectItem>
+            ))}
+            {customCategories.map((c) => (
+              <SelectItem key={c} value={c}>
+                {GOAL_CATEGORY_LABEL[c] ?? c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
+          <SelectTrigger className="h-8 w-32 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All cadences</SelectItem>
+            {GOAL_TIMEFRAMES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {GOAL_TIMEFRAME_LABEL[t]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -393,6 +477,26 @@ function GoalsPage() {
                       >
                         {GOAL_STATUS_LABEL[goal.status]}
                       </span>
+                      <div className="flex flex-col">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-5"
+                          title="Move up"
+                          onClick={() => moveGoal(goal.id, -1)}
+                        >
+                          <ArrowUp className="size-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-5"
+                          title="Move down"
+                          onClick={() => moveGoal(goal.id, 1)}
+                        >
+                          <ArrowDown className="size-3" />
+                        </Button>
+                      </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="size-7">
@@ -476,6 +580,11 @@ function GoalsPage() {
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                       <span className="rounded-full bg-muted px-2 py-0.5">
                         {GOAL_CATEGORY_LABEL[goal.category] ?? goal.category}
+                      </span>
+                      <span className="rounded-full bg-muted px-2 py-0.5">
+                        {GOAL_TIMEFRAME_LABEL[
+                          (goal as Goal & { timeframe?: string }).timeframe ?? "monthly"
+                        ] ?? "Monthly"}
                       </span>
                       <span className={cn("font-medium", PRIORITY_CLASS[goal.priority])}>
                         {GOAL_PRIORITY_LABEL[goal.priority]} priority
@@ -613,6 +722,33 @@ function GoalsPage() {
                       {GOAL_CATEGORIES.map((c) => (
                         <SelectItem key={c} value={c}>
                           {GOAL_CATEGORY_LABEL[c]}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={CUSTOM}>Custom…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {draft.category === CUSTOM ? (
+                    <Input
+                      value={draft.customCategory}
+                      onChange={(e) => setDraft({ ...draft, customCategory: e.target.value })}
+                      placeholder="Custom category name"
+                      className="mt-1"
+                    />
+                  ) : null}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Cadence</Label>
+                  <Select
+                    value={draft.timeframe}
+                    onValueChange={(v) => setDraft({ ...draft, timeframe: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GOAL_TIMEFRAMES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {GOAL_TIMEFRAME_LABEL[t]}
                         </SelectItem>
                       ))}
                     </SelectContent>
