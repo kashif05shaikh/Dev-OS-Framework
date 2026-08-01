@@ -17,7 +17,7 @@ import type {
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
-import type { FocusSession } from "@/lib/devos-types";
+import type { FocusSession, Profile } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -110,6 +110,7 @@ type UpdatableTable =
   | "project_tasks"
   | "job_applications"
   | "coding_profiles"
+  | "profiles"
   | "resumes"
   | "resume_sections"
   | "resume_entries"
@@ -175,6 +176,30 @@ export const subjectsQuery = () =>
           .order("position", { ascending: true })
           .order("created_at", { ascending: true }),
       ),
+  });
+
+export const profileQuery = () =>
+  queryOptions({
+    queryKey: ["profile"],
+    queryFn: async (): Promise<Profile | null> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      assertOk(error);
+      if (data) return data as Profile;
+      const created = await supabase
+        .from("profiles")
+        .upsert({ id: userId })
+        .select("*")
+        .maybeSingle();
+      assertOk(created.error);
+      return (created.data as Profile | null) ?? null;
+    },
   });
 
 export const noteFoldersQuery = () =>

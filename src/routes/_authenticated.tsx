@@ -1,9 +1,12 @@
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { LoadingState } from "@/components/states";
 import { useAuth } from "@/hooks/use-auth";
+import { applyAccent, cacheAccent, cachedAccent } from "@/lib/accent";
+import { profileQuery } from "@/lib/devos-queries";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -15,6 +18,21 @@ function AuthenticatedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Capture the first protected path so the redirect target doesn't drift to /auth.
   const intended = useRef(pathname);
+  const profile = useQuery({ ...profileQuery(), enabled: Boolean(user) });
+
+  // Paint the cached accent immediately, then reconcile with the stored profile.
+  useEffect(() => {
+    const cached = cachedAccent();
+    if (cached) applyAccent(cached);
+  }, []);
+
+  useEffect(() => {
+    const accent = profile.data?.accent_color;
+    if (accent) {
+      applyAccent(accent);
+      cacheAccent(accent);
+    }
+  }, [profile.data?.accent_color]);
 
   useEffect(() => {
     if (!loading && !user) {

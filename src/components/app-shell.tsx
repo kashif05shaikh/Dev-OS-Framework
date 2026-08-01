@@ -47,10 +47,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Dev Tools", to: "/tools", icon: Wrench },
   { label: "Network", to: "/network", icon: Users },
   { label: "Analytics", to: "/analytics", icon: BarChart3 },
-];
-
-const UPCOMING_NAV: NavItem[] = [
-  { label: "Settings", icon: Settings },
+  { label: "Settings", to: "/settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -90,22 +87,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
-          </nav>
-
-          <p className="px-3 pb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
-            Porting next
-          </p>
-          <nav className="space-y-1 pb-6">
-            {UPCOMING_NAV.map((item) => (
-              <span
-                key={item.label}
-                title="Not ported yet"
-                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/40"
-              >
-                <item.icon className="size-4" />
-                {item.label}
-              </span>
-            ))}
           </nav>
         </ScrollArea>
 
