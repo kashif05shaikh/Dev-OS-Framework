@@ -23,14 +23,14 @@ function ModelIcon({ model }: { model: AiModelTarget }) {
   );
 }
 
-/** Row of model buttons: copies the prompt, then opens that model's chat. */
+/** Row of model buttons opening each model's chat in a new tab. */
 export function AiModelLauncher({
   onLaunch,
   getHref,
   className,
 }: {
-  onLaunch: (model: AiModelTarget) => void;
-  getHref: (model: AiModelTarget) => string;
+  onLaunch?: (model: AiModelTarget) => void;
+  getHref?: (model: AiModelTarget) => string;
   className?: string;
 }) {
   return (
@@ -40,20 +40,20 @@ export function AiModelLauncher({
         <Tooltip key={model.id}>
           <TooltipTrigger asChild>
             <a
-              href={getHref(model)}
+              href={getHref ? getHref(model) : model.url("")}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Copy prompt and open ${model.label}`}
-              onClick={() => onLaunch(model)}
-              className="flex size-7 items-center justify-center rounded-md border border-border bg-muted/40 transition-colors hover:bg-accent"
+              aria-label={`Open ${model.label}`}
+              onClick={() => onLaunch?.(model)}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs transition-colors hover:bg-accent"
               style={{ color: model.color }}
             >
               <ModelIcon model={model} />
+              <span className="text-foreground">{model.label}</span>
             </a>
           </TooltipTrigger>
           <TooltipContent>
-            Copy &amp; open {model.label}
-            {model.prefills ? " (prefilled)" : " (paste it)"}
+            Open {model.label}
           </TooltipContent>
         </Tooltip>
       ))}
