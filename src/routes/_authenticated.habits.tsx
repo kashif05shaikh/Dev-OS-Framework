@@ -87,13 +87,10 @@ function lastDays(n: number): string[] {
 
 function streaks(dates: Set<string>): { current: number; best: number } {
   let current = 0;
-  for (let i = 0; i < 365; i++) {
-    const day = isoDay(-i);
-    if (dates.has(day)) current++;
-    else if (i > 0 || !dates.has(isoDay(0))) {
-      if (i === 0) continue;
-      break;
-    }
+  const start = dates.has(isoDay(0)) ? 0 : 1;
+  for (let i = start; i < 365; i++) {
+    if (!dates.has(isoDay(-i))) break;
+    current++;
   }
   const sorted = [...dates].sort();
   let best = 0;
