@@ -525,6 +525,7 @@ function AccountCard({
   onSync,
   onEdit,
   onToggleAutoSync,
+  onEditStats,
   onDisconnect,
 }: {
   account: SocialAccount;
@@ -533,10 +534,13 @@ function AccountCard({
   onSync: () => void;
   onEdit: () => void;
   onToggleAutoSync: () => void;
+  onEditStats: () => void;
   onDisconnect: () => void;
 }) {
   const meta = socialPlatform(account.platform);
   const extra = extraOf(profile);
+  const manualCapable = MANUAL_PLATFORMS.has(account.platform);
+  const isManual = Boolean(extra["manual"]);
   const activity = [
     ...links(extra, "recentArticles"),
     ...links(extra, "recentPosts"),
@@ -660,15 +664,34 @@ function AccountCard({
           <AlertTriangle className="mt-0.5 size-3 shrink-0" />
           {account.last_error}
         </p>
+      ) : manualCapable ? (
+        <p className="text-[11px] text-muted-foreground">
+          {isManual
+            ? `${meta?.label ?? account.platform} numbers are the ones you entered — tap Stats to update them.`
+            : `${meta?.label ?? account.platform} blocks automated profile reads. Add your numbers with Stats to fill this card.`}
+        </p>
       ) : meta?.limitation ? (
         <p className="text-[11px] text-muted-foreground">{meta.limitation}</p>
       ) : null}
 
       <div className="mt-auto flex items-center gap-2 border-t border-border/60 pt-3">
-        <Button size="sm" variant="outline" className="h-7 text-xs" disabled={syncing} onClick={onSync}>
-          <RefreshCw className={syncing ? "size-3 animate-spin" : "size-3"} />
-          Sync
-        </Button>
+        {manualCapable ? (
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onEditStats}>
+            <PencilLine className="size-3" />
+            Stats
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            disabled={syncing}
+            onClick={onSync}
+          >
+            <RefreshCw className={syncing ? "size-3 animate-spin" : "size-3"} />
+            Sync
+          </Button>
+        )}
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onEdit}>
           Edit
         </Button>
