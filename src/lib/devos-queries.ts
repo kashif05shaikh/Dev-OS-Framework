@@ -17,6 +17,7 @@ import type {
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
+import type { FocusSession } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -117,7 +118,8 @@ type UpdatableTable =
   | "goals"
   | "goal_milestones"
   | "habits"
-  | "habit_logs";
+  | "habit_logs"
+  | "focus_sessions";
 
 /**
  * Update a row by id.
@@ -403,6 +405,23 @@ export const habitLogsQuery = (days = 120) =>
           .select("*")
           .gte("log_date", from.toISOString().slice(0, 10))
           .order("log_date", { ascending: false }),
+      );
+    },
+  });
+
+/** Focus sessions from the trailing `days` window (default 30 days). */
+export const focusSessionsQuery = (days = 30) =>
+  queryOptions({
+    queryKey: ["focus_sessions", days],
+    queryFn: async (): Promise<FocusSession[]> => {
+      const from = new Date();
+      from.setDate(from.getDate() - days);
+      return unwrap(
+        await supabase
+          .from("focus_sessions")
+          .select("*")
+          .gte("started_at", from.toISOString())
+          .order("started_at", { ascending: false }),
       );
     },
   });
