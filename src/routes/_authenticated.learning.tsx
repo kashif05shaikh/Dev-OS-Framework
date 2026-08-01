@@ -590,26 +590,32 @@ function LearningPage() {
                       <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate text-sm font-medium">{resource.title}</h3>
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                          {RESOURCE_TYPE_LABEL[resource.type] ?? resource.type}
-                        </p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="shrink-0 text-[11px] uppercase tracking-wider text-muted-foreground">
+                            {RESOURCE_TYPE_LABEL[resource.type] ?? resource.type}
+                          </p>
+                          {isAll && subjectName.get(resource.subject_id) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSubject(resource.subject_id);
+                                setActiveFolder(resource.folder_id);
+                              }}
+                              className="flex min-w-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                            >
+                              <span
+                                className="size-1.5 shrink-0 rounded-full"
+                                style={{
+                                  backgroundColor: subjectName.get(resource.subject_id)!.color,
+                                }}
+                              />
+                              <span className="truncate">
+                                {subjectName.get(resource.subject_id)!.name}
+                              </span>
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
-                      {isAll && subjectName.get(resource.subject_id) ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveSubject(resource.subject_id);
-                            setActiveFolder(resource.folder_id);
-                          }}
-                          className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
-                        >
-                          <span
-                            className="size-1.5 rounded-full"
-                            style={{ backgroundColor: subjectName.get(resource.subject_id)!.color }}
-                          />
-                          {subjectName.get(resource.subject_id)!.name}
-                        </button>
-                      ) : null}
                       <button
                         type="button"
                         aria-label="Toggle favourite"
