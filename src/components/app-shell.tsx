@@ -37,11 +37,11 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Learning Hub", to: "/learning", icon: GraduationCap },
   { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Job Tracker", to: "/jobs", icon: Briefcase },
+  { label: "Coding Profiles", to: "/profiles", icon: Braces },
+  { label: "Resume", to: "/resume", icon: FileText },
 ];
 
 const UPCOMING_NAV: NavItem[] = [
-  { label: "Coding Profiles", icon: Braces },
-  { label: "Resume", icon: FileText },
   { label: "AI Prompts", icon: Sparkles },
   { label: "Calendar", icon: CalendarDays },
   { label: "Goals", icon: Target },
