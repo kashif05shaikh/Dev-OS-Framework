@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      coding_profiles: {
+        Row: {
+          contests_attended: number
+          created_at: string
+          current_streak: number
+          id: string
+          last_synced_at: string | null
+          max_streak: number
+          notes: string | null
+          platform: string
+          position: number
+          problems_solved: number
+          profile_url: string | null
+          rank_label: string | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          contests_attended?: number
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_synced_at?: string | null
+          max_streak?: number
+          notes?: string | null
+          platform?: string
+          position?: number
+          problems_solved?: number
+          profile_url?: string | null
+          rank_label?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          contests_attended?: number
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_synced_at?: string | null
+          max_streak?: number
+          notes?: string | null
+          platform?: string
+          position?: number
+          problems_solved?: number
+          profile_url?: string | null
+          rank_label?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           applied_on: string | null
@@ -389,6 +446,160 @@ export type Database = {
           tech_stack?: string[]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      resume_entries: {
+        Row: {
+          bullets: string[]
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean
+          location: string | null
+          organization: string | null
+          position: number
+          section_id: string
+          start_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bullets?: string[]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          location?: string | null
+          organization?: string | null
+          position?: number
+          section_id: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bullets?: string[]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          location?: string | null
+          organization?: string | null
+          position?: number
+          section_id?: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_entries_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "resume_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resume_sections: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          position: number
+          resume_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          position?: number
+          resume_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          position?: number
+          resume_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_sections_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resumes: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          github_url: string | null
+          headline: string | null
+          id: string
+          is_default: boolean
+          linkedin_url: string | null
+          location: string | null
+          phone: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          headline?: string | null
+          id?: string
+          is_default?: boolean
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          headline?: string | null
+          id?: string
+          is_default?: boolean
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
         }
         Relationships: []
       }
