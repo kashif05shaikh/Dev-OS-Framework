@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bell,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -11,11 +13,13 @@ import {
   MapPin,
   Pencil,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
+import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { getUpcomingContests, type UpcomingContest } from "@/lib/contests.functions";
 import {
   assertOk,
   calendarEventsQuery,
@@ -50,6 +55,7 @@ import {
   EVENT_KINDS,
   EVENT_KIND_COLOR,
   EVENT_KIND_LABEL,
+  CODING_PLATFORM_LABEL,
   type CalendarEvent,
 } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
@@ -146,6 +152,12 @@ function toDraft(e: CalendarEvent): EventDraft {
 function CalendarPage() {
   const qc = useQueryClient();
   const events = useQuery(calendarEventsQuery());
+  const fetchContests = useServerFn(getUpcomingContests);
+  const contests = useQuery({
+    queryKey: ["upcoming_contests"],
+    queryFn: () => fetchContests(),
+    staleTime: 15 * 60 * 1000,
+  });
 
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -155,6 +167,31 @@ function CalendarPage() {
 
   const findCachedRow = (id: string): { id: string } =>
     (qc.getQueryData<CalendarEvent[]>(["calendar_events"]) ?? []).find((r) => r.id === id) ?? { id };
+
+  const addContest = useMutation({
+    mutationFn: async (contest: UpcomingContest) =>
+      runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const start = new Date(contest.startsAt);
+        const { error } = await supabase.from("calendar_events").insert({
+          user_id,
+          title: contest.name,
+          description: `${CODING_PLATFORM_LABEL[contest.platform] ?? contest.platform} contest · ${contest.durationMinutes} min`,
+          kind: "contest",
+          event_date: toIso(start),
+          all_day: false,
+          start_time: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          url: contest.url,
+          color: EVENT_KIND_COLOR["contest"] ?? "#34d399",
+        });
+        assertOk(error);
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["calendar_events"] });
+      toast.success("Contest added to your calendar");
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
 
   const saveEvent = useMutation({
     mutationFn: async (value: EventDraft) => {
@@ -241,6 +278,55 @@ function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.data]);
 
+  const [remindersOn, setRemindersOn] = useState(false);
+  const firedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    setRemindersOn(Notification.permission === "granted");
+  }, []);
+
+  // Schedule browser reminders 10 minutes before each of today's timed events.
+  useEffect(() => {
+    if (!remindersOn || typeof window === "undefined" || !("Notification" in window)) return;
+    const iso = toIso(new Date());
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const e of events.data ?? []) {
+      if (e.completed || e.event_date !== iso || !e.start_time) continue;
+      const when = new Date(`${e.event_date}T${e.start_time}`).getTime() - 10 * 60 * 1000;
+      const delay = when - Date.now();
+      if (delay <= 0 || delay > 12 * 60 * 60 * 1000 || firedRef.current.has(e.id)) continue;
+      timers.push(
+        setTimeout(() => {
+          firedRef.current.add(e.id);
+          new Notification(e.title, {
+            body: `${EVENT_KIND_LABEL[e.kind] ?? e.kind} starts at ${formatTime(e.start_time)}`,
+          });
+        }, delay),
+      );
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [events.data, remindersOn]);
+
+  const enableReminders = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("This browser doesn't support notifications.");
+      return;
+    }
+    if (remindersOn) {
+      setRemindersOn(false);
+      toast.success("Reminders paused");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      toast.error("Allow notifications to get reminders.");
+      return;
+    }
+    setRemindersOn(true);
+    toast.success("Reminders on — you'll be pinged 10 minutes before each event");
+  };
+
   if (events.isLoading) return <LoadingState label="Loading your calendar…" />;
   if (events.error) return <ErrorState error={events.error} onRetry={() => void events.refetch()} />;
 
@@ -285,6 +371,14 @@ function CalendarPage() {
           }}
         >
           Today
+        </Button>
+        <Button
+          variant={remindersOn ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => void enableReminders()}
+        >
+          <Bell className={cn("size-4", remindersOn && "text-primary")} />
+          {remindersOn ? "Reminders on" : "Reminders"}
         </Button>
         <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
           <Plus className="size-4" />
@@ -505,6 +599,87 @@ function CalendarPage() {
                         </button>
                       </li>
                     ))}
+                  </ul>
+                )}
+              </section>
+
+              <section>
+                <div className="mb-2 flex items-center gap-2">
+                  <h2 className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
+                    Upcoming contests
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto"
+                    aria-label="Refresh contests"
+                    onClick={() => void contests.refetch()}
+                  >
+                    <RefreshCw
+                      className={cn("size-3.5", contests.isFetching && "animate-spin")}
+                    />
+                  </Button>
+                </div>
+                {contests.isLoading ? (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" /> Fetching contests…
+                  </p>
+                ) : contests.error ? (
+                  <p className="text-xs text-muted-foreground">
+                    Couldn&apos;t load contests. Try refreshing.
+                  </p>
+                ) : (contests.data?.length ?? 0) === 0 ? (
+                  <p className="text-xs text-muted-foreground">No contests announced yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(contests.data ?? []).slice(0, 8).map((c) => {
+                      const start = new Date(c.startsAt);
+                      const added = (events.data ?? []).some(
+                        (e) => e.url === c.url && e.kind === "contest",
+                      );
+                      return (
+                        <li
+                          key={c.id}
+                          className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
+                        >
+                          <PlatformLogo platform={c.platform} className="size-7" />
+                          <div className="min-w-0 flex-1">
+                            <a
+                              href={c.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="line-clamp-2 text-xs font-medium hover:underline"
+                            >
+                              {c.name}
+                            </a>
+                            <p className="text-[11px] text-muted-foreground">
+                              {start.toLocaleDateString(undefined, {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                              {" · "}
+                              {start.toLocaleTimeString(undefined, {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={added ? "Already in calendar" : "Add contest to calendar"}
+                            disabled={added || addContest.isPending}
+                            onClick={() => addContest.mutate(c)}
+                          >
+                            {added ? (
+                              <Check className="size-3.5 text-primary" />
+                            ) : (
+                              <Plus className="size-3.5" />
+                            )}
+                          </Button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </section>

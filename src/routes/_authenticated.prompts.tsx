@@ -6,6 +6,7 @@ import { Copy, Loader2, Pencil, Plus, Search, Sparkles, Star, Trash2, Wand2 } fr
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
+import { AiModelLauncher } from "@/components/ai-model-launcher";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
+import type { AiModelTarget } from "@/lib/ai-models";
 import {
   aiPromptsQuery,
   assertOk,
@@ -186,6 +188,27 @@ function PromptsPage() {
     }
   };
 
+  const launchInModel = async (prompt: AiPrompt, model: AiModelTarget) => {
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(prompt.body);
+    } catch {
+      copied = false;
+    }
+    window.open(model.url(prompt.body), "_blank", "noopener,noreferrer");
+    patchPrompt.mutate({
+      id: prompt.id,
+      patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
+    });
+    toast.success(
+      model.prefills
+        ? `Opening ${model.label} with your prompt${copied ? " (also copied)" : ""}`
+        : copied
+          ? `Copied — paste it into ${model.label}`
+          : `Opening ${model.label} — copy the prompt manually`,
+    );
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (prompts.data ?? []).filter((p) => {
@@ -326,6 +349,12 @@ function PromptsPage() {
                     >
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
+                  </div>
+                  <div className="mt-3 border-t border-border pt-3">
+                    <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/70">
+                      Send to model
+                    </p>
+                    <AiModelLauncher onLaunch={(model) => void launchInModel(p, model)} />
                   </div>
                 </article>
               ))}
