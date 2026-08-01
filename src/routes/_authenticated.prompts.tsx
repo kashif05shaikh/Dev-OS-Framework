@@ -43,7 +43,6 @@ import { craftPrompt } from "@/lib/ai-prompts.functions";
 import { AiLogo } from "@/components/ai-logo";
 import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
 import { useAiWorkspace } from "@/lib/ai-usage";
-import { openExternal } from "@/lib/open-external";
 import {
   aiPromptsQuery,
   assertOk,
