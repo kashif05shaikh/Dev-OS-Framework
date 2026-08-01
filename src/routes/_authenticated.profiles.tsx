@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
+import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,9 +45,10 @@ import {
 } from "@/lib/devos-queries";
 import {
   CODING_PLATFORMS,
-  CODING_PLATFORM_COLOR,
   CODING_PLATFORM_LABEL,
   PROFILE_URL_TEMPLATE,
+  SOLVED_FIELD_LABEL,
+  SOLVED_LABEL,
   SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
@@ -350,16 +352,10 @@ function ProfilesPage() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((p) => {
-                const color = CODING_PLATFORM_COLOR[p.platform] ?? CODING_PLATFORM_COLOR['other']!;
                 return (
                   <article key={p.id} className="rounded-xl border border-border bg-card p-4">
                     <div className="flex items-start gap-3">
-                      <span
-                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold uppercase"
-                        style={{ backgroundColor: `${color}22`, color }}
-                      >
-                        {(CODING_PLATFORM_LABEL[p.platform] ?? p.platform).slice(0, 2)}
-                      </span>
+                      <PlatformLogo platform={p.platform} className="mt-0.5" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h2 className="truncate text-sm font-medium">
@@ -423,7 +419,7 @@ function ProfilesPage() {
                     <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          Solved
+                          {SOLVED_LABEL[p.platform] ?? "Solved"}
                         </dt>
                         <dd className="text-sm font-semibold">{p.problems_solved}</dd>
                       </div>
