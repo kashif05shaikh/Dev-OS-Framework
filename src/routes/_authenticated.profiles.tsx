@@ -50,6 +50,7 @@ import {
   SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/profiles")({
   head: () => ({
