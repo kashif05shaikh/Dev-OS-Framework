@@ -385,6 +385,17 @@ function ProfilesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                        {canSync(p.platform) ? (
+                          <DropdownMenuItem
+                            disabled={syncingId === p.id}
+                            onClick={() => syncProfile.mutate(p)}
+                          >
+                            <RefreshCw
+                              className={cn("size-3.5", syncingId === p.id && "animate-spin")}
+                            />
+                            {syncingId === p.id ? "Syncing…" : "Sync now"}
+                          </DropdownMenuItem>
+                        ) : null}
                           <DropdownMenuItem onClick={() => setDraft(toDraft(p))}>
                             <Pencil className="size-3.5" />
                             Edit
@@ -440,6 +451,11 @@ function ProfilesPage() {
                         <Flame className="size-3.5" />
                         {p.current_streak}d streak · best {p.max_streak}d
                       </span>
+                      {p.last_synced_at ? (
+                        <span className="ml-auto">
+                          synced {new Date(p.last_synced_at).toLocaleDateString()}
+                        </span>
+                      ) : null}
                     </div>
 
                     {p.notes ? (
@@ -498,6 +514,31 @@ function ProfilesPage() {
                     onChange={(e) => setDraft({ ...draft, username: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                <p className="mr-auto text-[11px] text-muted-foreground">
+                  {canSync(draft.platform)
+                    ? "Rating, rank, problems solved, contests and streak are fetched automatically."
+                    : "Automatic sync isn't available for this platform — fill the numbers in manually."}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  disabled={
+                    !canSync(draft.platform) ||
+                    !draft.username.trim() ||
+                    fillFromPlatform.isPending
+                  }
+                  onClick={() => fillFromPlatform.mutate(draft)}
+                >
+                  <RefreshCw
+                    className={cn("size-3.5", fillFromPlatform.isPending && "animate-spin")}
+                  />
+                  {fillFromPlatform.isPending ? "Fetching…" : "Fetch stats"}
+                </Button>
               </div>
 
               <div className="space-y-1.5">
