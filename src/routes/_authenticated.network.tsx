@@ -720,6 +720,120 @@ function AccountCard({
   );
 }
 
+function StatsDialog({
+  draft,
+  onClose,
+  onChange,
+  onSubmit,
+  pending,
+}: {
+  draft: StatsDraft | null;
+  onClose: () => void;
+  onChange: (draft: StatsDraft) => void;
+  onSubmit: (draft: StatsDraft) => void;
+  pending: boolean;
+}) {
+  const meta = draft ? socialPlatform(draft.account.platform) : undefined;
+
+  return (
+    <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{meta?.label ?? "Profile"} stats</DialogTitle>
+        </DialogHeader>
+        {draft ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit(draft);
+            }}
+          >
+            <p className="text-[11px] text-muted-foreground">
+              {meta?.label ?? "This platform"} requires a login for profile data, so automated sync
+              cannot read it. Enter your numbers here and DevOS will keep them on the card.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-name">
+                Display name
+              </Label>
+              <Input
+                id="stats-name"
+                value={draft.display_name}
+                onChange={(e) => onChange({ ...draft, display_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-bio">
+                Headline / bio
+              </Label>
+              <Input
+                id="stats-bio"
+                value={draft.bio}
+                onChange={(e) => onChange({ ...draft, bio: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-avatar">
+                Avatar image URL
+              </Label>
+              <Input
+                id="stats-avatar"
+                placeholder="https://…"
+                value={draft.avatar_url}
+                onChange={(e) => onChange({ ...draft, avatar_url: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-followers">
+                  Followers
+                </Label>
+                <Input
+                  id="stats-followers"
+                  inputMode="numeric"
+                  value={draft.followers}
+                  onChange={(e) => onChange({ ...draft, followers: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-following">
+                  Following
+                </Label>
+                <Input
+                  id="stats-following"
+                  inputMode="numeric"
+                  value={draft.following}
+                  onChange={(e) => onChange({ ...draft, following: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-posts">
+                  Posts
+                </Label>
+                <Input
+                  id="stats-posts"
+                  inputMode="numeric"
+                  value={draft.posts}
+                  onChange={(e) => onChange({ ...draft, posts: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Saving…" : "Save stats"}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ConnectDialog({
   draft,
   onClose,
