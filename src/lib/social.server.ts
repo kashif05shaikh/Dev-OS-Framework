@@ -275,7 +275,20 @@ async function fetchInstagram(handle: string): Promise<SocialSnapshot> {
     await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
   }
 
-  return fetchInstagramFromPage(user);
+  try {
+    return await fetchInstagramFromPage(user);
+  } catch (error) {
+    if (error instanceof PlatformError && /does not exist/.test(error.message)) throw error;
+    // Instagram blocks automated reads from server IPs; keep the verified link.
+    return {
+      ...empty("instagram", user, `https://instagram.com/${user}`),
+      extra: {
+        postsLabel: "Posts",
+        unavailable: true,
+        note: "Instagram is currently blocking automated profile reads, so DevOS keeps the verified link only. Open the profile to view stats.",
+      },
+    };
+  }
 }
 
 function parseCount(value: string | undefined): number | null {
@@ -303,9 +316,7 @@ async function fetchInstagramFromPage(user: string): Promise<SocialSnapshot> {
     return match ? decode(match[1]!) : null;
   };
   const description = meta("og:description");
-  if (!description) {
-    fail("Instagram is rate-limiting DevOS right now. Wait a minute and sync again.");
-  }
+  if (!description) fail("Instagram did not return profile metadata.");
   const stats = description.match(
     /([\d.,]+[KMB]?)\s+Followers,\s+([\d.,]+[KMB]?)\s+Following,\s+([\d.,]+[KMB]?)\s+Posts/i,
   );
