@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_PLATFORMS, type AiPlatform } from "@/lib/ai-models";
 import { formatLastUsed, useAiWorkspace } from "@/lib/ai-usage";
+import { openExternal } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai")({
@@ -36,8 +37,10 @@ function AiWorkspacePage() {
   const { state, toggleFavorite, recordUse } = useAiWorkspace();
   const [search, setSearch] = useState("");
 
-  const launch = (p: AiPlatform) => {
+  const launch = (event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
+    event.preventDefault();
     recordUse(p.id);
+    openExternal(p.url);
   };
 
   const filtered = useMemo(() => {
@@ -100,8 +103,9 @@ function AiWorkspacePage() {
                 <a
                   key={p.id}
                   href={p.url}
-                  target="_top"
-                  onClick={() => launch(p)}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   onClick={(event) => launch(event, p)}
                   title={`Open ${p.label}`}
                   className="group flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs font-medium transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10"
                 >
@@ -155,8 +159,13 @@ function AiWorkspacePage() {
                           <div>{formatLastUsed(usage?.lastUsedAt)}</div>
                           <div>Opened {usage?.count ?? 0}×</div>
                         </div>
-                        <Button size="sm" asChild onClick={() => launch(p)}>
-                          <a href={p.url} target="_top">
+                         <Button size="sm" asChild>
+                           <a
+                             href={p.url}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             onClick={(event) => launch(event, p)}
+                           >
                             <Rocket className="size-4" />
                             Open
                           </a>
@@ -183,8 +192,13 @@ function AiWorkspacePage() {
                     <span className="text-muted-foreground">
                       {formatLastUsed(state.usage[p.id]?.lastUsedAt)}
                     </span>
-                    <Button variant="ghost" size="sm" asChild onClick={() => launch(p)}>
-                      <a href={p.url} target="_top">
+                     <Button variant="ghost" size="sm" asChild>
+                       <a
+                         href={p.url}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         onClick={(event) => launch(event, p)}
+                       >
                         Open
                       </a>
                     </Button>
