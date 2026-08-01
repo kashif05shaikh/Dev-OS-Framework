@@ -183,7 +183,11 @@ function GoalsPage() {
       const payload = {
         title: value.title.trim(),
         description: value.description.trim() || null,
-        category: value.category,
+        category:
+          value.category === CUSTOM
+            ? value.customCategory.trim().toLowerCase() || "custom"
+            : value.category,
+        timeframe: value.timeframe,
         status: value.status,
         priority: value.priority,
         target_value: Number(value.target_value) || 0,
