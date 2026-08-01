@@ -496,7 +496,10 @@ function ProfilesPage() {
                     <SelectContent>
                       {CODING_PLATFORMS.map((p) => (
                         <SelectItem key={p} value={p}>
-                          {CODING_PLATFORM_LABEL[p]}
+                          <span className="flex items-center gap-2">
+                            <PlatformLogo platform={p} className="size-5 rounded-md" />
+                            {CODING_PLATFORM_LABEL[p]}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -574,7 +577,9 @@ function ProfilesPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="cp-solved">Problems solved</Label>
+                  <Label htmlFor="cp-solved">
+                    {SOLVED_FIELD_LABEL[draft.platform] ?? "Problems solved"}
+                  </Label>
                   <Input
                     id="cp-solved"
                     inputMode="numeric"
