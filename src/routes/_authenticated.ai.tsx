@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Clock, Rocket, Search, Star } from "lucide-react";
+import { toast } from "sonner";
 
 import { AiLogo } from "@/components/ai-logo";
 import { EmptyState } from "@/components/states";
@@ -36,10 +37,23 @@ function AiWorkspacePage() {
   const { state, toggleFavorite, recordUse } = useAiWorkspace();
   const [search, setSearch] = useState("");
 
-  // Let the browser handle the navigation natively via the anchor's
-  // target="_blank" — we only record local usage stats here.
+  // The anchor's target="_blank" handles the real navigation. Inside an
+  // embedded preview frame the host can swallow that request, so we surface a
+  // copy-link escape hatch instead of leaving the user on a blocked page.
   const launch = (_event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
     recordUse(p.id);
+    if (typeof window !== "undefined" && window.top !== window.self) {
+      toast(`Opening ${p.label}`, {
+        description: "If your browser blocks it, copy the link and paste it in a new tab.",
+        action: {
+          label: "Copy link",
+          onClick: () => {
+            void navigator.clipboard.writeText(p.url);
+            toast.success("Link copied");
+          },
+        },
+      });
+    }
   };
 
   const filtered = useMemo(() => {
