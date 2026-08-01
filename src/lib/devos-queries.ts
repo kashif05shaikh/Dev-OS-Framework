@@ -361,6 +361,7 @@ export const goalsQuery = () =>
           .from("goals")
           .select("*")
           .order("pinned", { ascending: false })
+          .order("position", { ascending: true })
           .order("created_at", { ascending: false }),
       ),
   });
