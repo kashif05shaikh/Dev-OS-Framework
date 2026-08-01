@@ -324,6 +324,24 @@ function LearningPage() {
         </div>
 
         <ScrollArea className="flex-1 p-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSubject(ALL_SUBJECTS);
+              setActiveFolder(null);
+            }}
+            className={cn(
+              "mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium transition-colors",
+              isAll ? "bg-accent" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+            )}
+          >
+            <BookOpen className="size-3.5 shrink-0" />
+            <span className="truncate">All resources</span>
+            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+              {resources.data?.length ?? 0}
+            </span>
+          </button>
+
           {(subjects.data?.length ?? 0) === 0 ? (
             <EmptyState title="No subjects" description="Create a subject to start collecting resources." />
           ) : (
