@@ -134,7 +134,7 @@ export function DevServices() {
                 <span className="block truncate text-[11px] text-muted-foreground">{service.desc}</span>
               </span>
               <ExternalLink className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
+            </a>
           ))}
         </div>
       </section>
