@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Clock, Rocket, Search, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Clock, Copy, ExternalLink, Info, Rocket, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { AiLogo } from "@/components/ai-logo";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_PLATFORMS, type AiPlatform } from "@/lib/ai-models";
 import { formatLastUsed, useAiWorkspace } from "@/lib/ai-usage";
+import { copyText, isEmbedded, openExternal, standaloneAppUrl } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai")({
@@ -37,23 +38,20 @@ function AiWorkspacePage() {
   const { state, toggleFavorite, recordUse } = useAiWorkspace();
   const [search, setSearch] = useState("");
 
-  // The anchor's target="_blank" handles the real navigation. Inside an
-  // embedded preview frame the host can swallow that request, so we surface a
-  // copy-link escape hatch instead of leaving the user on a blocked page.
-  const launch = (_event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
+  const [embedded, setEmbedded] = useState(false);
+  useEffect(() => setEmbedded(isEmbedded()), []);
+
+  // Never embed AI sites: always hand the URL to a real top-level browser tab.
+  const launch = (event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
+    event.preventDefault();
     recordUse(p.id);
-    if (typeof window !== "undefined" && window.top !== window.self) {
-      toast(`Opening ${p.label}`, {
-        description: "If your browser blocks it, copy the link and paste it in a new tab.",
-        action: {
-          label: "Copy link",
-          onClick: () => {
-            void navigator.clipboard.writeText(p.url);
-            toast.success("Link copied");
-          },
-        },
-      });
-    }
+    openExternal(p.url, p.label);
+  };
+
+  const copyLink = async (p: AiPlatform) => {
+    const ok = await copyText(p.url);
+    if (ok) toast.success(`${p.label} link copied`, { description: p.url });
+    else toast.error("Could not copy the link", { description: p.url });
   };
 
   const filtered = useMemo(() => {
@@ -107,6 +105,24 @@ function AiWorkspacePage() {
 
       <ScrollArea className="flex-1">
         <div className="space-y-8 p-6">
+          {embedded ? (
+            <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <Info className="mt-0.5 size-4 shrink-0 text-amber-400" />
+              <p className="mr-auto max-w-2xl text-xs text-amber-100/90">
+                External AI websites cannot be opened inside the Lovable preview because those
+                websites block embedding. Open the published app or use the “Open in New Tab”
+                action below.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openExternal(standaloneAppUrl("/ai"), "DevOS")}
+              >
+                <ExternalLink className="size-4" />
+                Open Published App
+              </Button>
+            </div>
+          ) : null}
           <section>
             <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Quick launch
@@ -172,13 +188,31 @@ function AiWorkspacePage() {
                           <div>{formatLastUsed(usage?.lastUsedAt)}</div>
                           <div>Opened {usage?.count ?? 0}×</div>
                         </div>
-                         <Button size="sm" asChild>
-                           <a
-                             href={p.url}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             onClick={(event) => launch(event, p)}
-                           >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Copy ${p.label} link`}
+                          title="Copy link"
+                          onClick={() => void copyLink(p)}
+                        >
+                          <Copy className="size-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={fav ? `Unfavorite ${p.label}` : `Favorite ${p.label}`}
+                          title="Favorite"
+                          onClick={() => toggleFavorite(p.id)}
+                        >
+                          <Star className={cn("size-4", fav && "fill-current text-amber-400")} />
+                        </Button>
+                        <Button size="sm" asChild>
+                          <a
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => launch(event, p)}
+                          >
                             <Rocket className="size-4" />
                             Open
                           </a>
