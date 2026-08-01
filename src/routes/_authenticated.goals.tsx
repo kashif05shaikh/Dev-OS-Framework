@@ -477,6 +477,26 @@ function GoalsPage() {
                       >
                         {GOAL_STATUS_LABEL[goal.status]}
                       </span>
+                      <div className="flex flex-col">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-5"
+                          title="Move up"
+                          onClick={() => moveGoal(goal.id, -1)}
+                        >
+                          <ArrowUp className="size-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-5"
+                          title="Move down"
+                          onClick={() => moveGoal(goal.id, 1)}
+                        >
+                          <ArrowDown className="size-3" />
+                        </Button>
+                      </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="size-7">
@@ -560,6 +580,11 @@ function GoalsPage() {
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                       <span className="rounded-full bg-muted px-2 py-0.5">
                         {GOAL_CATEGORY_LABEL[goal.category] ?? goal.category}
+                      </span>
+                      <span className="rounded-full bg-muted px-2 py-0.5">
+                        {GOAL_TIMEFRAME_LABEL[
+                          (goal as Goal & { timeframe?: string }).timeframe ?? "monthly"
+                        ] ?? "Monthly"}
                       </span>
                       <span className={cn("font-medium", PRIORITY_CLASS[goal.priority])}>
                         {GOAL_PRIORITY_LABEL[goal.priority]} priority
