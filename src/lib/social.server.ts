@@ -275,7 +275,20 @@ async function fetchInstagram(handle: string): Promise<SocialSnapshot> {
     await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
   }
 
-  return fetchInstagramFromPage(user);
+  try {
+    return await fetchInstagramFromPage(user);
+  } catch (error) {
+    if (error instanceof PlatformError && /does not exist/.test(error.message)) throw error;
+    // Instagram blocks automated reads from server IPs; keep the verified link.
+    return {
+      ...empty("instagram", user, `https://instagram.com/${user}`),
+      extra: {
+        postsLabel: "Posts",
+        unavailable: true,
+        note: "Instagram is currently blocking automated profile reads, so DevOS keeps the verified link only. Open the profile to view stats.",
+      },
+    };
+  }
 }
 
 function parseCount(value: string | undefined): number | null {
@@ -303,9 +316,7 @@ async function fetchInstagramFromPage(user: string): Promise<SocialSnapshot> {
     return match ? decode(match[1]!) : null;
   };
   const description = meta("og:description");
-  if (!description) {
-    fail("Instagram is rate-limiting DevOS right now. Wait a minute and sync again.");
-  }
+  if (!description) fail("Instagram did not return profile metadata.");
   const stats = description.match(
     /([\d.,]+[KMB]?)\s+Followers,\s+([\d.,]+[KMB]?)\s+Following,\s+([\d.,]+[KMB]?)\s+Posts/i,
   );
@@ -605,8 +616,50 @@ async function fetchLinkedin(handle: string): Promise<SocialSnapshot> {
       "That is not a LinkedIn username. Copy the last part of your profile URL (linkedin.com/in/…), for example kashif-shaikh-05.",
     );
   }
+
+  const profileUrl = `https://www.linkedin.com/in/${vanity}`;
+  // LinkedIn gates most profiles behind auth, but public ones still expose
+  // Open Graph metadata through a read proxy.
+  try {
+    const response = await fetch(`https://r.jina.ai/${profileUrl}`, {
+      headers: { "x-return-format": "html", ...UA },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (response.ok) {
+      const html = await response.text();
+      const meta = (property: string) => {
+        const match = html.match(new RegExp(`og:${property}" content="([^"]*)"`, "i"));
+        return match ? decode(match[1]!) : null;
+      };
+      const title = meta("title");
+      if (title) {
+        const name = title.split(/ [-|] /)[0]?.trim() || vanity;
+        const headline = title.includes(" - ")
+          ? title.split(" - ").slice(1).join(" - ").replace(/ \| LinkedIn$/, "").trim()
+          : null;
+        const followers = parseCount(
+          (html.match(/([\d.,KMB]+)\s+followers/i) ?? [])[1]?.trim(),
+        );
+        const connections = parseCount(
+          (html.match(/([\d.,KMB]+)\+?\s+connections/i) ?? [])[1]?.trim(),
+        );
+        return {
+          ...empty("linkedin", vanity, profileUrl),
+          display_name: name,
+          avatar_url: meta("image"),
+          bio: clean(meta("description")) ?? clean(headline),
+          followers,
+          following: connections,
+          extra: { headline, postsLabel: "Posts" },
+        };
+      }
+    }
+  } catch {
+    // fall through to the link-only snapshot
+  }
+
   return {
-    ...empty("linkedin", vanity, `https://www.linkedin.com/in/${vanity}`),
+    ...empty("linkedin", vanity, profileUrl),
     extra: {
       note: "LinkedIn does not expose profile data without an approved Marketing API partnership, so DevOS keeps the verified link only.",
       unavailable: true,
