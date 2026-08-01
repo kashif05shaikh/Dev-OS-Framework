@@ -15,7 +15,9 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated.learning'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
+import { Route as AuthenticatedProfilesRouteImport } from './routes/_authenticated.profiles'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
+import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated.resume'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -46,9 +48,19 @@ const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProfilesRoute = AuthenticatedProfilesRouteImport.update({
+  id: '/profiles',
+  path: '/profiles',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
+  id: '/resume',
+  path: '/resume',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -58,14 +70,18 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/resume': typeof AuthenticatedResumeRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/resume': typeof AuthenticatedResumeRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -75,14 +91,32 @@ export interface FileRoutesById {
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/profiles': typeof AuthenticatedProfilesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/resume': typeof AuthenticatedResumeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/jobs' | '/learning' | '/notes' | '/projects'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/jobs'
+    | '/learning'
+    | '/notes'
+    | '/profiles'
+    | '/projects'
+    | '/resume'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/jobs' | '/learning' | '/notes' | '/projects' | '/'
+  to:
+    | '/auth'
+    | '/jobs'
+    | '/learning'
+    | '/notes'
+    | '/profiles'
+    | '/projects'
+    | '/resume'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
@@ -90,7 +124,9 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs'
     | '/_authenticated/learning'
     | '/_authenticated/notes'
+    | '/_authenticated/profiles'
     | '/_authenticated/projects'
+    | '/_authenticated/resume'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -143,11 +179,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/profiles': {
+      id: '/_authenticated/profiles'
+      path: '/profiles'
+      fullPath: '/profiles'
+      preLoaderRoute: typeof AuthenticatedProfilesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects': {
       id: '/_authenticated/projects'
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/resume': {
+      id: '/_authenticated/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof AuthenticatedResumeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
@@ -157,7 +207,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedProfilesRoute: typeof AuthenticatedProfilesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedResumeRoute: typeof AuthenticatedResumeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -165,7 +217,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedProfilesRoute: AuthenticatedProfilesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedResumeRoute: AuthenticatedResumeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

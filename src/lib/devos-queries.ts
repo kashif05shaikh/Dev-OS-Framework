@@ -9,6 +9,12 @@ import type {
   Subject,
 } from "@/lib/devos-types";
 import type { JobApplication, Project, ProjectTask } from "@/lib/devos-types";
+import type {
+  CodingProfile,
+  Resume,
+  ResumeEntry,
+  ResumeSection,
+} from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -99,7 +105,11 @@ type UpdatableTable =
   | "learning_resources"
   | "projects"
   | "project_tasks"
-  | "job_applications";
+  | "job_applications"
+  | "coding_profiles"
+  | "resumes"
+  | "resume_sections"
+  | "resume_entries";
 
 /**
  * Update a row by id.
@@ -248,5 +258,61 @@ export const jobApplicationsQuery = () =>
           .from("job_applications")
           .select("*")
           .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const codingProfilesQuery = () =>
+  queryOptions({
+    queryKey: ["coding_profiles"],
+    queryFn: async (): Promise<CodingProfile[]> =>
+      unwrap(
+        await supabase
+          .from("coding_profiles")
+          .select("*")
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const resumesQuery = () =>
+  queryOptions({
+    queryKey: ["resumes"],
+    queryFn: async (): Promise<Resume[]> =>
+      unwrap(
+        await supabase
+          .from("resumes")
+          .select("*")
+          .order("is_default", { ascending: false })
+          .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const resumeSectionsQuery = (resumeId: string | null) =>
+  queryOptions({
+    queryKey: ["resume_sections", resumeId],
+    enabled: Boolean(resumeId),
+    queryFn: async (): Promise<ResumeSection[]> =>
+      unwrap(
+        await supabase
+          .from("resume_sections")
+          .select("*")
+          .eq("resume_id", resumeId!)
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const resumeEntriesQuery = (sectionIds: string[]) =>
+  queryOptions({
+    queryKey: ["resume_entries", [...sectionIds].sort().join(",")],
+    enabled: sectionIds.length > 0,
+    queryFn: async (): Promise<ResumeEntry[]> =>
+      unwrap(
+        await supabase
+          .from("resume_entries")
+          .select("*")
+          .in("section_id", sectionIds)
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
       ),
   });
