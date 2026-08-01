@@ -1,6 +1,11 @@
 import { useState } from "react";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AI_MODEL_TARGETS, type AiModelTarget } from "@/lib/ai-models";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +32,8 @@ export function AiModelLauncher({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-1", className)}>
+    <TooltipProvider delayDuration={150}>
+      <div className={cn("flex flex-wrap items-center gap-1", className)}>
       {AI_MODEL_TARGETS.map((model) => (
         <Tooltip key={model.id}>
           <TooltipTrigger asChild>
@@ -47,6 +53,7 @@ export function AiModelLauncher({
           </TooltipContent>
         </Tooltip>
       ))}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
