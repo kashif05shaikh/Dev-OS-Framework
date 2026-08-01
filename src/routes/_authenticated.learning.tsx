@@ -403,7 +403,7 @@ function LearningPage() {
                             onConfirm: async () => {
                               await deleteRow.mutateAsync({ table: "subjects", id: subject.id });
                               setConfirm(null);
-                              if (subjectId === subject.id) setActiveSubject(null);
+                              if (subjectId === subject.id) setActiveSubject(ALL_SUBJECTS);
                             },
                           })
                         }
@@ -546,7 +546,8 @@ function LearningPage() {
           </Select>
           <Button
             size="sm"
-            disabled={!subjectId}
+            disabled={!subjectId || isAll}
+            title={isAll ? "Pick a subject to add a resource" : undefined}
             onClick={() =>
               setDraft({
                 title: "",
@@ -569,7 +570,9 @@ function LearningPage() {
                   icon={<BookOpen className="size-6" />}
                   title={subjectId ? "No resources here" : "No subject selected"}
                   description={
-                    subjectId
+                    isAll
+                      ? "Pick a subject on the left and add your first resource."
+                      : subjectId
                       ? "Add a YouTube video, doc, PDF, course or GitHub repo to this subject."
                       : "Create a subject on the left to start."
                   }
@@ -591,6 +594,22 @@ function LearningPage() {
                           {RESOURCE_TYPE_LABEL[resource.type] ?? resource.type}
                         </p>
                       </div>
+                      {isAll && subjectName.get(resource.subject_id) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSubject(resource.subject_id);
+                            setActiveFolder(resource.folder_id);
+                          }}
+                          className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        >
+                          <span
+                            className="size-1.5 rounded-full"
+                            style={{ backgroundColor: subjectName.get(resource.subject_id)!.color }}
+                          />
+                          {subjectName.get(resource.subject_id)!.name}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         aria-label="Toggle favourite"
