@@ -290,3 +290,20 @@ export const HABIT_COLORS = [
   "#fb7185",
   "#60a5fa",
 ];
+
+export type FocusSession = Tables<"focus_sessions">;
+
+export const FOCUS_MODES = ["focus", "short_break", "long_break"] as const;
+export type FocusMode = (typeof FOCUS_MODES)[number];
+
+export const FOCUS_MODE_LABEL: Record<string, string> = {
+  focus: "Focus",
+  short_break: "Short break",
+  long_break: "Long break",
+};
+
+export const FOCUS_DEFAULT_MINUTES: Record<string, number> = {
+  focus: 25,
+  short_break: 5,
+  long_break: 15,
+};
