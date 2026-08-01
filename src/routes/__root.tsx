@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
+import { applyTheme, cachedTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Restore the saved theme before the user interacts with anything.
+  useEffect(() => {
+    applyTheme(cachedTheme());
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Bell, Check, Download, LogOut, Palette, ShieldCheck, Trash2, User } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Download,
+  LogOut,
+  Moon,
+  Palette,
+  ShieldCheck,
+  Sun,
+  Trash2,
+  User,
+} from "lucide-react";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -13,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { ACCENTS, applyAccent, cacheAccent, resolveAccent } from "@/lib/accent";
+import { applyTheme, cacheTheme, cachedTheme, resolveTheme, type ThemeKey } from "@/lib/theme";
 import { describeError, profileQuery, updateRow } from "@/lib/devos-queries";
 import { cn } from "@/lib/utils";
 
@@ -122,6 +134,11 @@ function SettingsPage() {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
     "unsupported",
   );
+  const [theme, setTheme] = useState<ThemeKey>("dark");
+
+  useEffect(() => {
+    setTheme(resolveTheme(cachedTheme()));
+  }, []);
 
   useEffect(() => {
     if (profile.data) setDisplayName(profile.data.display_name ?? "");
@@ -269,6 +286,37 @@ function SettingsPage() {
         description="Pick the accent used for highlights, charts and active states."
       >
         <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "dark", label: "Dark", icon: Moon },
+              { key: "light", label: "Light", icon: Sun },
+            ] as const
+          ).map((option) => {
+            const active = option.key === theme;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => {
+                  setTheme(option.key);
+                  applyTheme(option.key);
+                  cacheTheme(option.key);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors",
+                  active
+                    ? "border-primary/60 bg-primary/10 text-foreground"
+                    : "border-border text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                <option.icon className="size-3.5" />
+                {option.label}
+                {active ? <Check className="size-3.5 text-primary" /> : null}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
           {ACCENTS.map((accent) => {
             const active = accent.key === currentAccent.key;
             return (
@@ -298,7 +346,8 @@ function SettingsPage() {
           })}
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          DevOS uses a permanent dark theme — accents keep the black UI intact.
+          Dark is the DevOS default; light keeps the same layout with bright surfaces. Accents apply
+          to both.
         </p>
       </Section>
 

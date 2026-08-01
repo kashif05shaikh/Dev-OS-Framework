@@ -108,6 +108,37 @@
   color-scheme: dark;
 }
 
+/* Light theme — same design system, bright surfaces. */
+.light {
+  color-scheme: light;
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0 0);
+  --secondary-foreground: oklch(0.2 0 0);
+  --muted: oklch(0.955 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.945 0.01 293);
+  --accent-foreground: oklch(0.2 0 0);
+  --border: oklch(0 0 0 / 10%);
+  --input: oklch(0 0 0 / 14%);
+  --sidebar: oklch(0.97 0 0);
+  --sidebar-foreground: oklch(0.24 0 0);
+  --sidebar-accent: oklch(0.93 0 0);
+  --sidebar-accent-foreground: oklch(0.2 0 0);
+  --sidebar-border: oklch(0 0 0 / 9%);
+
+  --surface-raised: oklch(1 0 0);
+}
+
+.light .md-body pre {
+  background: oklch(0.965 0 0);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
