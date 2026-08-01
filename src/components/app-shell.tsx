@@ -46,11 +46,10 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Focus Timer", to: "/focus", icon: Timer },
   { label: "Dev Tools", to: "/tools", icon: Wrench },
   { label: "Network", to: "/network", icon: Users },
+  { label: "Analytics", to: "/analytics", icon: BarChart3 },
 ];
 
 const UPCOMING_NAV: NavItem[] = [
-  { label: "Analytics", icon: BarChart3 },
-  
   { label: "Settings", icon: Settings },
 ];
 
