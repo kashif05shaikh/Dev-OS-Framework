@@ -293,8 +293,9 @@ function GoalsPage() {
   const reorder = useMutation({
     mutationFn: async (ordered: Goal[]) => {
       for (let i = 0; i < ordered.length; i += 1) {
-        if (ordered[i].position !== i) {
-          await updateRow("goals", ordered[i], { position: i });
+        const row = ordered[i];
+        if (row && row.position !== i) {
+          await updateRow("goals", row, { position: i });
         }
       }
     },
@@ -320,6 +321,7 @@ function GoalsPage() {
     const to = from + dir;
     if (from < 0 || to < 0 || to >= list.length) return;
     const [item] = list.splice(from, 1);
+    if (!item) return;
     list.splice(to, 0, item);
     reorder.mutate(list);
   };
