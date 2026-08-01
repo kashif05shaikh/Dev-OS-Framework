@@ -373,6 +373,14 @@ function CalendarPage() {
         >
           Today
         </Button>
+        <Button
+          variant={remindersOn ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => void enableReminders()}
+        >
+          <Bell className={cn("size-4", remindersOn && "text-primary")} />
+          {remindersOn ? "Reminders on" : "Reminders"}
+        </Button>
         <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
           <Plus className="size-4" />
           New event
@@ -592,6 +600,87 @@ function CalendarPage() {
                         </button>
                       </li>
                     ))}
+                  </ul>
+                )}
+              </section>
+
+              <section>
+                <div className="mb-2 flex items-center gap-2">
+                  <h2 className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
+                    Upcoming contests
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto"
+                    aria-label="Refresh contests"
+                    onClick={() => void contests.refetch()}
+                  >
+                    <RefreshCw
+                      className={cn("size-3.5", contests.isFetching && "animate-spin")}
+                    />
+                  </Button>
+                </div>
+                {contests.isLoading ? (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" /> Fetching contests…
+                  </p>
+                ) : contests.error ? (
+                  <p className="text-xs text-muted-foreground">
+                    Couldn&apos;t load contests. Try refreshing.
+                  </p>
+                ) : (contests.data?.length ?? 0) === 0 ? (
+                  <p className="text-xs text-muted-foreground">No contests announced yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(contests.data ?? []).slice(0, 8).map((c) => {
+                      const start = new Date(c.startsAt);
+                      const added = (events.data ?? []).some(
+                        (e) => e.url === c.url && e.kind === "contest",
+                      );
+                      return (
+                        <li
+                          key={c.id}
+                          className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
+                        >
+                          <PlatformLogo platform={c.platform} className="size-7" />
+                          <div className="min-w-0 flex-1">
+                            <a
+                              href={c.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="line-clamp-2 text-xs font-medium hover:underline"
+                            >
+                              {c.name}
+                            </a>
+                            <p className="text-[11px] text-muted-foreground">
+                              {start.toLocaleDateString(undefined, {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                              {" · "}
+                              {start.toLocaleTimeString(undefined, {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={added ? "Already in calendar" : "Add contest to calendar"}
+                            disabled={added || addContest.isPending}
+                            onClick={() => addContest.mutate(c)}
+                          >
+                            {added ? (
+                              <Check className="size-3.5 text-primary" />
+                            ) : (
+                              <Plus className="size-3.5" />
+                            )}
+                          </Button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </section>
