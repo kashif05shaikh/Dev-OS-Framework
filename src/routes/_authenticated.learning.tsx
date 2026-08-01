@@ -723,13 +723,11 @@ function ResourceDialog({
 }) {
   const [value, setValue] = useState<ResourceDraft | null>(draft);
 
-  // Sync local form whenever a different draft is opened.
-  if (draft !== null && value?.id !== draft.id) {
+  // Sync the local form every time the dialog opens with a new draft
+  // (new resources have no id, so identity comparison alone is not enough).
+  useEffect(() => {
     setValue(draft);
-  }
-  if (draft === null && value !== null) {
-    setValue(null);
-  }
+  }, [draft]);
 
   return (
     <Dialog open={draft !== null} onOpenChange={(open) => !open && onClose()}>
@@ -821,7 +819,7 @@ function ResourceDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={saving || !value?.title.trim()}>
-              {draft?.id ? "Save changes" : "Add resource"}
+              {saving ? "Saving…" : draft?.id ? "Save changes" : "Add resource"}
             </Button>
           </DialogFooter>
         </form>
