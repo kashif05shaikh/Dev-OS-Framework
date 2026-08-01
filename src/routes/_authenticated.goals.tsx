@@ -169,6 +169,7 @@ function GoalsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [timeframeFilter, setTimeframeFilter] = useState("all");
   const [draft, setDraft] = useState<GoalDraft | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [milestoneInput, setMilestoneInput] = useState<Record<string, string>>({});
@@ -289,15 +290,61 @@ function GoalsPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  const reorder = useMutation({
+    mutationFn: async (ordered: Goal[]) => {
+      for (let i = 0; i < ordered.length; i += 1) {
+        if (ordered[i].position !== i) {
+          await updateRow("goals", ordered[i], { position: i });
+        }
+      }
+    },
+    onMutate: async (ordered) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      qc.setQueryData<Goal[]>(
+        ["goals"],
+        ordered.map((g, i) => ({ ...g, position: i })),
+      );
+      return { previous };
+    },
+    onError: (e: unknown, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["goals"], ctx.previous);
+      toast.error(describeError(e));
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["goals"] }),
+  });
+
+  const moveGoal = (goalId: string, dir: -1 | 1) => {
+    const list = [...(goals.data ?? [])];
+    const from = list.findIndex((g) => g.id === goalId);
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= list.length) return;
+    const [item] = list.splice(from, 1);
+    list.splice(to, 0, item);
+    reorder.mutate(list);
+  };
+
+  const customCategories = useMemo(() => {
+    const known = new Set<string>(GOAL_CATEGORIES as readonly string[]);
+    return Array.from(
+      new Set((goals.data ?? []).map((g) => g.category).filter((c) => !known.has(c))),
+    );
+  }, [goals.data]);
+
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (goals.data ?? []).filter((g) => {
       if (statusFilter !== "all" && g.status !== statusFilter) return false;
       if (categoryFilter !== "all" && g.category !== categoryFilter) return false;
+      if (
+        timeframeFilter !== "all" &&
+        ((g as Goal & { timeframe?: string }).timeframe ?? "monthly") !== timeframeFilter
+      )
+        return false;
       if (!term) return true;
       return `${g.title} ${g.description ?? ""}`.toLowerCase().includes(term);
     });
-  }, [goals.data, search, statusFilter, categoryFilter]);
+  }, [goals.data, search, statusFilter, categoryFilter, timeframeFilter]);
 
   const stats = useMemo(() => {
     const all = goals.data ?? [];
