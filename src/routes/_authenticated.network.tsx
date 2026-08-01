@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Link2Off,
   MapPin,
+  PencilLine,
   Plus,
   RefreshCw,
   Users,
@@ -69,6 +70,27 @@ export const Route = createFileRoute("/_authenticated/network")({
 
 type Draft = { platform: string; handle: string; editing?: SocialAccount };
 
+/** Manual stat entry for platforms that block automated profile reads. */
+type StatsDraft = {
+  account: SocialAccount;
+  display_name: string;
+  bio: string;
+  avatar_url: string;
+  followers: string;
+  following: string;
+  posts: string;
+};
+
+/** Platforms whose public data cannot be read from a server (login-walled). */
+const MANUAL_PLATFORMS = new Set(["instagram", "linkedin"]);
+
+function toNumber(value: string): number | null {
+  const trimmed = value.trim().replace(/[,\s]/g, "");
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+}
+
 function compact(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   if (value < 1000) return String(value);
@@ -97,6 +119,7 @@ function NetworkPage() {
   const fetchProfile = useServerFn(fetchSocialProfile);
 
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [stats, setStats] = useState<StatsDraft | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
 
@@ -121,23 +144,34 @@ function NetworkPage() {
   const available = SOCIAL_PLATFORMS.filter((p) => !connectedIds.has(p.id));
 
   async function persistSnapshot(userId: string, snapshot: SocialSnapshot) {
+    // Never wipe manually entered stats with an empty (blocked) snapshot.
+    const existing = byPlatform.get(snapshot.platform);
+    const existingExtra = extraOf(existing);
+    const keepManual =
+      Boolean(existingExtra["manual"]) &&
+      snapshot.followers === null &&
+      snapshot.following === null &&
+      snapshot.posts === null;
+
     await runWithRetry(async () => {
       const { error } = await supabase.from("social_profile_cache").upsert(
         {
           user_id: userId,
           platform: snapshot.platform,
           handle: snapshot.handle,
-          display_name: snapshot.display_name,
-          avatar_url: snapshot.avatar_url,
-          bio: snapshot.bio,
+          display_name: snapshot.display_name ?? (keepManual ? (existing?.display_name ?? null) : null),
+          avatar_url: snapshot.avatar_url ?? (keepManual ? (existing?.avatar_url ?? null) : null),
+          bio: snapshot.bio ?? (keepManual ? (existing?.bio ?? null) : null),
           location: snapshot.location,
           website: snapshot.website,
           verified: snapshot.verified,
-          followers: snapshot.followers,
-          following: snapshot.following,
-          posts: snapshot.posts,
+          followers: keepManual ? (existing?.followers ?? null) : snapshot.followers,
+          following: keepManual ? (existing?.following ?? null) : snapshot.following,
+          posts: keepManual ? (existing?.posts ?? null) : snapshot.posts,
           joined_at: snapshot.joined_at,
-          extra_json: snapshot.extra as never,
+          extra_json: (keepManual
+            ? { ...snapshot.extra, manual: true }
+            : snapshot.extra) as never,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,platform" },
@@ -145,6 +179,48 @@ function NetworkPage() {
       assertOk(error);
     });
   }
+
+  const saveStats = useMutation({
+    mutationFn: async (value: StatsDraft) => {
+      const userId = await requireUserId();
+      const meta = socialPlatform(value.account.platform);
+      await runWithRetry(async () => {
+        const { error } = await supabase.from("social_profile_cache").upsert(
+          {
+            user_id: userId,
+            platform: value.account.platform,
+            handle: value.account.username,
+            display_name: value.display_name.trim() || null,
+            avatar_url: value.avatar_url.trim() || null,
+            bio: value.bio.trim() || null,
+            followers: toNumber(value.followers),
+            following: toNumber(value.following),
+            posts: toNumber(value.posts),
+            extra_json: {
+              manual: true,
+              postsLabel: "Posts",
+              note: `${meta?.label ?? value.account.platform} blocks automated profile reads, so these numbers are the ones you entered.`,
+            } as never,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,platform" },
+        );
+        assertOk(error);
+      });
+      await updateRow("social_accounts", value.account, {
+        status: "connected",
+        last_error: null,
+        last_synced: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      setStats(null);
+      void qc.invalidateQueries({ queryKey: ["social_accounts"] });
+      void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
+      toast.success("Stats saved");
+    },
+    onError: (error: unknown) => toast.error(describeError(error)),
+  });
 
   const connect = useMutation({
     mutationFn: async (value: Draft) => {
@@ -354,6 +430,18 @@ function NetworkPage() {
                       })
                     }
                     onToggleAutoSync={() => toggleAutoSync.mutate(account)}
+                    onEditStats={() => {
+                      const profile = byPlatform.get(account.platform);
+                      setStats({
+                        account,
+                        display_name: profile?.display_name ?? "",
+                        bio: profile?.bio ?? "",
+                        avatar_url: profile?.avatar_url ?? "",
+                        followers: profile?.followers != null ? String(profile.followers) : "",
+                        following: profile?.following != null ? String(profile.following) : "",
+                        posts: profile?.posts != null ? String(profile.posts) : "",
+                      });
+                    }}
                     onDisconnect={() =>
                       setConfirm({
                         title: "Disconnect account?",
@@ -411,6 +499,13 @@ function NetworkPage() {
         taken={connectedIds}
       />
       <ConfirmDialog state={confirm} onOpenChange={(open) => !open && setConfirm(null)} />
+      <StatsDialog
+        draft={stats}
+        onClose={() => setStats(null)}
+        onChange={setStats}
+        onSubmit={(value) => saveStats.mutate(value)}
+        pending={saveStats.isPending}
+      />
     </div>
   );
 }
@@ -431,6 +526,7 @@ function AccountCard({
   onSync,
   onEdit,
   onToggleAutoSync,
+  onEditStats,
   onDisconnect,
 }: {
   account: SocialAccount;
@@ -439,10 +535,13 @@ function AccountCard({
   onSync: () => void;
   onEdit: () => void;
   onToggleAutoSync: () => void;
+  onEditStats: () => void;
   onDisconnect: () => void;
 }) {
   const meta = socialPlatform(account.platform);
   const extra = extraOf(profile);
+  const manualCapable = MANUAL_PLATFORMS.has(account.platform);
+  const isManual = Boolean(extra["manual"]);
   const activity = [
     ...links(extra, "recentArticles"),
     ...links(extra, "recentPosts"),
@@ -566,15 +665,34 @@ function AccountCard({
           <AlertTriangle className="mt-0.5 size-3 shrink-0" />
           {account.last_error}
         </p>
+      ) : manualCapable ? (
+        <p className="text-[11px] text-muted-foreground">
+          {isManual
+            ? `${meta?.label ?? account.platform} numbers are the ones you entered — tap Stats to update them.`
+            : `${meta?.label ?? account.platform} blocks automated profile reads. Add your numbers with Stats to fill this card.`}
+        </p>
       ) : meta?.limitation ? (
         <p className="text-[11px] text-muted-foreground">{meta.limitation}</p>
       ) : null}
 
       <div className="mt-auto flex items-center gap-2 border-t border-border/60 pt-3">
-        <Button size="sm" variant="outline" className="h-7 text-xs" disabled={syncing} onClick={onSync}>
-          <RefreshCw className={syncing ? "size-3 animate-spin" : "size-3"} />
-          Sync
-        </Button>
+        {manualCapable ? (
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onEditStats}>
+            <PencilLine className="size-3" />
+            Stats
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            disabled={syncing}
+            onClick={onSync}
+          >
+            <RefreshCw className={syncing ? "size-3 animate-spin" : "size-3"} />
+            Sync
+          </Button>
+        )}
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onEdit}>
           Edit
         </Button>
@@ -599,6 +717,120 @@ function AccountCard({
           : "Never synced"}
       </p>
     </article>
+  );
+}
+
+function StatsDialog({
+  draft,
+  onClose,
+  onChange,
+  onSubmit,
+  pending,
+}: {
+  draft: StatsDraft | null;
+  onClose: () => void;
+  onChange: (draft: StatsDraft) => void;
+  onSubmit: (draft: StatsDraft) => void;
+  pending: boolean;
+}) {
+  const meta = draft ? socialPlatform(draft.account.platform) : undefined;
+
+  return (
+    <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{meta?.label ?? "Profile"} stats</DialogTitle>
+        </DialogHeader>
+        {draft ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit(draft);
+            }}
+          >
+            <p className="text-[11px] text-muted-foreground">
+              {meta?.label ?? "This platform"} requires a login for profile data, so automated sync
+              cannot read it. Enter your numbers here and DevOS will keep them on the card.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-name">
+                Display name
+              </Label>
+              <Input
+                id="stats-name"
+                value={draft.display_name}
+                onChange={(e) => onChange({ ...draft, display_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-bio">
+                Headline / bio
+              </Label>
+              <Input
+                id="stats-bio"
+                value={draft.bio}
+                onChange={(e) => onChange({ ...draft, bio: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="stats-avatar">
+                Avatar image URL
+              </Label>
+              <Input
+                id="stats-avatar"
+                placeholder="https://…"
+                value={draft.avatar_url}
+                onChange={(e) => onChange({ ...draft, avatar_url: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-followers">
+                  Followers
+                </Label>
+                <Input
+                  id="stats-followers"
+                  inputMode="numeric"
+                  value={draft.followers}
+                  onChange={(e) => onChange({ ...draft, followers: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-following">
+                  Following
+                </Label>
+                <Input
+                  id="stats-following"
+                  inputMode="numeric"
+                  value={draft.following}
+                  onChange={(e) => onChange({ ...draft, following: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="stats-posts">
+                  Posts
+                </Label>
+                <Input
+                  id="stats-posts"
+                  inputMode="numeric"
+                  value={draft.posts}
+                  onChange={(e) => onChange({ ...draft, posts: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Saving…" : "Save stats"}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }
 

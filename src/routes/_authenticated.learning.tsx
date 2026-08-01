@@ -99,6 +99,8 @@ const TYPE_ICON: Record<string, typeof BookOpen> = {
   blog: BookOpen,
 };
 
+const ALL_SUBJECTS = "__all__";
+
 type ResourceDraft = {
   id?: string;
   title: string;
@@ -114,7 +116,7 @@ function LearningPage() {
   const folders = useQuery(learningFoldersQuery());
   const resources = useQuery(learningResourcesQuery());
 
-  const [activeSubject, setActiveSubject] = useState<string | null>(null);
+  const [activeSubject, setActiveSubject] = useState<string | null>(ALL_SUBJECTS);
   const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "favorite" | "completed" | "in-progress">("all");
@@ -123,6 +125,7 @@ function LearningPage() {
   const [draft, setDraft] = useState<ResourceDraft | null>(null);
 
   const subjectId = activeSubject ?? subjects.data?.[0]?.id ?? null;
+  const isAll = subjectId === ALL_SUBJECTS;
 
   /** Full row from the query cache — needed for the POST-upsert save fallback. */
   const findCachedRow = (key: string, id: string): { id: string } | undefined =>
@@ -263,15 +266,21 @@ function LearningPage() {
   });
 
   const subjectFolders = useMemo(
-    () => (folders.data ?? []).filter((f) => f.subject_id === subjectId),
-    [folders.data, subjectId],
+    () => (isAll ? [] : (folders.data ?? []).filter((f) => f.subject_id === subjectId)),
+    [folders.data, subjectId, isAll],
   );
+
+  const subjectName = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    for (const s of subjects.data ?? []) map.set(s.id, { name: s.name, color: s.color });
+    return map;
+  }, [subjects.data]);
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (resources.data ?? []).filter((r) => {
-      if (r.subject_id !== subjectId) return false;
-      if (activeFolder && r.folder_id !== activeFolder) return false;
+      if (!isAll && r.subject_id !== subjectId) return false;
+      if (!isAll && activeFolder && r.folder_id !== activeFolder) return false;
       if (filter === "favorite" && !r.favorite) return false;
       if (filter === "completed" && !r.completed) return false;
       if (filter === "in-progress" && (r.completed || r.progress_percent === 0)) return false;
@@ -282,7 +291,7 @@ function LearningPage() {
         (r.url ?? "").toLowerCase().includes(term)
       );
     });
-  }, [resources.data, subjectId, activeFolder, filter, search]);
+  }, [resources.data, subjectId, activeFolder, filter, search, isAll]);
 
   const isLoading = subjects.isLoading || folders.isLoading || resources.isLoading;
   const error = subjects.error ?? folders.error ?? resources.error;
@@ -315,6 +324,24 @@ function LearningPage() {
         </div>
 
         <ScrollArea className="flex-1 p-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSubject(ALL_SUBJECTS);
+              setActiveFolder(null);
+            }}
+            className={cn(
+              "mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium transition-colors",
+              isAll ? "bg-accent" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+            )}
+          >
+            <BookOpen className="size-3.5 shrink-0" />
+            <span className="truncate">All resources</span>
+            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+              {resources.data?.length ?? 0}
+            </span>
+          </button>
+
           {(subjects.data?.length ?? 0) === 0 ? (
             <EmptyState title="No subjects" description="Create a subject to start collecting resources." />
           ) : (
@@ -376,7 +403,7 @@ function LearningPage() {
                             onConfirm: async () => {
                               await deleteRow.mutateAsync({ table: "subjects", id: subject.id });
                               setConfirm(null);
-                              if (subjectId === subject.id) setActiveSubject(null);
+                              if (subjectId === subject.id) setActiveSubject(ALL_SUBJECTS);
                             },
                           })
                         }
@@ -519,7 +546,8 @@ function LearningPage() {
           </Select>
           <Button
             size="sm"
-            disabled={!subjectId}
+            disabled={!subjectId || isAll}
+            title={isAll ? "Pick a subject to add a resource" : undefined}
             onClick={() =>
               setDraft({
                 title: "",
@@ -542,7 +570,9 @@ function LearningPage() {
                   icon={<BookOpen className="size-6" />}
                   title={subjectId ? "No resources here" : "No subject selected"}
                   description={
-                    subjectId
+                    isAll
+                      ? "Pick a subject on the left and add your first resource."
+                      : subjectId
                       ? "Add a YouTube video, doc, PDF, course or GitHub repo to this subject."
                       : "Create a subject on the left to start."
                   }
@@ -560,9 +590,31 @@ function LearningPage() {
                       <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate text-sm font-medium">{resource.title}</h3>
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                          {RESOURCE_TYPE_LABEL[resource.type] ?? resource.type}
-                        </p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="shrink-0 text-[11px] uppercase tracking-wider text-muted-foreground">
+                            {RESOURCE_TYPE_LABEL[resource.type] ?? resource.type}
+                          </p>
+                          {isAll && subjectName.get(resource.subject_id) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSubject(resource.subject_id);
+                                setActiveFolder(resource.folder_id);
+                              }}
+                              className="flex min-w-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                            >
+                              <span
+                                className="size-1.5 shrink-0 rounded-full"
+                                style={{
+                                  backgroundColor: subjectName.get(resource.subject_id)!.color,
+                                }}
+                              />
+                              <span className="truncate">
+                                {subjectName.get(resource.subject_id)!.name}
+                              </span>
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                       <button
                         type="button"
