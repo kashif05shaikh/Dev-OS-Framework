@@ -100,10 +100,10 @@ type UpdatableTable = "subjects" | "notes" | "note_folders" | "learning_folders"
  * database is perfectly reachable. When that happens we retry the very same
  * change as a POST upsert (full row + patch), which those tools allow.
  */
-export async function updateRow<T extends { id: string }>(
+export async function updateRow(
   table: UpdatableTable,
-  row: T,
-  patch: Partial<T>,
+  row: { id: string } & Record<string, unknown>,
+  patch: Record<string, unknown>,
 ): Promise<void> {
   await runWithRetry(async () => {
     const attempt = await supabase
