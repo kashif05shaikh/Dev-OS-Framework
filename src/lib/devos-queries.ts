@@ -212,3 +212,41 @@ export async function requireUserId(): Promise<string> {
   if (!data.user) throw new Error("Your session expired. Please sign in again.");
   return data.user.id;
 }
+
+export const projectsQuery = () =>
+  queryOptions({
+    queryKey: ["projects"],
+    queryFn: async (): Promise<Project[]> =>
+      unwrap(
+        await supabase
+          .from("projects")
+          .select("*")
+          .order("pinned", { ascending: false })
+          .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const projectTasksQuery = () =>
+  queryOptions({
+    queryKey: ["project_tasks"],
+    queryFn: async (): Promise<ProjectTask[]> =>
+      unwrap(
+        await supabase
+          .from("project_tasks")
+          .select("*")
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const jobApplicationsQuery = () =>
+  queryOptions({
+    queryKey: ["job_applications"],
+    queryFn: async (): Promise<JobApplication[]> =>
+      unwrap(
+        await supabase
+          .from("job_applications")
+          .select("*")
+          .order("updated_at", { ascending: false }),
+      ),
+  });
