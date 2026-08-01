@@ -8,6 +8,7 @@ import type {
   NoteFolder,
   Subject,
 } from "@/lib/devos-types";
+import type { JobApplication, Project, ProjectTask } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -90,7 +91,15 @@ function looksLikeNetworkFailure(message: string): boolean {
   );
 }
 
-type UpdatableTable = "subjects" | "notes" | "note_folders" | "learning_folders" | "learning_resources";
+type UpdatableTable =
+  | "subjects"
+  | "notes"
+  | "note_folders"
+  | "learning_folders"
+  | "learning_resources"
+  | "projects"
+  | "project_tasks"
+  | "job_applications";
 
 /**
  * Update a row by id.
