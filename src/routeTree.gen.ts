@@ -18,6 +18,7 @@ import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated.goals'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated.learning'
+import { Route as AuthenticatedNetworkRouteImport } from './routes/_authenticated.network'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
 import { Route as AuthenticatedProfilesRouteImport } from './routes/_authenticated.profiles'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
@@ -69,6 +70,11 @@ const AuthenticatedLearningRoute = AuthenticatedLearningRouteImport.update({
   path: '/learning',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedNetworkRoute = AuthenticatedNetworkRouteImport.update({
+  id: '/network',
+  path: '/network',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   id: '/notes',
   path: '/notes',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AuthenticatedGoalsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
+  '/network': typeof AuthenticatedNetworkRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/goals': typeof AuthenticatedGoalsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
+  '/network': typeof AuthenticatedNetworkRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
+  '/_authenticated/network': typeof AuthenticatedNetworkRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/profiles': typeof AuthenticatedProfilesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/jobs'
     | '/learning'
+    | '/network'
     | '/notes'
     | '/profiles'
     | '/projects'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/jobs'
     | '/learning'
+    | '/network'
     | '/notes'
     | '/profiles'
     | '/projects'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/_authenticated/goals'
     | '/_authenticated/jobs'
     | '/_authenticated/learning'
+    | '/_authenticated/network'
     | '/_authenticated/notes'
     | '/_authenticated/profiles'
     | '/_authenticated/projects'
@@ -272,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLearningRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/network': {
+      id: '/_authenticated/network'
+      path: '/network'
+      fullPath: '/network'
+      preLoaderRoute: typeof AuthenticatedNetworkRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/notes': {
       id: '/_authenticated/notes'
       path: '/notes'
@@ -324,6 +343,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
+  AuthenticatedNetworkRoute: typeof AuthenticatedNetworkRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedProfilesRoute: typeof AuthenticatedProfilesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -340,6 +360,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
+  AuthenticatedNetworkRoute: AuthenticatedNetworkRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedProfilesRoute: AuthenticatedProfilesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
