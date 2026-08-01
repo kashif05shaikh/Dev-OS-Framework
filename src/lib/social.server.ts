@@ -213,6 +213,11 @@ async function fetchTwitter(handle: string): Promise<SocialSnapshot> {
 /* ------------------------------ Instagram ----------------------------- */
 
 async function fetchInstagram(handle: string): Promise<SocialSnapshot> {
+  const user = handle.replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/$/, "");
+  if (!user || /[^A-Za-z0-9._]/.test(user)) {
+    fail("Enter a valid Instagram username, for example natgeo.");
+  }
+
   type Payload = {
     data?: {
       user?: {
@@ -230,24 +235,96 @@ async function fetchInstagram(handle: string): Promise<SocialSnapshot> {
       };
     };
   };
-  const payload = await getJson<Payload>(
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`,
-    { headers: { "x-ig-app-id": "936619743392459" } },
+  // Instagram frequently rate-limits datacenter IPs, so retry briefly before
+  // falling back to the public profile page metadata.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(
+        `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(user)}`,
+        {
+          headers: {
+            ...UA,
+            "x-ig-app-id": "936619743392459",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36",
+          },
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
+      if (response.status === 404) fail("That Instagram account does not exist.");
+      if (response.ok) {
+        const profile = ((await response.json()) as Payload).data?.user;
+        if (profile) {
+          return {
+            ...empty("instagram", profile.username, `https://instagram.com/${profile.username}`),
+            display_name: clean(profile.full_name),
+            avatar_url: clean(profile.profile_pic_url_hd ?? profile.profile_pic_url),
+            bio: clean(profile.biography),
+            website: clean(profile.external_url),
+            verified: profile.is_verified,
+            followers: profile.edge_followed_by?.count ?? null,
+            following: profile.edge_follow?.count ?? null,
+            posts: profile.edge_owner_to_timeline_media?.count ?? null,
+            extra: { private: profile.is_private, postsLabel: "Posts" },
+          };
+        }
+      }
+    } catch (error) {
+      if (error instanceof PlatformError) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+  }
+
+  return fetchInstagramFromPage(user);
+}
+
+function parseCount(value: string | undefined): number | null {
+  if (!value) return null;
+  const match = value.replace(/,/g, "").match(/^([\d.]+)\s*([KMB])?$/i);
+  if (!match) return null;
+  const base = Number(match[1]);
+  if (Number.isNaN(base)) return null;
+  const mult = { k: 1e3, m: 1e6, b: 1e9 }[(match[2] ?? "").toLowerCase()] ?? 1;
+  return Math.round(base * mult);
+}
+
+async function fetchInstagramFromPage(user: string): Promise<SocialSnapshot> {
+  const html = await getText(`https://www.instagram.com/${encodeURIComponent(user)}/`, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent":
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    },
+  });
+  const meta = (property: string) => {
+    const match = html.match(
+      new RegExp(`<meta property="${property}" content="([^"]*)"`, "i"),
+    );
+    return match ? decode(match[1]!) : null;
+  };
+  const description = meta("og:description");
+  if (!description) {
+    fail("Instagram is rate-limiting DevOS right now. Wait a minute and sync again.");
+  }
+  const stats = description.match(
+    /([\d.,]+[KMB]?)\s+Followers,\s+([\d.,]+[KMB]?)\s+Following,\s+([\d.,]+[KMB]?)\s+Posts/i,
   );
-  const user = payload.data?.user;
-  if (!user) fail("Instagram did not return this profile. It may be private or rate-limited.");
+  const title = meta("og:title") ?? "";
+  const name = title.split("(")[0]?.trim() || null;
+  const bio = description.includes(" - ") ? description.split(" - ").slice(1).join(" - ") : null;
 
   return {
-    ...empty("instagram", user.username, `https://instagram.com/${user.username}`),
-    display_name: clean(user.full_name),
-    avatar_url: clean(user.profile_pic_url_hd ?? user.profile_pic_url),
-    bio: clean(user.biography),
-    website: clean(user.external_url),
-    verified: user.is_verified,
-    followers: user.edge_followed_by?.count ?? null,
-    following: user.edge_follow?.count ?? null,
-    posts: user.edge_owner_to_timeline_media?.count ?? null,
-    extra: { private: user.is_private, postsLabel: "Posts" },
+    ...empty("instagram", user, `https://instagram.com/${user}`),
+    display_name: name,
+    avatar_url: meta("og:image"),
+    bio: bio && !bio.startsWith("See Instagram photos") ? bio : null,
+    followers: parseCount(stats?.[1]),
+    following: parseCount(stats?.[2]),
+    posts: parseCount(stats?.[3]),
+    extra: {
+      postsLabel: "Posts",
+      note: "Read from Instagram's public profile page — the private API was rate-limited.",
+    },
   };
 }
 
@@ -517,8 +594,17 @@ async function fetchMedium(handle: string): Promise<SocialSnapshot> {
 /* ------------------------------- LinkedIn ----------------------------- */
 
 async function fetchLinkedin(handle: string): Promise<SocialSnapshot> {
-  const vanity = handle.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "").replace(/\/$/, "");
+  const vanity = handle
+    .trim()
+    .replace(/^https?:\/\/(www\.|[a-z]{2}\.)?linkedin\.com\/in\//i, "")
+    .replace(/\?.*$/, "")
+    .replace(/\/+$/, "");
   if (!vanity) fail("Enter your LinkedIn vanity name, for example williamhgates.");
+  if (/\s/.test(vanity) || !/^[A-Za-z0-9\-_%À-ÿ]+$/.test(vanity)) {
+    fail(
+      "That is not a LinkedIn username. Copy the last part of your profile URL (linkedin.com/in/…), for example kashif-shaikh-05.",
+    );
+  }
   return {
     ...empty("linkedin", vanity, `https://www.linkedin.com/in/${vanity}`),
     extra: {
