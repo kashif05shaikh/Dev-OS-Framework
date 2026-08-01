@@ -17,6 +17,7 @@ import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
 import { Route as AuthenticatedProfilesRouteImport } from './routes/_authenticated.profiles'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
+import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
 import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated.resume'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -58,6 +59,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
   id: '/resume',
   path: '/resume',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/resume': typeof AuthenticatedResumeRoute
 }
 export interface FileRoutesByTo {
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/resume': typeof AuthenticatedResumeRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/profiles': typeof AuthenticatedProfilesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/resume': typeof AuthenticatedResumeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/profiles'
     | '/projects'
+    | '/prompts'
     | '/resume'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/profiles'
     | '/projects'
+    | '/prompts'
     | '/resume'
     | '/'
   id:
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notes'
     | '/_authenticated/profiles'
     | '/_authenticated/projects'
+    | '/_authenticated/prompts'
     | '/_authenticated/resume'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -193,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/prompts': {
+      id: '/_authenticated/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/resume': {
       id: '/_authenticated/resume'
       path: '/resume'
@@ -209,6 +228,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedProfilesRoute: typeof AuthenticatedProfilesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedResumeRoute: typeof AuthenticatedResumeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -219,6 +239,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedProfilesRoute: AuthenticatedProfilesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedResumeRoute: AuthenticatedResumeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

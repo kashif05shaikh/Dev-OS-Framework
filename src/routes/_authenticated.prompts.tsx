@@ -320,7 +320,6 @@ function PromptsPage() {
                           title: "Delete prompt?",
                           description: `"${p.title}" will be permanently removed.`,
                           confirmLabel: "Delete",
-                          destructive: true,
                           onConfirm: () => deletePrompt.mutate(p.id),
                         })
                       }
