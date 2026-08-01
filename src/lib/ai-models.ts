@@ -11,24 +11,22 @@ export type AiModelTarget = {
   prefills: boolean;
 };
 
-const enc = (p: string) => encodeURIComponent(p.slice(0, 1800));
-
 export const AI_MODEL_TARGETS: AiModelTarget[] = [
   {
     id: "chatgpt",
     label: "ChatGPT",
     icon: "openai",
     color: "#10a37f",
-    url: (p) => `https://chatgpt.com/?q=${enc(p)}`,
-    prefills: true,
+    url: () => "https://chatgpt.com/",
+    prefills: false,
   },
   {
     id: "claude",
     label: "Claude",
     icon: "anthropic",
     color: "#d97757",
-    url: (p) => `https://claude.ai/new?q=${enc(p)}`,
-    prefills: true,
+    url: () => "https://claude.ai/new",
+    prefills: false,
   },
   {
     id: "gemini",
@@ -43,16 +41,16 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     label: "Perplexity",
     icon: "perplexity",
     color: "#20b8cd",
-    url: (p) => `https://www.perplexity.ai/search?q=${enc(p)}`,
-    prefills: true,
+    url: () => "https://www.perplexity.ai/",
+    prefills: false,
   },
   {
     id: "grok",
     label: "Grok",
     icon: "x",
     color: "#e5e7eb",
-    url: (p) => `https://grok.com/?q=${enc(p)}`,
-    prefills: true,
+    url: () => "https://grok.com/",
+    prefills: false,
   },
   {
     id: "deepseek",
@@ -67,8 +65,8 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     label: "Copilot",
     icon: "githubcopilot",
     color: "#a78bfa",
-    url: (p) => `https://copilot.microsoft.com/?q=${enc(p)}`,
-    prefills: true,
+    url: () => "https://copilot.microsoft.com/",
+    prefills: false,
   },
   {
     id: "mistral",
