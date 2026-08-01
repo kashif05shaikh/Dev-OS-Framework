@@ -429,6 +429,18 @@ function NetworkPage() {
                       })
                     }
                     onToggleAutoSync={() => toggleAutoSync.mutate(account)}
+                    onEditStats={() => {
+                      const profile = byPlatform.get(account.platform);
+                      setStats({
+                        account,
+                        display_name: profile?.display_name ?? "",
+                        bio: profile?.bio ?? "",
+                        avatar_url: profile?.avatar_url ?? "",
+                        followers: profile?.followers != null ? String(profile.followers) : "",
+                        following: profile?.following != null ? String(profile.following) : "",
+                        posts: profile?.posts != null ? String(profile.posts) : "",
+                      });
+                    }}
                     onDisconnect={() =>
                       setConfirm({
                         title: "Disconnect account?",
@@ -486,6 +498,13 @@ function NetworkPage() {
         taken={connectedIds}
       />
       <ConfirmDialog state={confirm} onOpenChange={(open) => !open && setConfirm(null)} />
+      <StatsDialog
+        draft={stats}
+        onClose={() => setStats(null)}
+        onChange={setStats}
+        onSubmit={(value) => saveStats.mutate(value)}
+        pending={saveStats.isPending}
+      />
     </div>
   );
 }
