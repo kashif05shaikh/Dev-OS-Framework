@@ -42,7 +42,7 @@ const EDITORS: Editor[] = [
     desc: "Launch the desktop app",
     launch: "vscode://",
     fallback: "https://vscode.dev/",
-    logo: "https://cdn.simpleicons.org/visualstudiocode/007ACC",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg",
   },
   {
     name: "Cursor",
