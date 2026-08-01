@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { LoadingState } from "@/components/states";
@@ -13,12 +13,14 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Capture the first protected path so the redirect target doesn't drift to /auth.
+  const intended = useRef(pathname);
 
   useEffect(() => {
     if (!loading && !user) {
-      void navigate({ to: "/auth", search: { redirect: pathname }, replace: true });
+      void navigate({ to: "/auth", search: { redirect: intended.current }, replace: true });
     }
-  }, [loading, user, navigate, pathname]);
+  }, [loading, user, navigate]);
 
   if (loading || !user) {
     return (
