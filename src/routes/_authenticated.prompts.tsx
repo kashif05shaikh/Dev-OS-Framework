@@ -345,15 +345,6 @@ function PromptsPage() {
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
                   </div>
-                  <div className="mt-3 border-t border-border pt-3">
-                    <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/70">
-                      Send to model
-                    </p>
-                    <AiModelLauncher
-                      getHref={(model) => model.url(p.body)}
-                      onLaunch={(model) => launchInModel(p, model)}
-                    />
-                  </div>
                 </article>
               ))}
             </div>
