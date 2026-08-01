@@ -17,7 +17,7 @@ import type {
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
-import type { FocusSession } from "@/lib/devos-types";
+import type { FocusSession, Profile } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -200,19 +200,6 @@ export const profileQuery = () =>
       assertOk(created.error);
       return (created.data as Profile | null) ?? null;
     },
-  });
-
-const _subjectsQueryLegacy = () =>
-  queryOptions({
-    queryKey: ["subjects"],
-    queryFn: async (): Promise<Subject[]> =>
-      unwrap(
-        await supabase
-          .from("subjects")
-          .select("*")
-          .order("position", { ascending: true })
-          .order("created_at", { ascending: true }),
-      ),
   });
 
 export const noteFoldersQuery = () =>
