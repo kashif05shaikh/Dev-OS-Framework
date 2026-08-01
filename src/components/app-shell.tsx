@@ -41,11 +41,11 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Resume", to: "/resume", icon: FileText },
   { label: "AI Prompts", to: "/prompts", icon: Sparkles },
   { label: "Calendar", to: "/calendar", icon: CalendarDays },
+  { label: "Goals", to: "/goals", icon: Target },
+  { label: "Habits", to: "/habits", icon: Repeat },
 ];
 
 const UPCOMING_NAV: NavItem[] = [
-  { label: "Goals", icon: Target },
-  { label: "Habits", icon: Repeat },
   { label: "Focus Timer", icon: Timer },
   { label: "Analytics", icon: BarChart3 },
   { label: "Network", icon: Users },
