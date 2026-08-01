@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  Rocket,
   Settings,
   Sparkles,
   Target,
