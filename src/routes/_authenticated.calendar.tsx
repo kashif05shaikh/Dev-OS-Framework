@@ -279,6 +279,55 @@ function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.data]);
 
+  const [remindersOn, setRemindersOn] = useState(false);
+  const firedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    setRemindersOn(Notification.permission === "granted");
+  }, []);
+
+  // Schedule browser reminders 10 minutes before each of today's timed events.
+  useEffect(() => {
+    if (!remindersOn || typeof window === "undefined" || !("Notification" in window)) return;
+    const iso = toIso(new Date());
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const e of events.data ?? []) {
+      if (e.completed || e.event_date !== iso || !e.start_time) continue;
+      const when = new Date(`${e.event_date}T${e.start_time}`).getTime() - 10 * 60 * 1000;
+      const delay = when - Date.now();
+      if (delay <= 0 || delay > 12 * 60 * 60 * 1000 || firedRef.current.has(e.id)) continue;
+      timers.push(
+        setTimeout(() => {
+          firedRef.current.add(e.id);
+          new Notification(e.title, {
+            body: `${EVENT_KIND_LABEL[e.kind] ?? e.kind} starts at ${formatTime(e.start_time)}`,
+          });
+        }, delay),
+      );
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [events.data, remindersOn]);
+
+  const enableReminders = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("This browser doesn't support notifications.");
+      return;
+    }
+    if (remindersOn) {
+      setRemindersOn(false);
+      toast.success("Reminders paused");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      toast.error("Allow notifications to get reminders.");
+      return;
+    }
+    setRemindersOn(true);
+    toast.success("Reminders on — you'll be pinged 10 minutes before each event");
+  };
+
   if (events.isLoading) return <LoadingState label="Loading your calendar…" />;
   if (events.error) return <ErrorState error={events.error} onRetry={() => void events.refetch()} />;
 
