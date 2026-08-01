@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      job_applications: {
+        Row: {
+          applied_on: string | null
+          company: string
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          follow_up_on: string | null
+          id: string
+          job_url: string | null
+          location: string | null
+          notes: string | null
+          position: number
+          role_title: string
+          salary_range: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          work_mode: string
+        }
+        Insert: {
+          applied_on?: string | null
+          company: string
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          follow_up_on?: string | null
+          id?: string
+          job_url?: string | null
+          location?: string | null
+          notes?: string | null
+          position?: number
+          role_title: string
+          salary_range?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          work_mode?: string
+        }
+        Update: {
+          applied_on?: string | null
+          company?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          follow_up_on?: string | null
+          id?: string
+          job_url?: string | null
+          location?: string | null
+          notes?: string | null
+          position?: number
+          role_title?: string
+          salary_range?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          work_mode?: string
+        }
+        Relationships: []
+      }
       learning_folders: {
         Row: {
           created_at: string
@@ -237,6 +297,98 @@ export type Database = {
           id?: string
           theme?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      project_tasks: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          position: number
+          project_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          position?: number
+          project_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          position?: number
+          project_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          live_url: string | null
+          name: string
+          notes: string | null
+          pinned: boolean
+          position: number
+          progress_percent: number
+          repo_url: string | null
+          status: string
+          tech_stack: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          live_url?: string | null
+          name: string
+          notes?: string | null
+          pinned?: boolean
+          position?: number
+          progress_percent?: number
+          repo_url?: string | null
+          status?: string
+          tech_stack?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          live_url?: string | null
+          name?: string
+          notes?: string | null
+          pinned?: boolean
+          position?: number
+          progress_percent?: number
+          repo_url?: string | null
+          status?: string
+          tech_stack?: string[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

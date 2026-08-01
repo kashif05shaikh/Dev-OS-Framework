@@ -8,6 +8,7 @@ import type {
   NoteFolder,
   Subject,
 } from "@/lib/devos-types";
+import type { JobApplication, Project, ProjectTask } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -90,7 +91,15 @@ function looksLikeNetworkFailure(message: string): boolean {
   );
 }
 
-type UpdatableTable = "subjects" | "notes" | "note_folders" | "learning_folders" | "learning_resources";
+type UpdatableTable =
+  | "subjects"
+  | "notes"
+  | "note_folders"
+  | "learning_folders"
+  | "learning_resources"
+  | "projects"
+  | "project_tasks"
+  | "job_applications";
 
 /**
  * Update a row by id.
@@ -203,3 +212,41 @@ export async function requireUserId(): Promise<string> {
   if (!data.user) throw new Error("Your session expired. Please sign in again.");
   return data.user.id;
 }
+
+export const projectsQuery = () =>
+  queryOptions({
+    queryKey: ["projects"],
+    queryFn: async (): Promise<Project[]> =>
+      unwrap(
+        await supabase
+          .from("projects")
+          .select("*")
+          .order("pinned", { ascending: false })
+          .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const projectTasksQuery = () =>
+  queryOptions({
+    queryKey: ["project_tasks"],
+    queryFn: async (): Promise<ProjectTask[]> =>
+      unwrap(
+        await supabase
+          .from("project_tasks")
+          .select("*")
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const jobApplicationsQuery = () =>
+  queryOptions({
+    queryKey: ["job_applications"],
+    queryFn: async (): Promise<JobApplication[]> =>
+      unwrap(
+        await supabase
+          .from("job_applications")
+          .select("*")
+          .order("updated_at", { ascending: false }),
+      ),
+  });

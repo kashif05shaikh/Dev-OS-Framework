@@ -35,12 +35,12 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
   { label: "Notes", to: "/notes", icon: FileText },
   { label: "Learning Hub", to: "/learning", icon: GraduationCap },
+  { label: "Projects", to: "/projects", icon: FolderKanban },
+  { label: "Job Tracker", to: "/jobs", icon: Briefcase },
 ];
 
 const UPCOMING_NAV: NavItem[] = [
   { label: "Coding Profiles", icon: Braces },
-  { label: "Projects", icon: FolderKanban },
-  { label: "Job Tracker", icon: Briefcase },
   { label: "Resume", icon: FileText },
   { label: "AI Prompts", icon: Sparkles },
   { label: "Calendar", icon: CalendarDays },
