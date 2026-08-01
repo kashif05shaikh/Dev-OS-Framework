@@ -33,8 +33,7 @@ type Editor = {
   desc: string;
   launch: string;
   fallback?: string;
-  slug?: string;
-  color?: string;
+  logo: string;
 };
 
 const EDITORS: Editor[] = [
@@ -43,25 +42,27 @@ const EDITORS: Editor[] = [
     desc: "Launch the desktop app",
     launch: "vscode://",
     fallback: "https://vscode.dev/",
-    slug: "visualstudiocode",
-    color: "007ACC",
+    logo: "https://cdn.simpleicons.org/visualstudiocode/007ACC",
   },
   {
     name: "Cursor",
     desc: "Open the Cursor editor",
     launch: "cursor://",
     fallback: "https://cursor.com/",
+    logo: "https://www.google.com/s2/favicons?domain=cursor.com&sz=64",
   },
   {
     name: "Antigravity",
     desc: "Google Antigravity IDE",
     launch: "antigravity://",
     fallback: "https://antigravity.google/",
+    logo: "https://www.google.com/s2/favicons?domain=antigravity.google&sz=64",
   },
   {
     name: "Codex",
     desc: "OpenAI Codex workspace",
     launch: "https://chatgpt.com/codex",
+    logo: "https://cdn.simpleicons.org/openai/ffffff",
   },
 ];
 
@@ -156,16 +157,7 @@ export function DevServices() {
               className="flex flex-col gap-2 rounded-xl border border-border bg-card/50 p-3"
             >
               <div className="flex items-center gap-2">
-                {editor.slug ? (
-                  <img
-                    src={iconUrl(editor.slug, editor.color ?? "ffffff")}
-                    alt=""
-                    loading="lazy"
-                    className="size-5"
-                  />
-                ) : (
-                  <MonitorPlay className="size-5 text-muted-foreground" />
-                )}
+                <img src={editor.logo} alt="" loading="lazy" className="size-5 shrink-0" />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium">{editor.name}</p>
                   <p className="truncate text-[11px] text-muted-foreground">{editor.desc}</p>
