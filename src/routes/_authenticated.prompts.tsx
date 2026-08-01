@@ -195,7 +195,7 @@ function PromptsPage() {
     } catch {
       copied = false;
     }
-    window.open(model.url(prompt.body), "_blank", "noopener,noreferrer");
+    openExternal(model.url(prompt.body));
     patchPrompt.mutate({
       id: prompt.id,
       patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
