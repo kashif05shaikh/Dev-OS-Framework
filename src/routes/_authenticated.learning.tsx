@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   CheckCircle2,
@@ -52,9 +52,12 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  assertOk,
+  describeError,
   learningFoldersQuery,
   learningResourcesQuery,
   requireUserId,
+  runWithRetry,
   subjectsQuery,
 } from "@/lib/devos-queries";
 import {
@@ -91,6 +94,8 @@ const TYPE_ICON: Record<string, typeof BookOpen> = {
   course: GraduationCap,
   github: Github,
   article: BookOpen,
+  website: ExternalLink,
+  blog: BookOpen,
 };
 
 type ResourceDraft = {
@@ -134,15 +139,15 @@ function LearningPage() {
         .insert({ user_id, name, position, color })
         .select()
         .single();
-      if (error) throw new Error(error.message);
-      return data;
+      assertOk(error);
+      return data!;
     },
     onSuccess: (data) => {
       invalidate();
       setActiveSubject(data.id);
       toast.success("Subject created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const createFolder = useMutation({
@@ -153,13 +158,13 @@ function LearningPage() {
       const { error } = await supabase
         .from("learning_folders")
         .insert({ user_id, subject_id: subjectId, name, position });
-      if (error) throw new Error(error.message);
+      assertOk(error);
     },
     onSuccess: () => {
       invalidate();
       toast.success("Folder created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const renameRow = useMutation({
@@ -173,13 +178,13 @@ function LearningPage() {
       name: string;
     }) => {
       const { error } = await supabase.from(table).update({ name }).eq("id", id);
-      if (error) throw new Error(error.message);
+      assertOk(error);
     },
     onSuccess: () => {
       invalidate();
       toast.success("Renamed");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const deleteRow = useMutation({
@@ -191,18 +196,19 @@ function LearningPage() {
       id: string;
     }) => {
       const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) throw new Error(error.message);
+      assertOk(error);
     },
     onSuccess: () => {
       invalidate();
       toast.success("Deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const saveResource = useMutation({
     mutationFn: async (value: ResourceDraft) => {
       if (!subjectId) throw new Error("Create a subject first.");
+      if (!value.title.trim()) throw new Error("Give the resource a title.");
       const payload = {
         title: value.title.trim(),
         type: value.type,
@@ -211,33 +217,51 @@ function LearningPage() {
         folder_id: value.folder_id,
         subject_id: subjectId,
       };
-      if (value.id) {
-        const { error } = await supabase
-          .from("learning_resources")
-          .update(payload)
-          .eq("id", value.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const user_id = await requireUserId();
-        const { error } = await supabase.from("learning_resources").insert({ ...payload, user_id });
-        if (error) throw new Error(error.message);
-      }
+      await runWithRetry(async () => {
+        if (value.id) {
+          const { error } = await supabase
+            .from("learning_resources")
+            .update(payload)
+            .eq("id", value.id);
+          assertOk(error);
+        } else {
+          const user_id = await requireUserId();
+          const { error } = await supabase
+            .from("learning_resources")
+            .insert({ ...payload, user_id });
+          assertOk(error);
+        }
+      });
     },
     onSuccess: (_d, value) => {
       invalidate();
       setDraft(null);
       toast.success(value.id ? "Resource updated" : "Resource added");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const patchResource = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<LearningResource> }) => {
-      const { error } = await supabase.from("learning_resources").update(patch).eq("id", id);
-      if (error) throw new Error(error.message);
+      await runWithRetry(async () => {
+        const { error } = await supabase.from("learning_resources").update(patch).eq("id", id);
+        assertOk(error);
+      });
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["learning_resources"] }),
-    onError: (e: Error) => toast.error(e.message),
+    // Optimistic so favourites / progress react instantly, rolled back on failure.
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: ["learning_resources"] });
+      const previous = qc.getQueryData<LearningResource[]>(["learning_resources"]);
+      qc.setQueryData<LearningResource[]>(["learning_resources"], (old) =>
+        (old ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r)),
+      );
+      return { previous };
+    },
+    onError: (e: unknown, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["learning_resources"], ctx.previous);
+      toast.error(describeError(e));
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["learning_resources"] }),
   });
 
   const subjectFolders = useMemo(
@@ -699,13 +723,11 @@ function ResourceDialog({
 }) {
   const [value, setValue] = useState<ResourceDraft | null>(draft);
 
-  // Sync local form whenever a different draft is opened.
-  if (draft !== null && value?.id !== draft.id) {
+  // Sync the local form every time the dialog opens with a new draft
+  // (new resources have no id, so identity comparison alone is not enough).
+  useEffect(() => {
     setValue(draft);
-  }
-  if (draft === null && value !== null) {
-    setValue(null);
-  }
+  }, [draft]);
 
   return (
     <Dialog open={draft !== null} onOpenChange={(open) => !open && onClose()}>
@@ -797,7 +819,7 @@ function ResourceDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={saving || !value?.title.trim()}>
-              {draft?.id ? "Save changes" : "Add resource"}
+              {saving ? "Saving…" : draft?.id ? "Save changes" : "Add resource"}
             </Button>
           </DialogFooter>
         </form>

@@ -10,8 +10,74 @@ import type {
 } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
-  if (result.error) throw new Error(result.error.message);
+  if (result.error) throw new Error(describeError(result.error));
   return (result.data ?? []) as T;
+}
+
+/** Turn low-level fetch/PostgREST failures into messages a human can act on. */
+export function describeError(error: unknown): string {
+  const raw =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : ((error as { message?: string } | null)?.message ?? "");
+
+  const lower = raw.toLowerCase();
+
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "You appear to be offline. Reconnect and try again — your changes are kept until the save succeeds.";
+  }
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("load failed") ||
+    lower.includes("network request failed")
+  ) {
+    return "Cannot reach the database. This is usually a network issue or a browser extension / ad-blocker blocking the request — disable it for this site and try again.";
+  }
+  if (lower.includes("jwt") || lower.includes("401") || lower.includes("not authenticated")) {
+    return "Your session expired. Please sign in again.";
+  }
+  if (lower.includes("row-level security") || lower.includes("permission denied")) {
+    return "You don't have permission to change this item.";
+  }
+  if (lower.includes("timeout") || lower.includes("aborted")) {
+    return "The request timed out. Please try again.";
+  }
+  return raw || "Something went wrong. Please try again.";
+}
+
+function isRetryable(error: unknown): boolean {
+  const msg = (error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
+  return (
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed") ||
+    msg.includes("cannot reach the database") ||
+    msg.includes("timed out") ||
+    msg.includes("timeout")
+  );
+}
+
+/** Retry transient network failures with backoff, then surface a friendly error. */
+export async function runWithRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isRetryable(error) || attempt === attempts - 1) break;
+      await new Promise((resolve) => setTimeout(resolve, 400 * 2 ** attempt));
+    }
+  }
+  throw new Error(describeError(lastError));
+}
+
+/** Throws a friendly Error when a Supabase call returned one. */
+export function assertOk(error: { message: string } | null): void {
+  if (error) throw new Error(describeError(error));
 }
 
 export const subjectsQuery = () =>
@@ -80,6 +146,7 @@ export const learningResourcesQuery = () =>
 
 export async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new Error("You are signed out. Sign in again to continue.");
+  if (error) throw new Error(describeError(error));
+  if (!data.user) throw new Error("Your session expired. Please sign in again.");
   return data.user.id;
 }
