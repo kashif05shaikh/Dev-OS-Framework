@@ -345,7 +345,7 @@ function LearningPage() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        variant="destructive"
+                        className="text-destructive focus:text-destructive"
                         onSelect={() =>
                           setConfirm({
                             title: `Delete "${subject.name}"?`,
@@ -425,7 +425,7 @@ function LearningPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              variant="destructive"
+                              className="text-destructive focus:text-destructive"
                               onSelect={() =>
                                 setConfirm({
                                   title: `Delete "${folder.name}"?`,
@@ -601,7 +601,7 @@ function LearningPage() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            variant="destructive"
+                            className="text-destructive focus:text-destructive"
                             onSelect={() =>
                               setConfirm({
                                 title: `Delete "${resource.title}"?`,

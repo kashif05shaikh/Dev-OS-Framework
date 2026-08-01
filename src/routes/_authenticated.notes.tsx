@@ -389,7 +389,7 @@ function NotesPage() {
                             <Pencil className="size-4" /> Rename
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            variant="destructive"
+                            className="text-destructive focus:text-destructive"
                             onSelect={() =>
                               setConfirm({
                                 title: `Delete "${subject.name}"?`,
@@ -470,7 +470,7 @@ function NotesPage() {
                                       <Pencil className="size-4" /> Rename
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      variant="destructive"
+                                      className="text-destructive focus:text-destructive"
                                       onSelect={() =>
                                         setConfirm({
                                           title: `Delete "${folder.name}"?`,
@@ -614,7 +614,7 @@ function Row({
   onSelect?: () => void;
   active: boolean;
   menu?: React.ReactNode;
-  badge?: number;
+  badge?: number | undefined;
   bold?: boolean;
   trailing?: React.ReactNode;
 }) {
