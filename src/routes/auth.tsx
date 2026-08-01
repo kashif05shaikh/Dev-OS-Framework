@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
 
 const searchSchema = z.object({
@@ -37,6 +38,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [sentConfirmation, setSentConfirmation] = useState(false);
 
   const redirectTo = search.redirect && search.redirect.startsWith("/") ? search.redirect : "/";
@@ -57,6 +59,21 @@ function AuthPage() {
       return;
     }
     toast.success("Welcome back");
+  }
+
+  async function handleGoogle() {
+    setGoogleBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setGoogleBusy(false);
+      toast.error(result.error.message ?? "Google sign-in failed");
+      return;
+    }
+    if (result.redirected) return;
+    toast.success("Welcome back");
+    setGoogleBusy(false);
   }
 
   async function handleSignUp(event: React.FormEvent) {
