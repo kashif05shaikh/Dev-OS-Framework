@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import {
   CalendarClock,
   Check,
+  ArrowDown,
+  ArrowUp,
   Pencil,
   Pin,
   Plus,
@@ -60,6 +62,8 @@ import {
   GOAL_PRIORITY_LABEL,
   GOAL_STATUSES,
   GOAL_STATUS_LABEL,
+  GOAL_TIMEFRAMES,
+  GOAL_TIMEFRAME_LABEL,
   type Goal,
   type GoalMilestone,
 } from "@/lib/devos-types";
@@ -104,6 +108,8 @@ type GoalDraft = {
   title: string;
   description: string;
   category: string;
+  customCategory: string;
+  timeframe: string;
   status: string;
   priority: string;
   target_value: string;
@@ -112,11 +118,15 @@ type GoalDraft = {
   due_date: string;
 };
 
+const CUSTOM = "__custom__";
+
 function emptyDraft(): GoalDraft {
   return {
     title: "",
     description: "",
-    category: "career",
+    category: "academic",
+    customCategory: "",
+    timeframe: "monthly",
     status: "active",
     priority: "medium",
     target_value: "100",
@@ -127,11 +137,14 @@ function emptyDraft(): GoalDraft {
 }
 
 function toDraft(goal: Goal): GoalDraft {
+  const known = (GOAL_CATEGORIES as readonly string[]).includes(goal.category);
   return {
     id: goal.id,
     title: goal.title,
     description: goal.description ?? "",
-    category: goal.category,
+    category: known ? goal.category : CUSTOM,
+    customCategory: known ? "" : goal.category,
+    timeframe: (goal as Goal & { timeframe?: string }).timeframe ?? "monthly",
     status: goal.status,
     priority: goal.priority,
     target_value: String(goal.target_value ?? 100),
