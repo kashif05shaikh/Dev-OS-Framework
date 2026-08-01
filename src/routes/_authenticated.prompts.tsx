@@ -108,6 +108,7 @@ function PromptsPage() {
   const qc = useQueryClient();
   const prompts = useQuery(aiPromptsQuery());
   const craft = useServerFn(craftPrompt);
+  const { recordUse } = useAiWorkspace();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
