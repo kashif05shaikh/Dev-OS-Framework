@@ -11,11 +11,13 @@ import {
   Link2,
   Palette,
   Regex,
+  Rocket,
   Type,
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { DevServices } from "@/components/dev-services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/tools")({
 });
 
 const TOOLS = [
+  { id: "services", label: "Quick launch", icon: Rocket },
   { id: "json", label: "JSON formatter", icon: Braces },
   { id: "base64", label: "Base64", icon: Fingerprint },
   { id: "url", label: "URL encoder", icon: Link2 },
@@ -708,7 +711,7 @@ function CaseTool() {
 }
 
 function ToolsPage() {
-  const [active, setActive] = useState<ToolId>("json");
+  const [active, setActive] = useState<ToolId>("services");
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -716,7 +719,7 @@ function ToolsPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Dev Tools</h1>
           <p className="text-xs text-muted-foreground">
-            {TOOLS.length} offline utilities — nothing you paste ever leaves your browser
+            {TOOLS.length - 1} offline utilities + quick launch — nothing you paste ever leaves your browser
           </p>
         </div>
       </header>
@@ -761,6 +764,7 @@ function ToolsPage() {
               ))}
             </div>
 
+            {active === "services" ? <DevServices /> : null}
             {active === "json" ? <JsonTool /> : null}
             {active === "base64" ? <Base64Tool /> : null}
             {active === "url" ? <UrlTool /> : null}
