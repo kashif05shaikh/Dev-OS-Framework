@@ -58,7 +58,34 @@ export const PROFILE_URL_TEMPLATE: Record<string, (u: string) => string> = {
 };
 
 /** Platforms whose stats DevOS can fetch automatically from the public APIs. */
-export const SYNCABLE_PLATFORMS = ["leetcode", "codeforces", "codechef", "github"] as const;
+export const SYNCABLE_PLATFORMS = [
+  "leetcode",
+  "codeforces",
+  "codechef",
+  "github",
+  "hackerrank",
+  "gfg",
+  "atcoder",
+] as const;
+
+/** simple-icons slugs used to render each platform's real logo. */
+export const CODING_PLATFORM_ICON: Record<string, string> = {
+  leetcode: "leetcode",
+  codeforces: "codeforces",
+  codechef: "codechef",
+  hackerrank: "hackerrank",
+  github: "github",
+  gfg: "geeksforgeeks",
+};
+
+/** GitHub tracks repositories, everyone else tracks solved problems. */
+export const SOLVED_LABEL: Record<string, string> = {
+  github: "Repos",
+};
+
+export const SOLVED_FIELD_LABEL: Record<string, string> = {
+  github: "Public repositories",
+};
 
 export const RESUME_SECTION_KINDS = [
   "experience",
