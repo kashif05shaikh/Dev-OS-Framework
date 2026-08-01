@@ -15,6 +15,7 @@ import type {
   ResumeEntry,
   ResumeSection,
 } from "@/lib/devos-types";
+import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -109,7 +110,9 @@ type UpdatableTable =
   | "coding_profiles"
   | "resumes"
   | "resume_sections"
-  | "resume_entries";
+  | "resume_entries"
+  | "ai_prompts"
+  | "calendar_events";
 
 /**
  * Update a row by id.
@@ -314,5 +317,31 @@ export const resumeEntriesQuery = (sectionIds: string[]) =>
           .in("section_id", sectionIds)
           .order("position", { ascending: true })
           .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const aiPromptsQuery = () =>
+  queryOptions({
+    queryKey: ["ai_prompts"],
+    queryFn: async (): Promise<AiPrompt[]> =>
+      unwrap(
+        await supabase
+          .from("ai_prompts")
+          .select("*")
+          .order("favorite", { ascending: false })
+          .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const calendarEventsQuery = () =>
+  queryOptions({
+    queryKey: ["calendar_events"],
+    queryFn: async (): Promise<CalendarEvent[]> =>
+      unwrap(
+        await supabase
+          .from("calendar_events")
+          .select("*")
+          .order("event_date", { ascending: true })
+          .order("start_time", { ascending: true, nullsFirst: true }),
       ),
   });

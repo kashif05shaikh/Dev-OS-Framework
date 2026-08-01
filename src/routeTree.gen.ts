@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated.learning'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
 import { Route as AuthenticatedProfilesRouteImport } from './routes/_authenticated.profiles'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
+import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
 import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated.resume'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -31,6 +33,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
@@ -58,6 +65,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
   id: '/resume',
   path: '/resume',
@@ -67,20 +79,24 @@ const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/resume': typeof AuthenticatedResumeRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/profiles': typeof AuthenticatedProfilesRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/resume': typeof AuthenticatedResumeRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -88,11 +104,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/profiles': typeof AuthenticatedProfilesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/resume': typeof AuthenticatedResumeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -101,31 +119,37 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/calendar'
     | '/jobs'
     | '/learning'
     | '/notes'
     | '/profiles'
     | '/projects'
+    | '/prompts'
     | '/resume'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/calendar'
     | '/jobs'
     | '/learning'
     | '/notes'
     | '/profiles'
     | '/projects'
+    | '/prompts'
     | '/resume'
     | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/calendar'
     | '/_authenticated/jobs'
     | '/_authenticated/learning'
     | '/_authenticated/notes'
     | '/_authenticated/profiles'
     | '/_authenticated/projects'
+    | '/_authenticated/prompts'
     | '/_authenticated/resume'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -156,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/jobs': {
@@ -193,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/prompts': {
+      id: '/_authenticated/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/resume': {
       id: '/_authenticated/resume'
       path: '/resume'
@@ -204,21 +242,25 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedProfilesRoute: typeof AuthenticatedProfilesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedResumeRoute: typeof AuthenticatedResumeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedProfilesRoute: AuthenticatedProfilesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedResumeRoute: AuthenticatedResumeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
