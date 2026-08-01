@@ -39,11 +39,11 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Job Tracker", to: "/jobs", icon: Briefcase },
   { label: "Coding Profiles", to: "/profiles", icon: Braces },
   { label: "Resume", to: "/resume", icon: FileText },
+  { label: "AI Prompts", to: "/prompts", icon: Sparkles },
+  { label: "Calendar", to: "/calendar", icon: CalendarDays },
 ];
 
 const UPCOMING_NAV: NavItem[] = [
-  { label: "AI Prompts", icon: Sparkles },
-  { label: "Calendar", icon: CalendarDays },
   { label: "Goals", icon: Target },
   { label: "Habits", icon: Repeat },
   { label: "Focus Timer", icon: Timer },
