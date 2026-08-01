@@ -1,5 +1,3 @@
-import { toast } from "sonner";
-
 /** True when DevOS is rendered inside an embedding frame (e.g. Lovable preview). */
 export function isEmbedded(): boolean {
   if (typeof window === "undefined") return false;
@@ -42,32 +40,4 @@ export async function copyText(text: string): Promise<boolean> {
       return false;
     }
   }
-}
-
-/**
- * Opens a URL as a real top-level browser tab. Never embeds the site.
- * Falls back to copying the link when the popup is blocked or swallowed.
- */
-export function openExternal(url: string, label?: string): boolean {
-  if (typeof window === "undefined") return false;
-
-  // Must run synchronously inside the user gesture for the popup to be allowed.
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (win) {
-    try {
-      win.opener = null;
-    } catch {
-      /* cross-origin, already detached */
-    }
-    return true;
-  }
-
-  void copyText(url).then((copied) => {
-    toast.error(copied ? "Popup blocked. Link copied to clipboard." : "Popup blocked.", {
-      description: copied
-        ? `Paste it in a new browser tab to open ${label ?? url}.`
-        : `Open ${url} manually in a new browser tab.`,
-    });
-  });
-  return false;
 }
