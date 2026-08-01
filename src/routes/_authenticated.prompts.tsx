@@ -41,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
 import { AiLogo } from "@/components/ai-logo";
+import { openExternal } from "@/lib/open-external";
 import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
 import { useAiWorkspace } from "@/lib/ai-usage";
 import {
@@ -224,7 +225,7 @@ function PromptsPage() {
   };
 
   const openIn = (
-    _event: React.MouseEvent<HTMLAnchorElement>,
+    event: React.MouseEvent<HTMLAnchorElement>,
     prompt: AiPrompt,
     target: AiPlatform,
   ) => {
@@ -237,6 +238,8 @@ function PromptsPage() {
       patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
     });
     recordUse(target.id);
+    event.preventDefault();
+    openExternal(target.url, target.label);
   };
 
   const filtered = useMemo(() => {
