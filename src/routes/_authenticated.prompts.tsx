@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Copy, Loader2, Pencil, Plus, Search, Sparkles, Star, Trash2, Wand2 } from "lucide-react";
+import {
+  Copy,
+  Files,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Star,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
@@ -29,6 +40,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
+import { AI_MODEL_TARGETS, aiModelLogo, findAiModel } from "@/lib/ai-models";
 import {
   aiPromptsQuery,
   assertOk,
@@ -164,6 +176,27 @@ function PromptsPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  const duplicatePrompt = useMutation({
+    mutationFn: async (p: AiPrompt) =>
+      runWithRetry(async () => {
+        const user_id = await requireUserId();
+        const { error } = await supabase.from("ai_prompts").insert({
+          user_id,
+          title: `${p.title} (copy)`,
+          body: p.body,
+          category: p.category,
+          model: p.model,
+          tags: p.tags,
+        });
+        assertOk(error);
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["ai_prompts"] });
+      toast.success("Prompt duplicated");
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
+
   const aiCraft = useMutation({
     mutationFn: async (input: { mode: "improve" | "generate"; text: string; category: string }) =>
       craft({ data: input }),
@@ -290,8 +323,16 @@ function PromptsPage() {
                       {PROMPT_CATEGORY_LABEL[p.category] ?? p.category}
                     </span>
                     {p.model ? (
-                      <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
-                        {p.model}
+                      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
+                        {findAiModel(p.model) ? (
+                          <img
+                            src={aiModelLogo(findAiModel(p.model)!)}
+                            alt=""
+                            className="size-3"
+                            loading="lazy"
+                          />
+                        ) : null}
+                        {findAiModel(p.model)?.label ?? p.model}
                       </span>
                     ) : null}
                     {p.tags.map((t) => (
@@ -310,6 +351,14 @@ function PromptsPage() {
                     <Button variant="ghost" size="sm" onClick={() => void copyPrompt(p)}>
                       <Copy className="size-4" />
                       Copy
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Duplicate prompt"
+                      onClick={() => duplicatePrompt.mutate(p)}
+                    >
+                      <Files className="size-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => setDraft(toDraft(p))}>
                       <Pencil className="size-4" />
@@ -440,12 +489,27 @@ function PromptsPage() {
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="prompt-model">Preferred model (optional)</Label>
-                  <Input
-                    id="prompt-model"
-                    value={draft?.model ?? ""}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, model: e.target.value } : d))}
-                    placeholder="gemini / gpt / claude"
-                  />
+                  <Select
+                    value={draft?.model ? draft.model : "none"}
+                    onValueChange={(v) =>
+                      setDraft((d) => (d ? { ...d, model: v === "none" ? "" : v } : d))
+                    }
+                  >
+                    <SelectTrigger id="prompt-model">
+                      <SelectValue placeholder="No preferred model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No preferred model</SelectItem>
+                      {AI_MODEL_TARGETS.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <span className="flex items-center gap-2">
+                            <img src={aiModelLogo(m)} alt="" className="size-4" loading="lazy" />
+                            {m.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prompt-tags">Tags (comma separated)</Label>

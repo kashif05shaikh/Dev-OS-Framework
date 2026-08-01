@@ -15,7 +15,6 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated.focus'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated.goals'
-import { Route as AuthenticatedHabitsRouteImport } from './routes/_authenticated.habits'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated.learning'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
@@ -52,11 +51,6 @@ const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
 const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedHabitsRoute = AuthenticatedHabitsRouteImport.update({
-  id: '/habits',
-  path: '/habits',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
@@ -106,7 +100,6 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
-  '/habits': typeof AuthenticatedHabitsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -121,7 +114,6 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
-  '/habits': typeof AuthenticatedHabitsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -139,7 +131,6 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/focus': typeof AuthenticatedFocusRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
-  '/_authenticated/habits': typeof AuthenticatedHabitsRoute
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
@@ -158,7 +149,6 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/focus'
     | '/goals'
-    | '/habits'
     | '/jobs'
     | '/learning'
     | '/notes'
@@ -173,7 +163,6 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/focus'
     | '/goals'
-    | '/habits'
     | '/jobs'
     | '/learning'
     | '/notes'
@@ -190,7 +179,6 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/focus'
     | '/_authenticated/goals'
-    | '/_authenticated/habits'
     | '/_authenticated/jobs'
     | '/_authenticated/learning'
     | '/_authenticated/notes'
@@ -249,13 +237,6 @@ declare module '@tanstack/react-router' {
       path: '/goals'
       fullPath: '/goals'
       preLoaderRoute: typeof AuthenticatedGoalsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/habits': {
-      id: '/_authenticated/habits'
-      path: '/habits'
-      fullPath: '/habits'
-      preLoaderRoute: typeof AuthenticatedHabitsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/jobs': {
@@ -321,7 +302,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedFocusRoute: typeof AuthenticatedFocusRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
-  AuthenticatedHabitsRoute: typeof AuthenticatedHabitsRoute
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
@@ -337,7 +317,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedFocusRoute: AuthenticatedFocusRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
-  AuthenticatedHabitsRoute: AuthenticatedHabitsRoute,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,

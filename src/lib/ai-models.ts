@@ -42,6 +42,24 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     linkText: "Gemini",
   },
   {
+    id: "cursor",
+    label: "Cursor",
+    icon: "cursor",
+    color: "#e5e7eb",
+    url: () => "https://cursor.com/",
+    prefills: false,
+    linkText: "Cursor",
+  },
+  {
+    id: "copilot",
+    label: "Copilot",
+    icon: "githubcopilot",
+    color: "#a78bfa",
+    url: () => "https://copilot.microsoft.com/",
+    prefills: false,
+    linkText: "Copilot",
+  },
+  {
     id: "perplexity",
     label: "Perplexity",
     icon: "perplexity",
@@ -69,15 +87,6 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     linkText: "DeepSeek",
   },
   {
-    id: "copilot",
-    label: "Copilot",
-    icon: "githubcopilot",
-    color: "#a78bfa",
-    url: () => "https://copilot.microsoft.com/",
-    prefills: false,
-    linkText: "Copilot",
-  },
-  {
     id: "mistral",
     label: "Le Chat",
     icon: "mistralai",
@@ -87,3 +96,15 @@ export const AI_MODEL_TARGETS: AiModelTarget[] = [
     linkText: "Le Chat",
   },
 ];
+
+/** Finds a model target by id or label (case-insensitive). */
+export function findAiModel(value?: string | null): AiModelTarget | undefined {
+  if (!value) return undefined;
+  const v = value.trim().toLowerCase();
+  return AI_MODEL_TARGETS.find((m) => m.id === v || m.label.toLowerCase() === v);
+}
+
+/** Brand logo URL for a model target. */
+export function aiModelLogo(model: AiModelTarget): string {
+  return `https://cdn.simpleicons.org/${model.icon}/${model.color.replace("#", "")}`;
+}
