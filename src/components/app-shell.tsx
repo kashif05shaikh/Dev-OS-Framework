@@ -39,6 +39,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Coding Profiles", to: "/profiles", icon: Braces },
   { label: "Resume", to: "/resume", icon: FileText },
   { label: "AI Prompts", to: "/prompts", icon: Sparkles },
+  { label: "AI Workspace", to: "/ai", icon: Rocket },
   { label: "Calendar", to: "/calendar", icon: CalendarDays },
   { label: "Goals", to: "/goals", icon: Target },
   { label: "Focus Timer", to: "/focus", icon: Timer },
