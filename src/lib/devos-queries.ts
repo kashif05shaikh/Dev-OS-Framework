@@ -15,6 +15,7 @@ import type {
   ResumeEntry,
   ResumeSection,
 } from "@/lib/devos-types";
+import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -109,7 +110,9 @@ type UpdatableTable =
   | "coding_profiles"
   | "resumes"
   | "resume_sections"
-  | "resume_entries";
+  | "resume_entries"
+  | "ai_prompts"
+  | "calendar_events";
 
 /**
  * Update a row by id.
