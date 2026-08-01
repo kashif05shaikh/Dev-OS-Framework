@@ -155,11 +155,116 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
   return stats;
 }
 
+async function fetchHackerRank(username: string): Promise<FetchedStats> {
+  const handle = encodeURIComponent(username);
+  const profile = (await getJson(
+    `https://www.hackerrank.com/rest/contests/master/hackers/${handle}/profile`,
+  ).catch(() => null)) as { model?: { username?: string } } | null;
+  if (!profile?.model?.username) throw new Error(`No HackerRank user called "${username}".`);
+
+  const stats = base("hackerrank", username, `https://www.hackerrank.com/profile/${username}`);
+
+  try {
+    const badges = (await getJson(`https://www.hackerrank.com/rest/hackers/${handle}/badges`)) as {
+      models?: { badge_name?: string; badge_type?: string; solved?: number; stars?: number }[];
+    };
+    const list = badges.models ?? [];
+    stats.problems_solved = list.reduce((sum, b) => sum + (b.solved ?? 0), 0);
+    const ps = list.find((b) => b.badge_type === "problem-solving");
+    if (ps?.stars) stats.rank_label = `${ps.stars}\u2605 Problem Solving`;
+  } catch {
+    /* badges are optional */
+  }
+
+  try {
+    const elo = (await getJson(
+      `https://www.hackerrank.com/rest/hackers/${handle}/rating_histories_elo`,
+    )) as { models?: { events?: { rating?: number; date?: string }[] }[] };
+    const events = (elo.models ?? []).flatMap((m) => m.events ?? []);
+    stats.contests_attended = events.length;
+    const latest = events
+      .slice()
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .at(-1);
+    if (latest?.rating) stats.rating = Math.round(latest.rating);
+  } catch {
+    /* ratings are optional */
+  }
+
+  return stats;
+}
+
+function readEmbeddedNumber(html: string, key: string): number | null {
+  const match = new RegExp(`\\\\?"${key}\\\\?":\\s*(\\d+)`).exec(html);
+  return match?.[1] ? Number.parseInt(match[1], 10) : null;
+}
+
+async function fetchGfg(username: string): Promise<FetchedStats> {
+  const url = `https://www.geeksforgeeks.org/user/${encodeURIComponent(username)}/`;
+  const response = await fetch(url, { headers: UA, redirect: "follow" });
+  if (response.status === 404) throw new Error(`No GeeksforGeeks user called "${username}".`);
+  if (!response.ok) throw new Error(`GeeksforGeeks returned ${response.status}`);
+  const html = await response.text();
+
+  const solved = readEmbeddedNumber(html, "total_problems_solved");
+  if (solved === null) throw new Error(`No GeeksforGeeks user called "${username}".`);
+
+  const stats = base("gfg", username, url);
+  stats.problems_solved = solved;
+  stats.rating = readEmbeddedNumber(html, "score");
+  stats.current_streak = readEmbeddedNumber(html, "pod_solved_current_streak") ?? 0;
+  stats.max_streak = readEmbeddedNumber(html, "pod_solved_longest_streak") ?? stats.current_streak;
+  const rank = readEmbeddedNumber(html, "institute_rank");
+  if (rank) stats.rank_label = `Institute #${rank}`;
+  return stats;
+}
+
+function atcoderColor(rating: number): string {
+  if (rating >= 2800) return "Red";
+  if (rating >= 2400) return "Orange";
+  if (rating >= 2000) return "Yellow";
+  if (rating >= 1600) return "Blue";
+  if (rating >= 1200) return "Cyan";
+  if (rating >= 800) return "Green";
+  if (rating >= 400) return "Brown";
+  return "Gray";
+}
+
+async function fetchAtCoder(username: string): Promise<FetchedStats> {
+  const handle = encodeURIComponent(username);
+  const history = (await getJson(`https://atcoder.jp/users/${handle}/history/json`).catch(
+    () => null,
+  )) as { IsRated?: boolean; NewRating?: number }[] | null;
+  if (!Array.isArray(history)) throw new Error(`No AtCoder user called "${username}".`);
+
+  const stats = base("atcoder", username, `https://atcoder.jp/users/${username}`);
+  stats.contests_attended = history.length;
+  const rated = history.filter((h) => h.IsRated).at(-1);
+  if (rated?.NewRating !== undefined) {
+    stats.rating = rated.NewRating;
+    stats.rank_label = atcoderColor(rated.NewRating);
+  }
+
+  try {
+    const ac = (await getJson(
+      `https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user=${handle}`,
+    )) as { count?: number };
+    stats.problems_solved = ac.count ?? 0;
+  } catch {
+    /* solved count is optional */
+  }
+
+  return stats;
+}
+
 const FETCHERS: Record<string, (username: string) => Promise<FetchedStats>> = {
   leetcode: fetchLeetCode,
   codeforces: fetchCodeforces,
   github: fetchGitHub,
   codechef: fetchCodeChef,
+  hackerrank: fetchHackerRank,
+  gfg: fetchGfg,
+  atcoder: fetchAtCoder,
 };
 
 export const SYNCABLE_PLATFORMS = Object.keys(FETCHERS);
