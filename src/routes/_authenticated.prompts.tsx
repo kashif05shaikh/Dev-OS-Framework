@@ -40,7 +40,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
-import { AI_MODEL_TARGETS, aiModelLogo, findAiModel } from "@/lib/ai-models";
+import { AiLogo } from "@/components/ai-logo";
+import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
+import { useAiWorkspace } from "@/lib/ai-usage";
+import { openExternal } from "@/lib/open-external";
 import {
   aiPromptsQuery,
   assertOk,
@@ -324,15 +327,10 @@ function PromptsPage() {
                     </span>
                     {p.model ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
-                        {findAiModel(p.model) ? (
-                          <img
-                            src={aiModelLogo(findAiModel(p.model)!)}
-                            alt=""
-                            className="size-3"
-                            loading="lazy"
-                          />
+                        {findAiPlatform(p.model) ? (
+                          <AiLogo platform={findAiPlatform(p.model)!} className="size-3" />
                         ) : null}
-                        {findAiModel(p.model)?.label ?? p.model}
+                        {findAiPlatform(p.model)?.label ?? p.model}
                       </span>
                     ) : null}
                     {p.tags.map((t) => (
@@ -500,10 +498,10 @@ function PromptsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No preferred model</SelectItem>
-                      {AI_MODEL_TARGETS.map((m) => (
+                      {AI_PLATFORMS.map((m) => (
                         <SelectItem key={m.id} value={m.id}>
                           <span className="flex items-center gap-2">
-                            <img src={aiModelLogo(m)} alt="" className="size-4" loading="lazy" />
+                            <AiLogo platform={m} className="size-4" />
                             {m.label}
                           </span>
                         </SelectItem>
