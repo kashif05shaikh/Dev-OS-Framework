@@ -182,8 +182,7 @@ function LearningPage() {
       id: string;
       name: string;
     }) => {
-      const { error } = await supabase.from(table).update({ name }).eq("id", id);
-      assertOk(error);
+      await updateRow(table, findCachedRow(table, id) ?? { id }, { name });
     },
     onSuccess: () => {
       invalidate();
@@ -224,11 +223,8 @@ function LearningPage() {
       };
       await runWithRetry(async () => {
         if (value.id) {
-          const { error } = await supabase
-            .from("learning_resources")
-            .update(payload)
-            .eq("id", value.id);
-          assertOk(error);
+          const existing = findCachedRow("learning_resources", value.id) ?? { id: value.id };
+          await updateRow("learning_resources", existing, payload);
         } else {
           const user_id = await requireUserId();
           const { error } = await supabase
@@ -248,10 +244,7 @@ function LearningPage() {
 
   const patchResource = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<LearningResource> }) => {
-      await runWithRetry(async () => {
-        const { error } = await supabase.from("learning_resources").update(patch).eq("id", id);
-        assertOk(error);
-      });
+      await updateRow("learning_resources", findCachedRow("learning_resources", id) ?? { id }, patch);
     },
     // Optimistic so favourites / progress react instantly, rolled back on failure.
     onMutate: async ({ id, patch }) => {
