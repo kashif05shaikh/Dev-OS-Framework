@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated.learning'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated.notes'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
@@ -28,6 +29,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedLearningRoute = AuthenticatedLearningRouteImport.update({
@@ -49,12 +55,14 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/projects': typeof AuthenticatedProjectsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/jobs': typeof AuthenticatedJobsRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -64,6 +72,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -71,13 +80,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/learning' | '/notes' | '/projects'
+  fullPaths: '/' | '/auth' | '/jobs' | '/learning' | '/notes' | '/projects'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/learning' | '/notes' | '/projects' | '/'
+  to: '/auth' | '/jobs' | '/learning' | '/notes' | '/projects' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/jobs'
     | '/_authenticated/learning'
     | '/_authenticated/notes'
     | '/_authenticated/projects'
@@ -112,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/jobs': {
+      id: '/_authenticated/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AuthenticatedJobsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/learning': {
       id: '/_authenticated/learning'
       path: '/learning'
@@ -137,6 +154,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -144,6 +162,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
