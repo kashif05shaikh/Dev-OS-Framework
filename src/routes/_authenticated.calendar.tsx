@@ -56,6 +56,7 @@ import {
   EVENT_KINDS,
   EVENT_KIND_COLOR,
   EVENT_KIND_LABEL,
+  CODING_PLATFORM_LABEL,
   type CalendarEvent,
 } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
