@@ -6,7 +6,7 @@ import { Copy, Loader2, Pencil, Plus, Search, Sparkles, Star, Trash2, Wand2 } fr
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
-import { AiModelLauncher } from "@/components/ai-model-launcher";
+
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
@@ -250,12 +250,6 @@ function PromptsPage() {
         </Button>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-2">
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
-          AI models
-        </span>
-        <AiModelLauncher />
-      </div>
 
       <ScrollArea className="flex-1">
         <div className="p-6">
