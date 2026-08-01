@@ -319,3 +319,29 @@ export const resumeEntriesQuery = (sectionIds: string[]) =>
           .order("created_at", { ascending: true }),
       ),
   });
+
+export const aiPromptsQuery = () =>
+  queryOptions({
+    queryKey: ["ai_prompts"],
+    queryFn: async (): Promise<AiPrompt[]> =>
+      unwrap(
+        await supabase
+          .from("ai_prompts")
+          .select("*")
+          .order("favorite", { ascending: false })
+          .order("updated_at", { ascending: false }),
+      ),
+  });
+
+export const calendarEventsQuery = () =>
+  queryOptions({
+    queryKey: ["calendar_events"],
+    queryFn: async (): Promise<CalendarEvent[]> =>
+      unwrap(
+        await supabase
+          .from("calendar_events")
+          .select("*")
+          .order("event_date", { ascending: true })
+          .order("start_time", { ascending: true, nullsFirst: true }),
+      ),
+  });
