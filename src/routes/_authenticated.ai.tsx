@@ -39,7 +39,6 @@ function AiWorkspacePage() {
 
   const launch = (p: AiPlatform) => {
     recordUse(p.id);
-    openExternal(p.url);
   };
 
   const filtered = useMemo(() => {
@@ -98,17 +97,19 @@ function AiWorkspacePage() {
               Quick launch
             </h2>
             <div className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-card/50 p-3 backdrop-blur-xl">
-              {AI_PLATFORMS.map((p) => (
-                <button
+                {AI_PLATFORMS.map((p) => (
+                <a
                   key={p.id}
-                  type="button"
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => launch(p)}
                   title={`Open ${p.label}`}
                   className="group flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs font-medium transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10"
                 >
                   <AiLogo platform={p} className="size-4 transition-transform group-hover:scale-110" />
                   {p.label}
-                </button>
+                </a>
               ))}
             </div>
           </section>
@@ -156,9 +157,11 @@ function AiWorkspacePage() {
                           <div>{formatLastUsed(usage?.lastUsedAt)}</div>
                           <div>Opened {usage?.count ?? 0}×</div>
                         </div>
-                        <Button size="sm" onClick={() => launch(p)}>
-                          <Rocket className="size-4" />
-                          Open
+                        <Button size="sm" asChild onClick={() => launch(p)}>
+                          <a href={p.url} target="_blank" rel="noopener noreferrer">
+                            <Rocket className="size-4" />
+                            Open
+                          </a>
                         </Button>
                       </div>
                     </article>
@@ -182,8 +185,10 @@ function AiWorkspacePage() {
                     <span className="text-muted-foreground">
                       {formatLastUsed(state.usage[p.id]?.lastUsedAt)}
                     </span>
-                    <Button variant="ghost" size="sm" onClick={() => launch(p)}>
-                      Open
+                    <Button variant="ghost" size="sm" asChild onClick={() => launch(p)}>
+                      <a href={p.url} target="_blank" rel="noopener noreferrer">
+                        Open
+                      </a>
                     </Button>
                   </li>
                 ))}
