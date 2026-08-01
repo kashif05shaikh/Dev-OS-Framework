@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated.ai'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated.focus'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated.goals'
@@ -43,6 +44,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/focus': typeof AuthenticatedFocusRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/ai'
+    | '/analytics'
     | '/calendar'
     | '/focus'
     | '/goals'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/ai'
+    | '/analytics'
     | '/calendar'
     | '/focus'
     | '/goals'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/ai'
+    | '/_authenticated/analytics'
     | '/_authenticated/calendar'
     | '/_authenticated/focus'
     | '/_authenticated/goals'
@@ -247,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AuthenticatedAiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/calendar': {
@@ -338,6 +357,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedFocusRoute: typeof AuthenticatedFocusRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
@@ -355,6 +375,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedFocusRoute: AuthenticatedFocusRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
