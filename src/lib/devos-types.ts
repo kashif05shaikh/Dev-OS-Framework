@@ -12,6 +12,62 @@ export type CodingProfile = Tables<"coding_profiles">;
 export type Resume = Tables<"resumes">;
 export type ResumeSection = Tables<"resume_sections">;
 export type ResumeEntry = Tables<"resume_entries">;
+export type AiPrompt = Tables<"ai_prompts">;
+export type CalendarEvent = Tables<"calendar_events">;
+
+export const PROMPT_CATEGORIES = [
+  "general",
+  "coding",
+  "debugging",
+  "writing",
+  "learning",
+  "interview",
+  "system",
+  "marketing",
+] as const;
+export type PromptCategory = (typeof PROMPT_CATEGORIES)[number];
+
+export const PROMPT_CATEGORY_LABEL: Record<string, string> = {
+  general: "General",
+  coding: "Coding",
+  debugging: "Debugging",
+  writing: "Writing",
+  learning: "Learning",
+  interview: "Interview",
+  system: "System",
+  marketing: "Marketing",
+};
+
+export const EVENT_KINDS = [
+  "task",
+  "interview",
+  "deadline",
+  "study",
+  "contest",
+  "meeting",
+  "reminder",
+] as const;
+export type EventKind = (typeof EVENT_KINDS)[number];
+
+export const EVENT_KIND_LABEL: Record<string, string> = {
+  task: "Task",
+  interview: "Interview",
+  deadline: "Deadline",
+  study: "Study",
+  contest: "Contest",
+  meeting: "Meeting",
+  reminder: "Reminder",
+};
+
+export const EVENT_KIND_COLOR: Record<string, string> = {
+  task: "#8b5cf6",
+  interview: "#fbbf24",
+  deadline: "#fb7185",
+  study: "#22d3ee",
+  contest: "#34d399",
+  meeting: "#60a5fa",
+  reminder: "#a3e635",
+};
 
 export const CODING_PLATFORMS = [
   "leetcode",
