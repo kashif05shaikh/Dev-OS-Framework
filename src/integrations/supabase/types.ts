@@ -275,6 +275,7 @@ export type Database = {
           priority: string
           status: string
           target_value: number
+          timeframe: string
           title: string
           unit: string
           updated_at: string
@@ -292,6 +293,7 @@ export type Database = {
           priority?: string
           status?: string
           target_value?: number
+          timeframe?: string
           title: string
           unit?: string
           updated_at?: string
@@ -309,6 +311,7 @@ export type Database = {
           priority?: string
           status?: string
           target_value?: number
+          timeframe?: string
           title?: string
           unit?: string
           updated_at?: string
