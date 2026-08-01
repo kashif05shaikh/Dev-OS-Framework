@@ -110,6 +110,7 @@ type UpdatableTable =
   | "project_tasks"
   | "job_applications"
   | "coding_profiles"
+  | "profiles"
   | "resumes"
   | "resume_sections"
   | "resume_entries"
