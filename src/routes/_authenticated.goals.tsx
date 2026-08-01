@@ -389,6 +389,24 @@ function GoalsPage() {
                 {GOAL_CATEGORY_LABEL[c]}
               </SelectItem>
             ))}
+            {customCategories.map((c) => (
+              <SelectItem key={c} value={c}>
+                {GOAL_CATEGORY_LABEL[c] ?? c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
+          <SelectTrigger className="h-8 w-32 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All cadences</SelectItem>
+            {GOAL_TIMEFRAMES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {GOAL_TIMEFRAME_LABEL[t]}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
