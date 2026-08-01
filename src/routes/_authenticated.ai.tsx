@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_PLATFORMS, type AiPlatform } from "@/lib/ai-models";
 import { formatLastUsed, useAiWorkspace } from "@/lib/ai-usage";
-import { copyText, isEmbedded, openExternal, standaloneAppUrl } from "@/lib/open-external";
+import { copyText, isEmbedded, standaloneAppUrl } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai")({
@@ -41,11 +41,9 @@ function AiWorkspacePage() {
   const [embedded, setEmbedded] = useState(false);
   useEffect(() => setEmbedded(isEmbedded()), []);
 
-  // Never embed AI sites: always hand the URL to a real top-level browser tab.
-  const launch = (event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
-    event.preventDefault();
+  // Plain <a target="_blank"> handles navigation; we only record usage here.
+  const launch = (_event: React.MouseEvent<HTMLAnchorElement>, p: AiPlatform) => {
     recordUse(p.id);
-    openExternal(p.url, p.label);
   };
 
   const copyLink = async (p: AiPlatform) => {
@@ -113,13 +111,11 @@ function AiWorkspacePage() {
                 websites block embedding. Open the published app or use the “Open in New Tab”
                 action below.
               </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => openExternal(standaloneAppUrl("/ai"), "DevOS")}
-              >
-                <ExternalLink className="size-4" />
-                Open Published App
+              <Button size="sm" variant="outline" asChild>
+                <a href={standaloneAppUrl("/ai")} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="size-4" />
+                  Open Published App
+                </a>
               </Button>
             </div>
           ) : null}

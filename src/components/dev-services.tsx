@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { openExternal } from "@/lib/open-external";
 
 type Service = {
   name: string;
@@ -74,15 +73,10 @@ function iconUrl(slug: string, color: string) {
 
 function launchProtocol(url: string, fallback?: string) {
   if (typeof window === "undefined") return;
-  if (url.startsWith("http")) {
-    openExternal(url);
-    return;
-  }
   window.location.href = url;
   if (fallback) {
     toast("Opening desktop app…", {
-      description: "Nothing happened? Use the web version instead.",
-      action: { label: "Open web", onClick: () => openExternal(fallback) },
+      description: "Nothing happened? Use the Web button next to it instead.",
     });
   }
 }
@@ -122,10 +116,11 @@ export function DevServices() {
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {SERVICES.map((service) => (
-            <button
+            <a
               key={service.name}
-              type="button"
-              onClick={() => openExternal(service.url)}
+              href={service.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="group flex items-center gap-3 rounded-xl border border-border bg-card/50 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/50"
             >
               <img
@@ -139,7 +134,7 @@ export function DevServices() {
                 <span className="block truncate text-[11px] text-muted-foreground">{service.desc}</span>
               </span>
               <ExternalLink className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
+            </a>
           ))}
         </div>
       </section>
@@ -173,13 +168,10 @@ export function DevServices() {
                   Launch {editor.name}
                 </Button>
                 {editor.fallback ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-[11px]"
-                    onClick={() => openExternal(editor.fallback!)}
-                  >
-                    Web
+                  <Button size="sm" variant="ghost" className="h-7 text-[11px]" asChild>
+                    <a href={editor.fallback} target="_blank" rel="noopener noreferrer">
+                      Web
+                    </a>
                   </Button>
                 ) : null}
               </div>
@@ -213,13 +205,10 @@ export function DevServices() {
           <Button size="sm" className="h-8 text-[11px]" onClick={openProject}>
             Open in VS Code
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-8 text-[11px]"
-            onClick={() => openExternal("https://vscode.dev/")}
-          >
-            Open vscode.dev
+          <Button size="sm" variant="secondary" className="h-8 text-[11px]" asChild>
+            <a href="https://vscode.dev/" target="_blank" rel="noopener noreferrer">
+              Open vscode.dev
+            </a>
           </Button>
         </div>
       </section>
