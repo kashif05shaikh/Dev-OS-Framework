@@ -43,7 +43,6 @@ import { craftPrompt } from "@/lib/ai-prompts.functions";
 import { AiLogo } from "@/components/ai-logo";
 import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
 import { useAiWorkspace } from "@/lib/ai-usage";
-import { openExternal } from "@/lib/open-external";
 import {
   aiPromptsQuery,
   assertOk,
@@ -224,19 +223,18 @@ function PromptsPage() {
     }
   };
 
-  const openIn = async (prompt: AiPrompt, target: AiPlatform) => {
-    try {
-      await navigator.clipboard.writeText(prompt.body);
-      toast.success(`Prompt copied! Paste it into ${target.label}.`);
-    } catch {
-      toast.message(`Opening ${target.label} — copy your prompt manually.`);
-    }
+  const openIn = (prompt: AiPrompt, target: AiPlatform) => {
+    // Fire-and-forget: awaiting here would drop the user gesture and the
+    // browser would block the new tab.
+    navigator.clipboard
+      ?.writeText(prompt.body)
+      .then(() => toast.success(`Prompt copied! Paste it into ${target.label}.`))
+      .catch(() => toast.message(`Opening ${target.label} — copy your prompt manually.`));
     patchPrompt.mutate({
       id: prompt.id,
       patch: { usage_count: prompt.usage_count + 1, last_used_at: new Date().toISOString() },
     });
     recordUse(target.id);
-    openExternal(target.url);
   };
 
   const filtered = useMemo(() => {
@@ -363,16 +361,18 @@ function PromptsPage() {
                       Open in
                     </span>
                     {AI_PLATFORMS.map((target) => (
-                      <button
+                      <a
                         key={target.id}
-                        type="button"
+                        href={target.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         title={`Open in ${target.label}`}
                         aria-label={`Open in ${target.label}`}
-                        onClick={() => void openIn(p, target)}
+                        onClick={() => openIn(p, target)}
                         className="rounded-lg border border-border/60 bg-background/60 p-1.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
                       >
                         <AiLogo platform={target} className="size-4" />
-                      </button>
+                      </a>
                     ))}
                   </div>
                   <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
