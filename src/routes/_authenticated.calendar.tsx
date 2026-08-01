@@ -15,7 +15,6 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 
