@@ -173,6 +173,51 @@ export type Database = {
         }
         Relationships: []
       }
+      focus_sessions: {
+        Row: {
+          actual_seconds: number
+          completed: boolean
+          created_at: string
+          ended_at: string | null
+          id: string
+          label: string | null
+          mode: string
+          notes: string | null
+          planned_minutes: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_seconds?: number
+          completed?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          label?: string | null
+          mode?: string
+          notes?: string | null
+          planned_minutes?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_seconds?: number
+          completed?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          label?: string | null
+          mode?: string
+          notes?: string | null
+          planned_minutes?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_milestones: {
         Row: {
           created_at: string
