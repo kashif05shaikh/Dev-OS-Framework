@@ -99,6 +99,8 @@ const TYPE_ICON: Record<string, typeof BookOpen> = {
   blog: BookOpen,
 };
 
+const ALL_SUBJECTS = "__all__";
+
 type ResourceDraft = {
   id?: string;
   title: string;
@@ -114,7 +116,7 @@ function LearningPage() {
   const folders = useQuery(learningFoldersQuery());
   const resources = useQuery(learningResourcesQuery());
 
-  const [activeSubject, setActiveSubject] = useState<string | null>(null);
+  const [activeSubject, setActiveSubject] = useState<string | null>(ALL_SUBJECTS);
   const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "favorite" | "completed" | "in-progress">("all");
@@ -123,6 +125,7 @@ function LearningPage() {
   const [draft, setDraft] = useState<ResourceDraft | null>(null);
 
   const subjectId = activeSubject ?? subjects.data?.[0]?.id ?? null;
+  const isAll = subjectId === ALL_SUBJECTS;
 
   /** Full row from the query cache — needed for the POST-upsert save fallback. */
   const findCachedRow = (key: string, id: string): { id: string } | undefined =>
@@ -263,15 +266,21 @@ function LearningPage() {
   });
 
   const subjectFolders = useMemo(
-    () => (folders.data ?? []).filter((f) => f.subject_id === subjectId),
-    [folders.data, subjectId],
+    () => (isAll ? [] : (folders.data ?? []).filter((f) => f.subject_id === subjectId)),
+    [folders.data, subjectId, isAll],
   );
+
+  const subjectName = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    for (const s of subjects.data ?? []) map.set(s.id, { name: s.name, color: s.color });
+    return map;
+  }, [subjects.data]);
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (resources.data ?? []).filter((r) => {
-      if (r.subject_id !== subjectId) return false;
-      if (activeFolder && r.folder_id !== activeFolder) return false;
+      if (!isAll && r.subject_id !== subjectId) return false;
+      if (!isAll && activeFolder && r.folder_id !== activeFolder) return false;
       if (filter === "favorite" && !r.favorite) return false;
       if (filter === "completed" && !r.completed) return false;
       if (filter === "in-progress" && (r.completed || r.progress_percent === 0)) return false;
@@ -282,7 +291,7 @@ function LearningPage() {
         (r.url ?? "").toLowerCase().includes(term)
       );
     });
-  }, [resources.data, subjectId, activeFolder, filter, search]);
+  }, [resources.data, subjectId, activeFolder, filter, search, isAll]);
 
   const isLoading = subjects.isLoading || folders.isLoading || resources.isLoading;
   const error = subjects.error ?? folders.error ?? resources.error;
