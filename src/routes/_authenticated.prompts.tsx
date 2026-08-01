@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { craftPrompt } from "@/lib/ai-prompts.functions";
 import { AiLogo } from "@/components/ai-logo";
 import { AI_PLATFORMS, findAiPlatform, type AiPlatform } from "@/lib/ai-models";
+import { openExternal } from "@/lib/open-external";
 import { useAiWorkspace } from "@/lib/ai-usage";
 import {
   aiPromptsQuery,
@@ -223,9 +224,13 @@ function PromptsPage() {
     }
   };
 
-  const openIn = (prompt: AiPrompt, target: AiPlatform) => {
-    // Fire-and-forget: awaiting here would drop the user gesture and the
-    // browser would block the new tab.
+  const openIn = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    prompt: AiPrompt,
+    target: AiPlatform,
+  ) => {
+    event.preventDefault();
+    openExternal(target.url);
     navigator.clipboard
       ?.writeText(prompt.body)
       .then(() => toast.success(`Prompt copied! Paste it into ${target.label}.`))
@@ -364,10 +369,11 @@ function PromptsPage() {
                       <a
                         key={target.id}
                         href={target.url}
-                        target="_top"
+                         target="_blank"
+                         rel="noopener noreferrer"
                         title={`Open in ${target.label}`}
                         aria-label={`Open in ${target.label}`}
-                        onClick={() => openIn(p, target)}
+                         onClick={(event) => openIn(event, p, target)}
                         className="rounded-lg border border-border/60 bg-background/60 p-1.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
                       >
                         <AiLogo platform={target} className="size-4" />
