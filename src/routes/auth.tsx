@@ -103,20 +103,84 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6 sm:py-14">
+      <AmbientBackground />
+
+      <div className="grid w-full max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        {/* Brand / marketing panel */}
+        <motion.section
+          initial={{ opacity: 0, x: -24, filter: "blur(8px)" }}
+          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="hidden lg:block"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30"
+            >
+              <Terminal className="size-6" />
+            </motion.div>
+            <div className="min-w-0">
+              <h1 className="dash-gradient-text truncate text-2xl font-semibold tracking-tight">
+                DevOS
+              </h1>
+              <p className="text-xs text-muted-foreground">Developer Operating System</p>
+            </div>
+          </div>
+
+          <p className="mt-6 max-w-md text-balance text-lg leading-relaxed text-muted-foreground">
+            One workspace for your notes, projects, jobs, goals, coding profiles and AI tools —
+            wired to live data, built for shipping.
+          </p>
+
+          <ul className="mt-8 space-y-3">
+            {[
+              { icon: Zap, text: "Live coding stats from LeetCode, GitHub & more" },
+              { icon: Target, text: "Goals, focus sessions and analytics in one place" },
+              { icon: Sparkles, text: "AI workspace with a prompt library" },
+            ].map((item, i) => (
+              <motion.li
+                key={item.text}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 + i * 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="dash-card flex items-center gap-3 p-3 text-sm"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                  <item.icon className="size-4" />
+                </span>
+                <span className="min-w-0 text-muted-foreground">{item.text}</span>
+              </motion.li>
+            ))}
+          </ul>
+        </motion.section>
+
+        {/* Auth panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto w-full max-w-sm"
+        >
+        <div className="mb-8 flex items-center gap-3 lg:hidden">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
             <Terminal className="size-5" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">DevOS</h1>
-            <p className="text-xs text-muted-foreground">Developer Operating System</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-semibold tracking-tight">DevOS</h1>
+            <p className="truncate text-xs text-muted-foreground">Developer Operating System</p>
           </div>
         </div>
 
         {sentConfirmation ? (
-          <div className="rounded-xl border border-border bg-card p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="dash-card p-5 sm:p-6"
+          >
             <h2 className="text-sm font-semibold">Confirm your email</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               We sent a confirmation link to <span className="text-foreground">{email}</span>. Click it
@@ -129,9 +193,9 @@ function AuthPage() {
             >
               Back to sign in
             </Button>
-          </div>
+          </motion.div>
         ) : (
-          <Tabs defaultValue="signin" className="rounded-xl border border-border bg-card p-6">
+          <Tabs defaultValue="signin" className="dash-card p-5 sm:p-6">
             <Button
               type="button"
               variant="outline"
@@ -247,6 +311,7 @@ function AuthPage() {
             </TabsContent>
           </Tabs>
         )}
+        </motion.div>
       </div>
     </main>
   );
