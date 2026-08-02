@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Terminal } from "lucide-react";
+import { Loader2, Terminal, Sparkles, Zap, Target } from "lucide-react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
+import { AmbientBackground } from "@/components/dashboard/ambient";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
