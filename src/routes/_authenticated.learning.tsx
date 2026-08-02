@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   CheckCircle2,
@@ -840,7 +840,7 @@ function ResourceDialog({
       const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
       const { error } = await supabase.storage
         .from("learning-files")
-        .upload(path, file, { upsert: false, contentType: file.type || undefined });
+        .upload(path, file, { upsert: false, contentType: file.type || "application/octet-stream" });
       if (error) throw error;
       setValue((v) =>
         v
