@@ -249,6 +249,9 @@ function LearningPage() {
         description: value.description.trim() || null,
         folder_id: value.folder_id,
         subject_id: subjectId,
+        file_path: value.file_path ?? null,
+        file_name: value.file_name ?? null,
+        file_size: value.file_size ?? null,
       };
       await runWithRetry(async () => {
         if (value.id) {
@@ -581,6 +584,9 @@ function LearningPage() {
                 url: "",
                 description: "",
                 folder_id: activeFolder,
+                file_path: null,
+                file_name: null,
+                file_size: null,
               })
             }
           >
@@ -680,6 +686,9 @@ function LearningPage() {
                                 url: resource.url ?? "",
                                 description: resource.description ?? "",
                                 folder_id: resource.folder_id,
+                                file_path: resource.file_path,
+                                file_name: resource.file_name,
+                                file_size: resource.file_size,
                               })
                             }
                           >
@@ -756,6 +765,17 @@ function LearningPage() {
                         >
                           <ExternalLink className="size-3.5" /> Open
                         </a>
+                      ) : null}
+                      {resource.file_path ? (
+                        <button
+                          type="button"
+                          onClick={() => void openStoredFile(resource.file_path!)}
+                          className="inline-flex max-w-[60%] items-center gap-1.5 text-xs text-primary hover:underline"
+                          title={resource.file_name ?? "Attached file"}
+                        >
+                          <Paperclip className="size-3.5 shrink-0" />
+                          <span className="truncate">{resource.file_name ?? "Attachment"}</span>
+                        </button>
                       ) : null}
                       {resource.completed ? (
                         <span className="ml-auto inline-flex items-center gap-1 text-xs text-emerald-400">
