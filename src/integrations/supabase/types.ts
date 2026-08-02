@@ -515,6 +515,9 @@ export type Database = {
           created_at: string
           description: string | null
           favorite: boolean
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
           folder_id: string | null
           id: string
           progress_percent: number
@@ -531,6 +534,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           favorite?: boolean
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           folder_id?: string | null
           id?: string
           progress_percent?: number
@@ -547,6 +553,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           favorite?: boolean
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           folder_id?: string | null
           id?: string
           progress_percent?: number
