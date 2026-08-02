@@ -11,11 +11,15 @@ import {
   Github,
   GraduationCap,
   MoreHorizontal,
+  Paperclip,
   Pencil,
   Plus,
   Search,
   Star,
   Trash2,
+  Download,
+  Loader2,
+  X,
   Youtube,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -108,7 +112,29 @@ type ResourceDraft = {
   url: string;
   description: string;
   folder_id: string | null;
+  file_path?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
 };
+
+function formatBytes(bytes: number | null | undefined) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Opens a private learning file in a new tab via a short-lived signed URL. */
+async function openStoredFile(path: string) {
+  const { data, error } = await supabase.storage
+    .from("learning-files")
+    .createSignedUrl(path, 60 * 10);
+  if (error || !data?.signedUrl) {
+    toast.error(error?.message ?? "Could not open the file");
+    return;
+  }
+  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+}
 
 function LearningPage() {
   const qc = useQueryClient();
