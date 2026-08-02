@@ -818,12 +818,56 @@ function ResourceDialog({
   saving: boolean;
 }) {
   const [value, setValue] = useState<ResourceDraft | null>(draft);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync the local form every time the dialog opens with a new draft
   // (new resources have no id, so identity comparison alone is not enough).
   useEffect(() => {
     setValue(draft);
   }, [draft]);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File is larger than 50 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const userId = await requireUserId();
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from("learning-files")
+        .upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (error) throw error;
+      setValue((v) =>
+        v
+          ? {
+              ...v,
+              file_path: path,
+              file_name: file.name,
+              file_size: file.size,
+              title: v.title.trim() ? v.title : file.name.replace(/\.[^.]+$/, ""),
+            }
+          : v,
+      );
+      toast.success("File attached");
+    } catch (e: unknown) {
+      toast.error(describeError(e));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function removeFile() {
+    const path = value?.file_path;
+    if (!path) return;
+    await supabase.storage.from("learning-files").remove([path]);
+    setValue((v) => (v ? { ...v, file_path: null, file_name: null, file_size: null } : v));
+  }
 
   return (
     <Dialog open={draft !== null} onOpenChange={(open) => !open && onClose()}>
@@ -908,13 +952,69 @@ function ResourceDialog({
                 onChange={(e) => setValue((v) => (v ? { ...v, description: e.target.value } : v))}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Attachment</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => void handleFile(e.target.files?.[0])}
+              />
+              {value?.file_path ? (
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-2">
+                  <Paperclip className="size-4 shrink-0 text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => void openStoredFile(value.file_path!)}
+                    className="min-w-0 flex-1 truncate text-left text-xs text-primary hover:underline"
+                  >
+                    {value.file_name}
+                  </button>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                    {formatBytes(value.file_size)}
+                  </span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 shrink-0"
+                    aria-label="Remove attachment"
+                    onClick={() => void removeFile()}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" /> Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="size-4 rotate-180" /> Attach file from your device
+                    </>
+                  )}
+                </Button>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                PDFs, docs, slides, images — up to 50 MB. Stored privately in your workspace.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !value?.title.trim()}>
+            <Button type="submit" disabled={saving || uploading || !value?.title.trim()}>
               {saving ? "Saving…" : draft?.id ? "Save changes" : "Add resource"}
             </Button>
           </DialogFooter>
