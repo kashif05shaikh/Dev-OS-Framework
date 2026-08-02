@@ -91,8 +91,9 @@ export function GlassCard({
         ry.set(0);
       }}
       style={{ rotateX: rx, rotateY: ry, transformPerspective: 900 }}
-      whileHover={interactive && !reduce ? { y: -4, scale: 1.012 } : undefined}
-      whileTap={interactive && !reduce ? { scale: 0.99 } : undefined}
+      {...(interactive && !reduce
+        ? { whileHover: { y: -4, scale: 1.012 }, whileTap: { scale: 0.99 } }
+        : {})}
       transition={{ type: "spring", stiffness: 320, damping: 26 }}
       className={cn("dash-card group relative overflow-hidden", className)}
     >
