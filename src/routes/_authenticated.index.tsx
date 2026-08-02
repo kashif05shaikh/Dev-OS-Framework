@@ -235,7 +235,7 @@ function DashboardPage() {
     const completedRes = resList.filter((r) => r.completed).length;
 
     const projList = projects.data ?? [];
-    const doneProjects = projList.filter((p) => p.status === "completed").length;
+    const doneProjects = projList.filter((p) => p.status === "shipped").length;
 
     const resumeScore = (() => {
       const r = resumes.data ?? [];
