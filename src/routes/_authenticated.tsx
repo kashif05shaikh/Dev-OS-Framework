@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { LoadingState } from "@/components/states";
+import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/hooks/use-auth";
 import { applyAccent, cacheAccent, cachedAccent } from "@/lib/accent";
 import { profileQuery } from "@/lib/devos-queries";
@@ -50,7 +51,9 @@ function AuthenticatedLayout() {
 
   return (
     <AppShell>
-      <Outlet />
+      <PageTransition>
+        <Outlet />
+      </PageTransition>
     </AppShell>
   );
 }

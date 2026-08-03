@@ -89,10 +89,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "DevOS — Developer Operating System" },
       {
         property: "og:description",
-        content: "Notes, learning, projects, jobs and focus in one dark developer dashboard.",
+        content: "DevOS is a productivity workspace for developers: notes, learning, projects, jobs and focus in one dark dashboard.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "DevOS — Developer Operating System" },
+      { name: "twitter:description", content: "DevOS is a productivity workspace for developers: notes, learning, projects, jobs and focus in one dark dashboard." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/352e4461-7474-4968-b6dc-f64f616106fd/id-preview-89271af7--1bb0af76-ad00-45ba-8543-0f76e4ce7d84.lovable.app-1785677504993.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/352e4461-7474-4968-b6dc-f64f616106fd/id-preview-89271af7--1bb0af76-ad00-45ba-8543-0f76e4ce7d84.lovable.app-1785677504993.png" },
     ],
     links: [
       {
