@@ -296,6 +296,29 @@ function CalendarPage() {
   const [remindersOn, setRemindersOn] = useState(false);
   const firedRef = useRef<Set<string>>(new Set());
 
+  const [syncing, setSyncing] = useState(false);
+  const goToToday = () => {
+    const now = new Date();
+    setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelected(toIso(now));
+    setExpandedDay(null);
+  };
+  const handleSync = async () => {
+    if (syncing) return; // debounce rapid clicks
+    setSyncing(true);
+    try {
+      const [c, ev] = await Promise.all([contests.refetch(), events.refetch()]);
+      goToToday();
+      if (c.error || ev.error) toast.error(describeError(c.error ?? ev.error));
+      else toast.success("Calendar synced to today");
+    } catch (e) {
+      goToToday();
+      toast.error(describeError(e) || "Couldn't refresh contests");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     setRemindersOn(Notification.permission === "granted");
@@ -404,8 +427,8 @@ function CalendarPage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="overflow-x-auto p-4">
-          <div className="min-w-[760px]">
+        <div className="p-4 max-lg:overflow-x-auto">
+          <div className="min-w-[760px] lg:min-w-0">
             <div className="grid grid-cols-7 gap-px text-xs uppercase tracking-wide text-muted-foreground">
               {WEEKDAYS.map((d) => (
                 <div key={d} className="px-2 py-2 text-center">
@@ -423,7 +446,13 @@ function CalendarPage() {
                 const expanded = expandedDay === iso;
                 const hasOverflow = dayEvents.length + dayContests.length > 3;
                 return (
-                  <div key={iso} className="relative min-h-32 sm:min-h-36">
+                  <div
+                    key={iso}
+                    className={cn(
+                      "relative min-h-32 sm:min-h-36",
+                      expanded && hasOverflow ? "z-30" : "z-0",
+                    )}
+                  >
                     <button
                       type="button"
                       onClick={() => {
@@ -434,12 +463,12 @@ function CalendarPage() {
                       onMouseEnter={() => setExpandedDay(iso)}
                       onMouseLeave={() => setExpandedDay((cur) => (cur === iso ? null : cur))}
                       className={cn(
-                        "absolute inset-0 flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
+                        "absolute inset-0 z-[1] flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
                         !inMonth && "bg-card/40 text-muted-foreground/50",
                         selected === iso && "ring-1 ring-inset ring-primary",
                         expanded &&
                           hasOverflow &&
-                          "bottom-auto z-30 h-auto min-h-full overflow-visible rounded-lg shadow-2xl ring-1 ring-primary/50",
+                          "bottom-auto z-30 h-auto max-h-[300px] min-h-full overflow-y-auto rounded-lg bg-popover shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] ring-1 ring-primary/50",
                       )}
                     >
                       <span
@@ -507,10 +536,13 @@ function CalendarPage() {
               variant="ghost"
               size="icon"
               className="ml-auto"
-              aria-label="Refresh contests"
-              onClick={() => void contests.refetch()}
+              aria-label="Sync contests and jump to today"
+              disabled={syncing}
+              onClick={() => void handleSync()}
             >
-              <RefreshCw className={cn("size-4", contests.isFetching && "animate-spin")} />
+              <RefreshCw
+                className={cn("size-4", (syncing || contests.isFetching) && "animate-spin")}
+              />
             </Button>
             <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
               <Plus className="size-4" />
