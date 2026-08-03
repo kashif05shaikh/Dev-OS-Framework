@@ -404,8 +404,8 @@ function CalendarPage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="overflow-x-auto p-4">
-          <div className="min-w-[760px]">
+        <div className="p-4 max-lg:overflow-x-auto">
+          <div className="min-w-[760px] lg:min-w-0">
             <div className="grid grid-cols-7 gap-px text-xs uppercase tracking-wide text-muted-foreground">
               {WEEKDAYS.map((d) => (
                 <div key={d} className="px-2 py-2 text-center">
@@ -434,12 +434,12 @@ function CalendarPage() {
                       onMouseEnter={() => setExpandedDay(iso)}
                       onMouseLeave={() => setExpandedDay((cur) => (cur === iso ? null : cur))}
                       className={cn(
-                        "absolute inset-0 flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
+                        "absolute inset-0 z-[1] flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
                         !inMonth && "bg-card/40 text-muted-foreground/50",
                         selected === iso && "ring-1 ring-inset ring-primary",
                         expanded &&
                           hasOverflow &&
-                          "bottom-auto z-30 h-auto min-h-full overflow-visible rounded-lg shadow-2xl ring-1 ring-primary/50",
+                          "bottom-auto z-30 h-auto max-h-[300px] min-h-full overflow-y-auto rounded-lg bg-popover shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] ring-1 ring-primary/50",
                       )}
                     >
                       <span
