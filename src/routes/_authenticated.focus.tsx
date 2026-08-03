@@ -76,7 +76,6 @@ function formatMinutes(seconds: number): string {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
-const PRESETS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
 
 /** Plays a short repeating beep with the WebAudio API (no asset needed). */
 function playAlarm(times = 3) {
@@ -247,15 +246,6 @@ function FocusPage() {
     }
   };
 
-  const applyPreset = (minutes: number) => {
-    setDurations((d) => ({ ...d, [mode]: minutes * 60 }));
-    if (!running) {
-      elapsedRef.current = 0;
-      setElapsed(0);
-      setRemaining(minutes * 60);
-    }
-  };
-
   const stats = useMemo(() => {
     const all = sessions.data ?? [];
     const today = new Date().toISOString().slice(0, 10);
@@ -315,13 +305,13 @@ function FocusPage() {
               <p className="text-xs text-muted-foreground">
                 {FOCUS_MODE_LABEL[mode]} · {formatMinutes(total)} planned
               </p>
-              <div className="flex items-end gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 shadow-sm">
+              <div className="flex items-end gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5 shadow-[0_8px_24px_-12px_hsl(var(--foreground)/0.5),inset_0_1px_0_hsl(var(--foreground)/0.05)]">
                 {(["h", "m", "s"] as const).map((part, i) => (
-                  <div key={part} className="flex items-end gap-3">
+                  <div key={part} className="flex items-end gap-2">
                     {i > 0 && (
-                      <span className="pb-6 font-mono text-xl text-muted-foreground/60">:</span>
+                      <span className="pb-5 font-mono text-base text-muted-foreground/60">:</span>
                     )}
-                    <div className="grid gap-1.5 text-center">
+                    <div className="grid gap-1 text-center">
                       <Input
                         type="number"
                         min={0}
@@ -330,30 +320,17 @@ function FocusPage() {
                         onChange={(e) => setPart(part, e.target.value)}
                         disabled={running}
                         className={cn(
-                          "h-14 w-20 rounded-xl border-border/70 bg-background/80 text-center font-mono text-2xl font-semibold tabular-nums",
-                          "shadow-inner transition-colors focus-visible:border-primary/60",
+                          "h-10 w-14 rounded-lg border-border/70 bg-background/80 text-center font-mono text-lg font-semibold tabular-nums",
+                          "shadow-[inset_0_1px_3px_hsl(var(--background))] transition-colors focus-visible:border-primary/60",
                           "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
                         )}
                         aria-label={part === "h" ? "Hours" : part === "m" ? "Minutes" : "Seconds"}
                       />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                      <span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
                         {part === "h" ? "hrs" : part === "m" ? "min" : "sec"}
                       </span>
                     </div>
                   </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
-                {PRESETS.map((p) => (
-                  <Button
-                    key={p}
-                    size="sm"
-                    variant={total === p * 60 ? "secondary" : "outline"}
-                    className="h-7 px-2.5 text-xs"
-                    onClick={() => applyPreset(p)}
-                  >
-                    {p}m
-                  </Button>
                 ))}
               </div>
             </div>
