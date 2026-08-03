@@ -64,9 +64,12 @@ const MODE_ACCENT: Record<string, string> = {
 
 function formatClock(totalSeconds: number): string {
   const s = Math.max(0, totalSeconds);
-  const m = Math.floor(s / 60);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
   const r = s % 60;
-  return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(r).padStart(2, "0");
+  return h > 0 ? `${String(h).padStart(2, "0")}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
 function formatMinutes(seconds: number): string {
@@ -108,7 +111,9 @@ function FocusPage() {
   const qc = useQueryClient();
   const sessions = useQuery(focusSessionsQuery());
 
-  const [durations, setDurations] = useState<Record<string, number>>(FOCUS_DEFAULT_MINUTES);
+  const [durations, setDurations] = useState<Record<string, number>>(() =>
+    Object.fromEntries(Object.entries(FOCUS_DEFAULT_MINUTES).map(([k, v]) => [k, v * 60])),
+  );
   const [mode, setMode] = useState<string>("focus");
   const [label, setLabel] = useState("");
   const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES['focus']! * 60);
@@ -119,7 +124,7 @@ function FocusPage() {
   const startedAtRef = useRef<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
-  const total = (durations[mode] ?? 25) * 60;
+  const total = durations[mode] ?? 25 * 60;
 
   const logSession = useMutation({
     mutationFn: async (payload: {
@@ -163,7 +168,7 @@ function FocusPage() {
       logSession.mutate({
         mode,
         label: label.trim() || null,
-        planned_minutes: durations[mode] ?? 25,
+        planned_minutes: Math.max(1, Math.round((durations[mode] ?? 1500) / 60)),
         actual_seconds: elapsed,
         completed,
         started_at: startedAtRef.current ?? new Date().toISOString(),
@@ -209,7 +214,7 @@ function FocusPage() {
     setElapsed(0);
     startedAtRef.current = null;
     setMode(next);
-    setRemaining((durations[next] ?? 25) * 60);
+    setRemaining(durations[next] ?? 1500);
   };
 
   const start = () => {
@@ -229,14 +234,26 @@ function FocusPage() {
     setRemaining(total);
   };
 
-  const setDuration = (value: string) => {
-    const minutes = Math.max(1, Math.min(180, Number(value) || 1));
-    setDurations((d) => ({ ...d, [mode]: minutes }));
-    if (!running) setRemaining(minutes * 60);
+  const hms = {
+    h: Math.floor(total / 3600),
+    m: Math.floor((total % 3600) / 60),
+    s: total % 60,
+  };
+
+  const setPart = (part: "h" | "m" | "s", value: string) => {
+    const n = Math.max(0, Math.min(part === "h" ? 23 : 59, Number(value) || 0));
+    const next = { ...hms, [part]: n };
+    const seconds = Math.max(1, next.h * 3600 + next.m * 60 + next.s);
+    setDurations((d) => ({ ...d, [mode]: seconds }));
+    if (!running) {
+      elapsedRef.current = 0;
+      setElapsed(0);
+      setRemaining(seconds);
+    }
   };
 
   const applyPreset = (minutes: number) => {
-    setDurations((d) => ({ ...d, [mode]: minutes }));
+    setDurations((d) => ({ ...d, [mode]: minutes * 60 }));
     if (!running) {
       elapsedRef.current = 0;
       setElapsed(0);
@@ -334,14 +351,33 @@ function FocusPage() {
               {!countUp && <Progress value={pct} className="h-1.5 w-full max-w-md" />}
               <p className="text-xs text-muted-foreground">
                 {FOCUS_MODE_LABEL[mode]} ·{" "}
-                {countUp ? "open-ended stopwatch" : `${durations[mode]} min planned`}
+                {countUp ? "open-ended stopwatch" : `${formatMinutes(total)} planned`}
               </p>
+              <div className="flex items-end gap-2">
+                {(["h", "m", "s"] as const).map((part) => (
+                  <div key={part} className="grid gap-1 text-center">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={part === "h" ? 23 : 59}
+                      value={String(hms[part])}
+                      onChange={(e) => setPart(part, e.target.value)}
+                      disabled={countUp || running}
+                      className="h-10 w-16 text-center font-mono text-base tabular-nums"
+                      aria-label={part === "h" ? "Hours" : part === "m" ? "Minutes" : "Seconds"}
+                    />
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {part === "h" ? "hrs" : part === "m" ? "min" : "sec"}
+                    </span>
+                  </div>
+                ))}
+              </div>
               <div className="flex flex-wrap items-center justify-center gap-1.5">
                 {PRESETS.map((p) => (
                   <Button
                     key={p}
                     size="sm"
-                    variant={durations[mode] === p ? "secondary" : "outline"}
+                    variant={total === p * 60 ? "secondary" : "outline"}
                     className="h-7 px-2.5 text-xs"
                     onClick={() => applyPreset(p)}
                     disabled={countUp}
@@ -385,24 +421,13 @@ function FocusPage() {
               </Button>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs">What are you working on?</Label>
                 <Input
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="Refactor auth module"
-                  className="h-9"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label className="text-xs">{FOCUS_MODE_LABEL[mode]} length (minutes)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={180}
-                  value={String(durations[mode] ?? 25)}
-                  onChange={(e) => setDuration(e.target.value)}
                   className="h-9"
                 />
               </div>
