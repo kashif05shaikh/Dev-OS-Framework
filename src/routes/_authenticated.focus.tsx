@@ -373,7 +373,10 @@ function FocusPage() {
                 onClick={() => {
                   save(false);
                   setRunning(false);
-                  setRemaining(0);
+                  setElapsed(0);
+                  if (countUp) setRemaining(total);
+                  else setRemaining(0);
+                  if (alarmOn) playAlarm(1);
                 }}
                 disabled={!running && elapsedRef.current === 0}
               >
