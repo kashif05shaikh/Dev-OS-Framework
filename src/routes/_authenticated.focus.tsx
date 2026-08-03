@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
   Pause,
   Play,
   RotateCcw,
@@ -189,7 +188,7 @@ function FocusPage() {
 
   // Session completion.
   useEffect(() => {
-    if (remaining > 0) return;
+    if (remaining > 0 || !running) return;
     setRunning(false);
     setRemaining(0);
     save(true);
@@ -239,7 +238,7 @@ function FocusPage() {
   const setPart = (part: "h" | "m" | "s", value: string) => {
     const n = Math.max(0, Math.min(part === "h" ? 23 : 59, Number(value) || 0));
     const next = { ...hms, [part]: n };
-    const seconds = Math.max(1, next.h * 3600 + next.m * 60 + next.s);
+    const seconds = Math.max(0, next.h * 3600 + next.m * 60 + next.s);
     setDurations((d) => ({ ...d, [mode]: seconds }));
     if (!running) {
       elapsedRef.current = 0;
@@ -301,10 +300,6 @@ function FocusPage() {
                   {FOCUS_MODE_LABEL[m]}
                 </Button>
               ))}
-              <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Bell className="size-3.5" />
-                Alarm on
-              </div>
             </div>
 
             <div className="flex flex-col items-center gap-4 py-6">
