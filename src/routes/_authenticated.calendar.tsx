@@ -307,9 +307,10 @@ function CalendarPage() {
     if (syncing) return; // debounce rapid clicks
     setSyncing(true);
     try {
-      await Promise.all([contests.refetch(), events.refetch()]);
+      const [c, ev] = await Promise.all([contests.refetch(), events.refetch()]);
       goToToday();
-      toast.success("Calendar synced to today");
+      if (c.error || ev.error) toast.error(describeError(c.error ?? ev.error));
+      else toast.success("Calendar synced to today");
     } catch (e) {
       goToToday();
       toast.error(describeError(e) || "Couldn't refresh contests");
