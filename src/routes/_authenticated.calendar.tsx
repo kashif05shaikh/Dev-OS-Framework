@@ -444,13 +444,14 @@ function CalendarPage() {
                 const dayEvents = byDate.get(iso) ?? [];
                 const dayContests = contestsByDate.get(iso) ?? [];
                 const expanded = expandedDay === iso;
+                const hasItems = dayEvents.length + dayContests.length > 0;
                 const hasOverflow = dayEvents.length + dayContests.length > 3;
                 return (
                   <div
                     key={iso}
                     className={cn(
-                      "relative min-h-32 sm:min-h-36",
-                      expanded && hasOverflow ? "z-30" : "z-0",
+                      "calendar-day-slot relative min-h-32 overflow-visible sm:min-h-36",
+                      expanded && hasItems ? "is-expanded z-50" : "z-0",
                     )}
                   >
                     <button
@@ -463,12 +464,12 @@ function CalendarPage() {
                       onMouseEnter={() => setExpandedDay(iso)}
                       onMouseLeave={() => setExpandedDay((cur) => (cur === iso ? null : cur))}
                       className={cn(
-                        "absolute inset-0 z-[1] flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
+                        "calendar-day absolute inset-0 z-[1] flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left hover:bg-accent/40",
                         !inMonth && "bg-card/40 text-muted-foreground/50",
                         selected === iso && "ring-1 ring-inset ring-primary",
                         expanded &&
-                          hasOverflow &&
-                          "bottom-auto z-30 h-auto max-h-[300px] min-h-full overflow-y-auto rounded-lg bg-popover shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] ring-1 ring-primary/50",
+                          hasItems &&
+                          "is-expanded ring-1 ring-primary/50",
                       )}
                     >
                       <span
