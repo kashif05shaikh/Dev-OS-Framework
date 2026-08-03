@@ -94,7 +94,10 @@ function monthGrid(year: number, month: number): Date[] {
   const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7;
   const start = new Date(year, month, 1 - offset);
-  return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+  return Array.from(
+    { length: 42 },
+    (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+  );
 }
 
 function formatTime(value: string | null): string {
@@ -165,7 +168,9 @@ function CalendarPage() {
   const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   const findCachedRow = (id: string): { id: string } =>
-    (qc.getQueryData<CalendarEvent[]>(["calendar_events"]) ?? []).find((r) => r.id === id) ?? { id };
+    (qc.getQueryData<CalendarEvent[]>(["calendar_events"]) ?? []).find((r) => r.id === id) ?? {
+      id,
+    };
 
   const addContest = useMutation({
     mutationFn: async (contest: UpcomingContest) =>
@@ -266,10 +271,7 @@ function CalendarPage() {
     return map;
   }, [events.data]);
 
-  const days = useMemo(
-    () => monthGrid(cursor.getFullYear(), cursor.getMonth()),
-    [cursor],
-  );
+  const days = useMemo(() => monthGrid(cursor.getFullYear(), cursor.getMonth()), [cursor]);
 
   const contestsByDate = useMemo(() => {
     const map = new Map<string, UpcomingContest[]>();
@@ -341,7 +343,8 @@ function CalendarPage() {
   };
 
   if (events.isLoading) return <LoadingState label="Loading your calendar…" />;
-  if (events.error) return <ErrorState error={events.error} onRetry={() => void events.refetch()} />;
+  if (events.error)
+    return <ErrorState error={events.error} onRetry={() => void events.refetch()} />;
 
   const selectedEvents = byDate.get(selected) ?? [];
   const selectedContests = contestsByDate.get(selected) ?? [];
@@ -449,22 +452,23 @@ function CalendarPage() {
                         {day.getDate()}
                       </span>
                       <span className="flex flex-col gap-1">
-                        {dayEvents
-                          .slice(0, expanded ? dayEvents.length : 3)
-                          .map((e) => (
-                            <span
-                              key={e.id}
-                              className={cn(
-                                "truncate rounded px-1.5 py-0.5 text-[11px]",
-                                e.completed && "line-through opacity-60",
-                              )}
-                              style={{ backgroundColor: `${e.color}22`, color: e.color }}
-                            >
-                              {e.title}
-                            </span>
-                          ))}
+                        {dayEvents.slice(0, expanded ? dayEvents.length : 3).map((e) => (
+                          <span
+                            key={e.id}
+                            className={cn(
+                              "truncate rounded px-1.5 py-0.5 text-[11px]",
+                              e.completed && "line-through opacity-60",
+                            )}
+                            style={{ backgroundColor: `${e.color}22`, color: e.color }}
+                          >
+                            {e.title}
+                          </span>
+                        ))}
                         {dayContests
-                          .slice(0, expanded ? dayContests.length : Math.max(0, 3 - dayEvents.length))
+                          .slice(
+                            0,
+                            expanded ? dayContests.length : Math.max(0, 3 - dayEvents.length),
+                          )
                           .map((c) => (
                             <span
                               key={c.id}
@@ -530,7 +534,11 @@ function CalendarPage() {
               className="flex-1"
             />
             <Button type="submit" disabled={saveEvent.isPending || !quickTitle.trim()}>
-              {saveEvent.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {saveEvent.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
               Add
             </Button>
           </form>
@@ -647,7 +655,10 @@ function CalendarPage() {
                         {c.name}
                       </a>
                       <p className="text-[11px] text-muted-foreground">
-                        {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                        {start.toLocaleTimeString(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                         {" · "}
                         {c.durationMinutes} min
                       </p>
@@ -659,7 +670,11 @@ function CalendarPage() {
                       disabled={added || addContest.isPending}
                       onClick={() => addContest.mutate(c)}
                     >
-                      {added ? <Check className="size-3.5 text-primary" /> : <Plus className="size-3.5" />}
+                      {added ? (
+                        <Check className="size-3.5 text-primary" />
+                      ) : (
+                        <Plus className="size-3.5" />
+                      )}
                     </Button>
                   </li>
                 );
@@ -761,9 +776,7 @@ function CalendarPage() {
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
                   checked={draft?.all_day ?? true}
-                  onCheckedChange={(v) =>
-                    setDraft((d) => (d ? { ...d, all_day: Boolean(v) } : d))
-                  }
+                  onCheckedChange={(v) => setDraft((d) => (d ? { ...d, all_day: Boolean(v) } : d))}
                 />
                 All day
               </label>
@@ -819,9 +832,7 @@ function CalendarPage() {
                   id="event-notes"
                   rows={3}
                   value={draft?.description ?? ""}
-                  onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, description: e.target.value } : d))
-                  }
+                  onChange={(e) => setDraft((d) => (d ? { ...d, description: e.target.value } : d))}
                 />
               </div>
             </div>
