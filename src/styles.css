@@ -369,18 +369,6 @@
 }
 
 /* Keep cells near the right edge inside the calendar while expanding left. */
-.calendar-day-slot:nth-child(7n),
-.calendar-day-slot:nth-child(7n - 1) {
-  direction: rtl;
-}
-
-.calendar-day-slot:nth-child(7n) > .calendar-day,
-.calendar-day-slot:nth-child(7n - 1) > .calendar-day {
-  right: 0;
-  left: auto;
-  direction: ltr;
-}
-
 .calendar-day-slot:nth-child(7n):hover > .calendar-day,
 .calendar-day-slot:nth-child(7n - 1):hover > .calendar-day,
 .calendar-day-slot:nth-child(7n) > .calendar-day.is-expanded,
