@@ -272,6 +272,19 @@ function CalendarPage() {
     [cursor],
   );
 
+  const contestsByDate = useMemo(() => {
+    const map = new Map<string, UpcomingContest[]>();
+    for (const c of contests.data ?? []) {
+      const iso = toIso(new Date(c.startsAt));
+      const list = map.get(iso) ?? [];
+      list.push(c);
+      map.set(iso, list);
+    }
+    return map;
+  }, [contests.data]);
+
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+
   const upcoming = useMemo(() => {
     const iso = toIso(today);
     return (events.data ?? []).filter((e) => e.event_date >= iso && !e.completed).slice(0, 6);
