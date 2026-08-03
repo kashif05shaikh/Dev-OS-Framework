@@ -535,10 +535,13 @@ function CalendarPage() {
               variant="ghost"
               size="icon"
               className="ml-auto"
-              aria-label="Refresh contests"
-              onClick={() => void contests.refetch()}
+              aria-label="Sync contests and jump to today"
+              disabled={syncing}
+              onClick={() => void handleSync()}
             >
-              <RefreshCw className={cn("size-4", contests.isFetching && "animate-spin")} />
+              <RefreshCw
+                className={cn("size-4", (syncing || contests.isFetching) && "animate-spin")}
+              />
             </Button>
             <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
               <Plus className="size-4" />
