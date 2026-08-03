@@ -118,8 +118,6 @@ function FocusPage() {
   const [label, setLabel] = useState("");
   const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES['focus']! * 60);
   const [running, setRunning] = useState(false);
-  const [countUp, setCountUp] = useState(false);
-  const [alarmOn, setAlarmOn] = useState(true);
   const elapsedRef = useRef(0);
   const startedAtRef = useRef<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -185,19 +183,18 @@ function FocusPage() {
     const id = window.setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
-      if (!countUp) setRemaining((r) => r - 1);
+      setRemaining((r) => r - 1);
     }, 1000);
     return () => window.clearInterval(id);
-  }, [running, countUp]);
+  }, [running]);
 
   // Session completion.
   useEffect(() => {
-    if (countUp) return;
     if (remaining > 0) return;
     setRunning(false);
     setRemaining(0);
     save(true);
-    if (alarmOn) playAlarm();
+    playAlarm();
     toast.success(`${FOCUS_MODE_LABEL[mode]} session complete`);
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("DevOS Focus Timer", {
@@ -305,37 +302,9 @@ function FocusPage() {
                   {FOCUS_MODE_LABEL[m]}
                 </Button>
               ))}
-              <div className="ml-auto flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant={countUp ? "secondary" : "ghost"}
-                  className="h-8"
-                  onClick={() => {
-                    if (running && elapsedRef.current >= 10) save(false);
-                    setRunning(false);
-                    elapsedRef.current = 0;
-                    setElapsed(0);
-                    startedAtRef.current = null;
-                    setRemaining(total);
-                    setCountUp((v) => !v);
-                  }}
-                >
-                  {countUp ? "Count up" : "Countdown"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8"
-                  onClick={() => {
-                    const next = !alarmOn;
-                    setAlarmOn(next);
-                    if (next) playAlarm(1);
-                  }}
-                  aria-label={alarmOn ? "Disable alarm" : "Enable alarm"}
-                >
-                  {alarmOn ? <Bell className="size-4" /> : <BellOff className="size-4" />}
-                  {alarmOn ? "Alarm on" : "Alarm off"}
-                </Button>
+              <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Bell className="size-3.5" />
+                Alarm on
               </div>
             </div>
 
@@ -346,29 +315,37 @@ function FocusPage() {
                   MODE_ACCENT[mode],
                 )}
               >
-                {formatClock(countUp ? elapsed : remaining)}
+                {formatClock(remaining)}
               </p>
-              {!countUp && <Progress value={pct} className="h-1.5 w-full max-w-md" />}
+              <Progress value={pct} className="h-1.5 w-full max-w-md" />
               <p className="text-xs text-muted-foreground">
-                {FOCUS_MODE_LABEL[mode]} ·{" "}
-                {countUp ? "open-ended stopwatch" : `${formatMinutes(total)} planned`}
+                {FOCUS_MODE_LABEL[mode]} · {formatMinutes(total)} planned
               </p>
-              <div className="flex items-end gap-2">
-                {(["h", "m", "s"] as const).map((part) => (
-                  <div key={part} className="grid gap-1 text-center">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={part === "h" ? 23 : 59}
-                      value={String(hms[part])}
-                      onChange={(e) => setPart(part, e.target.value)}
-                      disabled={countUp || running}
-                      className="h-10 w-16 text-center font-mono text-base tabular-nums"
-                      aria-label={part === "h" ? "Hours" : part === "m" ? "Minutes" : "Seconds"}
-                    />
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {part === "h" ? "hrs" : part === "m" ? "min" : "sec"}
-                    </span>
+              <div className="flex items-end gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 shadow-sm">
+                {(["h", "m", "s"] as const).map((part, i) => (
+                  <div key={part} className="flex items-end gap-3">
+                    {i > 0 && (
+                      <span className="pb-6 font-mono text-xl text-muted-foreground/60">:</span>
+                    )}
+                    <div className="grid gap-1.5 text-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={part === "h" ? 23 : 59}
+                        value={String(hms[part])}
+                        onChange={(e) => setPart(part, e.target.value)}
+                        disabled={running}
+                        className={cn(
+                          "h-14 w-20 rounded-xl border-border/70 bg-background/80 text-center font-mono text-2xl font-semibold tabular-nums",
+                          "shadow-inner transition-colors focus-visible:border-primary/60",
+                          "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                        )}
+                        aria-label={part === "h" ? "Hours" : part === "m" ? "Minutes" : "Seconds"}
+                      />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                        {part === "h" ? "hrs" : part === "m" ? "min" : "sec"}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -380,7 +357,6 @@ function FocusPage() {
                     variant={total === p * 60 ? "secondary" : "outline"}
                     className="h-7 px-2.5 text-xs"
                     onClick={() => applyPreset(p)}
-                    disabled={countUp}
                   >
                     {p}m
                   </Button>
@@ -395,7 +371,7 @@ function FocusPage() {
                   Pause
                 </Button>
               ) : (
-                <Button onClick={start} disabled={!countUp && remaining <= 0}>
+                <Button onClick={start} disabled={remaining <= 0}>
                   <Play className="size-4" />
                   {elapsedRef.current > 0 ? "Resume" : "Start"}
                 </Button>
@@ -410,9 +386,8 @@ function FocusPage() {
                   save(false);
                   setRunning(false);
                   setElapsed(0);
-                  if (countUp) setRemaining(total);
-                  else setRemaining(0);
-                  if (alarmOn) playAlarm(1);
+                  setRemaining(0);
+                  playAlarm(1);
                 }}
                 disabled={!running && elapsedRef.current === 0}
               >
