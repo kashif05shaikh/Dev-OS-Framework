@@ -284,6 +284,7 @@ function CalendarPage() {
   }, [contests.data]);
 
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
 
   const upcoming = useMemo(() => {
     const iso = toIso(today);
@@ -344,6 +345,7 @@ function CalendarPage() {
   if (events.error) return <ErrorState error={events.error} onRetry={() => void events.refetch()} />;
 
   const selectedEvents = byDate.get(selected) ?? [];
+  const selectedContests = contestsByDate.get(selected) ?? [];
   const monthLabel = cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
   return (
@@ -399,306 +401,308 @@ function CalendarPage() {
         </Button>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[1fr_20rem]">
-        <div className="min-w-0 p-4">
-          <div className="grid grid-cols-7 gap-px text-[11px] uppercase tracking-wide text-muted-foreground">
-            {WEEKDAYS.map((d) => (
-              <div key={d} className="px-2 py-1.5 text-center">
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-border bg-border">
-            {days.map((day) => {
-              const iso = toIso(day);
-              const inMonth = day.getMonth() === cursor.getMonth();
-              const isToday = iso === toIso(today);
-              const dayEvents = byDate.get(iso) ?? [];
-              return (
-                <button
-                  key={iso}
-                  type="button"
-                  onClick={() => setSelected(iso)}
-                  onDoubleClick={() => setDraft(emptyDraft(iso))}
-                  className={cn(
-                    "flex min-h-24 flex-col gap-1 bg-card p-2 text-left transition-colors hover:bg-accent/40",
-                    !inMonth && "bg-card/40 text-muted-foreground/50",
-                    selected === iso && "ring-1 ring-inset ring-primary",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      isToday &&
-                        "inline-flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground",
-                    )}
-                  >
-                    {day.getDate()}
-                  </span>
-                  <span className="flex flex-col gap-1">
-                    {dayEvents.slice(0, 3).map((e) => (
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="overflow-x-auto p-4">
+          <div className="min-w-[760px]">
+            <div className="grid grid-cols-7 gap-px text-xs uppercase tracking-wide text-muted-foreground">
+              {WEEKDAYS.map((d) => (
+                <div key={d} className="px-2 py-2 text-center">
+                  {d}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-px overflow-visible rounded-xl border border-border bg-border">
+              {days.map((day) => {
+                const iso = toIso(day);
+                const inMonth = day.getMonth() === cursor.getMonth();
+                const isToday = iso === toIso(today);
+                const dayEvents = byDate.get(iso) ?? [];
+                const dayContests = contestsByDate.get(iso) ?? [];
+                const expanded = expandedDay === iso;
+                const hasOverflow = dayEvents.length + dayContests.length > 3;
+                return (
+                  <div key={iso} className="relative min-h-32 sm:min-h-36">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(iso);
+                        setExpandedDay((cur) => (cur === iso ? null : iso));
+                      }}
+                      onDoubleClick={() => setDraft(emptyDraft(iso))}
+                      onMouseEnter={() => setExpandedDay(iso)}
+                      onMouseLeave={() => setExpandedDay((cur) => (cur === iso ? null : cur))}
+                      className={cn(
+                        "absolute inset-0 flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left transition-all duration-200 ease-out hover:bg-accent/40",
+                        !inMonth && "bg-card/40 text-muted-foreground/50",
+                        selected === iso && "ring-1 ring-inset ring-primary",
+                        expanded &&
+                          hasOverflow &&
+                          "bottom-auto z-30 h-auto min-h-full overflow-visible rounded-lg shadow-2xl ring-1 ring-primary/50",
+                      )}
+                    >
                       <span
-                        key={e.id}
                         className={cn(
-                          "truncate rounded px-1.5 py-0.5 text-[10px]",
-                          e.completed && "line-through opacity-60",
+                          "text-sm font-medium",
+                          isToday &&
+                            "inline-flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground",
                         )}
-                        style={{
-                          backgroundColor: `${e.color}22`,
-                          color: e.color,
-                        }}
                       >
-                        {e.title}
+                        {day.getDate()}
                       </span>
-                    ))}
-                    {dayEvents.length > 3 ? (
-                      <span className="text-[10px] text-muted-foreground">
-                        +{dayEvents.length - 3} more
+                      <span className="flex flex-col gap-1">
+                        {dayEvents
+                          .slice(0, expanded ? dayEvents.length : 3)
+                          .map((e) => (
+                            <span
+                              key={e.id}
+                              className={cn(
+                                "truncate rounded px-1.5 py-0.5 text-[11px]",
+                                e.completed && "line-through opacity-60",
+                              )}
+                              style={{ backgroundColor: `${e.color}22`, color: e.color }}
+                            >
+                              {e.title}
+                            </span>
+                          ))}
+                        {dayContests
+                          .slice(0, expanded ? dayContests.length : Math.max(0, 3 - dayEvents.length))
+                          .map((c) => (
+                            <span
+                              key={c.id}
+                              title={c.name}
+                              className="flex items-center gap-1.5 rounded bg-muted/70 px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                            >
+                              <PlatformLogo platform={c.platform} className="size-3.5 shrink-0" />
+                              <span className="truncate">{c.name}</span>
+                            </span>
+                          ))}
+                        {!expanded && hasOverflow ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            +{dayEvents.length + dayContests.length - 3} more
+                          </span>
+                        ) : null}
                       </span>
-                    ) : null}
-                  </span>
-                </button>
-              );
-            })}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <aside className="flex min-h-0 flex-col border-t border-border lg:border-l lg:border-t-0">
-          <ScrollArea className="flex-1">
-            <div className="space-y-6 p-4">
-              <section>
-                <div className="mb-2 flex items-center gap-2">
-                  <h2 className="text-sm font-medium">
-                    {new Date(`${selected}T00:00:00`).toLocaleDateString(undefined, {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-auto"
-                    aria-label="Add event on this day"
-                    onClick={() => setDraft(emptyDraft(selected))}
-                  >
-                    <Plus className="size-4" />
-                  </Button>
-                </div>
-                {selectedEvents.length === 0 ? (
-                  <EmptyState
-                    icon={<CalendarDays className="size-5" />}
-                    title="Nothing scheduled"
-                    description="Double-click any day to add an event."
-                  />
-                ) : (
-                  <ul className="space-y-2">
-                    {selectedEvents.map((e) => (
-                      <li
-                        key={e.id}
-                        className="rounded-lg border border-border bg-card p-3"
-                        style={{ borderLeft: `3px solid ${e.color}` }}
-                      >
-                        <div className="flex items-start gap-2">
-                          <Checkbox
-                            checked={e.completed}
-                            aria-label="Mark done"
-                            onCheckedChange={(v) =>
-                              patchEvent.mutate({ id: e.id, patch: { completed: Boolean(v) } })
-                            }
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className={cn(
-                                "truncate text-sm font-medium",
-                                e.completed && "line-through text-muted-foreground",
-                              )}
-                            >
-                              {e.title}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {EVENT_KIND_LABEL[e.kind] ?? e.kind}
-                              {e.all_day
-                                ? " · All day"
-                                : e.start_time
-                                  ? ` · ${formatTime(e.start_time)}${e.end_time ? ` – ${formatTime(e.end_time)}` : ""}`
-                                  : ""}
-                            </p>
-                            {e.description ? (
-                              <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
-                                {e.description}
-                              </p>
-                            ) : null}
-                            {e.location ? (
-                              <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <MapPin className="size-3" />
-                                {e.location}
-                              </p>
-                            ) : null}
-                            {e.url ? (
-                              <a
-                                href={e.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                              >
-                                <ExternalLink className="size-3" />
-                                Open link
-                              </a>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-col">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Edit event"
-                              onClick={() => setDraft(toDraft(e))}
-                            >
-                              <Pencil className="size-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Delete event"
-                              onClick={() =>
-                                setConfirm({
-                                  title: "Delete event?",
-                                  description: `"${e.title}" will be permanently removed.`,
-                                  confirmLabel: "Delete",
-                                  onConfirm: () => deleteEvent.mutate(e.id),
-                                })
-                              }
-                            >
-                              <Trash2 className="size-3.5 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
+        <section className="border-t border-border p-4">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-medium">
+              {new Date(`${selected}T00:00:00`).toLocaleDateString(undefined, {
+                weekday: "long",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              aria-label="Refresh contests"
+              onClick={() => void contests.refetch()}
+            >
+              <RefreshCw className={cn("size-4", contests.isFetching && "animate-spin")} />
+            </Button>
+            <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
+              <Plus className="size-4" />
+              Add event
+            </Button>
+          </div>
 
-              <section>
-                <h2 className="mb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                  Upcoming
-                </h2>
-                {upcoming.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No upcoming events.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {upcoming.map((e) => (
-                      <li key={e.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date(`${e.event_date}T00:00:00`);
-                            setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
-                            setSelected(e.event_date);
-                          }}
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/50"
-                        >
-                          <span
-                            className="size-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: e.color }}
-                          />
-                          <span className="truncate">{e.title}</span>
-                          <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
-                            {new Date(`${e.event_date}T00:00:00`).toLocaleDateString(undefined, {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
+          <form
+            className="mb-4 flex flex-col gap-2 sm:flex-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!quickTitle.trim()) return;
+              saveEvent.mutate({ ...emptyDraft(selected), title: quickTitle });
+              setQuickTitle("");
+            }}
+          >
+            <Input
+              value={quickTitle}
+              onChange={(e) => setQuickTitle(e.target.value)}
+              placeholder={`Add something on ${new Date(`${selected}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}…`}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={saveEvent.isPending || !quickTitle.trim()}>
+              {saveEvent.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              Add
+            </Button>
+          </form>
 
-              <section>
-                <div className="mb-2 flex items-center gap-2">
-                  <h2 className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                    Upcoming contests
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-auto"
-                    aria-label="Refresh contests"
-                    onClick={() => void contests.refetch()}
-                  >
-                    <RefreshCw
-                      className={cn("size-3.5", contests.isFetching && "animate-spin")}
+          {selectedEvents.length === 0 && selectedContests.length === 0 ? (
+            <EmptyState
+              icon={<CalendarDays className="size-5" />}
+              title="Nothing scheduled"
+              description="Use the field above, or double-click any day to add an event."
+            />
+          ) : (
+            <ul className="grid gap-2 md:grid-cols-2">
+              {selectedEvents.map((e) => (
+                <li
+                  key={e.id}
+                  className="rounded-lg border border-border bg-card p-3"
+                  style={{ borderLeft: `3px solid ${e.color}` }}
+                >
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      checked={e.completed}
+                      aria-label="Mark done"
+                      onCheckedChange={(v) =>
+                        patchEvent.mutate({ id: e.id, patch: { completed: Boolean(v) } })
+                      }
                     />
-                  </Button>
-                </div>
-                {contests.isLoading ? (
-                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" /> Fetching contests…
-                  </p>
-                ) : contests.error ? (
-                  <p className="text-xs text-muted-foreground">
-                    Couldn&apos;t load contests. Try refreshing.
-                  </p>
-                ) : (contests.data?.length ?? 0) === 0 ? (
-                  <p className="text-xs text-muted-foreground">No contests announced yet.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {(contests.data ?? []).slice(0, 8).map((c) => {
-                      const start = new Date(c.startsAt);
-                      const added = (events.data ?? []).some(
-                        (e) => e.url === c.url && e.kind === "contest",
-                      );
-                      return (
-                        <li
-                          key={c.id}
-                          className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          "truncate text-sm font-medium",
+                          e.completed && "line-through text-muted-foreground",
+                        )}
+                      >
+                        {e.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {EVENT_KIND_LABEL[e.kind] ?? e.kind}
+                        {e.all_day
+                          ? " · All day"
+                          : e.start_time
+                            ? ` · ${formatTime(e.start_time)}${e.end_time ? ` – ${formatTime(e.end_time)}` : ""}`
+                            : ""}
+                      </p>
+                      {e.description ? (
+                        <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                          {e.description}
+                        </p>
+                      ) : null}
+                      {e.location ? (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <MapPin className="size-3" />
+                          {e.location}
+                        </p>
+                      ) : null}
+                      {e.url ? (
+                        <a
+                          href={e.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
                         >
-                          <PlatformLogo platform={c.platform} className="size-7" />
-                          <div className="min-w-0 flex-1">
-                            <a
-                              href={c.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="line-clamp-2 text-xs font-medium hover:underline"
-                            >
-                              {c.name}
-                            </a>
-                            <p className="text-[11px] text-muted-foreground">
-                              {start.toLocaleDateString(undefined, {
-                                day: "numeric",
-                                month: "short",
-                              })}
-                              {" · "}
-                              {start.toLocaleTimeString(undefined, {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={added ? "Already in calendar" : "Add contest to calendar"}
-                            disabled={added || addContest.isPending}
-                            onClick={() => addContest.mutate(c)}
-                          >
-                            {added ? (
-                              <Check className="size-3.5 text-primary" />
-                            ) : (
-                              <Plus className="size-3.5" />
-                            )}
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </section>
+                          <ExternalLink className="size-3" />
+                          Open link
+                        </a>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Edit event"
+                        onClick={() => setDraft(toDraft(e))}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Delete event"
+                        onClick={() =>
+                          setConfirm({
+                            title: "Delete event?",
+                            description: `"${e.title}" will be permanently removed.`,
+                            confirmLabel: "Delete",
+                            onConfirm: () => deleteEvent.mutate(e.id),
+                          })
+                        }
+                      >
+                        <Trash2 className="size-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+
+              {selectedContests.map((c) => {
+                const start = new Date(c.startsAt);
+                const added = (events.data ?? []).some(
+                  (e) => e.url === c.url && e.kind === "contest",
+                );
+                return (
+                  <li
+                    key={c.id}
+                    className="flex items-start gap-2 rounded-lg border border-border bg-card p-3"
+                  >
+                    <PlatformLogo platform={c.platform} className="size-7 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <a
+                        href={c.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="line-clamp-2 text-sm font-medium hover:underline"
+                      >
+                        {c.name}
+                      </a>
+                      <p className="text-[11px] text-muted-foreground">
+                        {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                        {" · "}
+                        {c.durationMinutes} min
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={added ? "Already in calendar" : "Add contest to calendar"}
+                      disabled={added || addContest.isPending}
+                      onClick={() => addContest.mutate(c)}
+                    >
+                      {added ? <Check className="size-3.5 text-primary" /> : <Plus className="size-3.5" />}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {upcoming.length > 0 ? (
+            <div className="mt-6">
+              <h3 className="mb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
+                Upcoming
+              </h3>
+              <ul className="flex flex-wrap gap-2">
+                {upcoming.map((e) => (
+                  <li key={e.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date(`${e.event_date}T00:00:00`);
+                        setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+                        setSelected(e.event_date);
+                      }}
+                      className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent/50"
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: e.color }}
+                      />
+                      <span className="max-w-40 truncate">{e.title}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(`${e.event_date}T00:00:00`).toLocaleDateString(undefined, {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </ScrollArea>
-        </aside>
+          ) : null}
+        </section>
       </div>
 
       <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
