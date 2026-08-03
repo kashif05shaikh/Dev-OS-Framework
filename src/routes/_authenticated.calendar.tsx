@@ -423,7 +423,13 @@ function CalendarPage() {
                 const expanded = expandedDay === iso;
                 const hasOverflow = dayEvents.length + dayContests.length > 3;
                 return (
-                  <div key={iso} className="relative min-h-32 sm:min-h-36">
+                  <div
+                    key={iso}
+                    className={cn(
+                      "relative min-h-32 sm:min-h-36",
+                      expanded && hasOverflow ? "z-30" : "z-0",
+                    )}
+                  >
                     <button
                       type="button"
                       onClick={() => {
