@@ -358,6 +358,8 @@
   width: 160%;
   height: 220px;
   min-height: 220px;
+  right: auto;
+  bottom: auto;
   z-index: 50;
   background: var(--color-popover);
   box-shadow: 0 8px 24px color-mix(in oklab, var(--color-background) 75%, transparent);
@@ -377,6 +379,14 @@
   right: 0;
   left: auto;
   direction: ltr;
+}
+
+.calendar-day-slot:nth-child(7n):hover > .calendar-day,
+.calendar-day-slot:nth-child(7n - 1):hover > .calendar-day,
+.calendar-day-slot:nth-child(7n) > .calendar-day.is-expanded,
+.calendar-day-slot:nth-child(7n - 1) > .calendar-day.is-expanded {
+  right: 0;
+  left: auto;
 }
 
 @media (hover: none) {
