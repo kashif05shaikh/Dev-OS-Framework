@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, SkipForward, Timer, Trash2 } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Timer,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -66,6 +75,35 @@ function formatMinutes(seconds: number): string {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
+const PRESETS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
+
+/** Plays a short repeating beep with the WebAudio API (no asset needed). */
+function playAlarm(times = 3) {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    for (let i = 0; i < times; i += 1) {
+      const at = ctx.currentTime + i * 0.55;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, at);
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.35, at + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.4);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + 0.45);
+    }
+    window.setTimeout(() => void ctx.close(), times * 600 + 400);
+  } catch {
+    /* audio unavailable — ignore */
+  }
+}
+
 function FocusPage() {
   const qc = useQueryClient();
   const sessions = useQuery(focusSessionsQuery());
@@ -75,8 +113,11 @@ function FocusPage() {
   const [label, setLabel] = useState("");
   const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES['focus']! * 60);
   const [running, setRunning] = useState(false);
+  const [countUp, setCountUp] = useState(false);
+  const [alarmOn, setAlarmOn] = useState(true);
   const elapsedRef = useRef(0);
   const startedAtRef = useRef<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
   const total = (durations[mode] ?? 25) * 60;
 
@@ -138,17 +179,20 @@ function FocusPage() {
     if (!running) return;
     const id = window.setInterval(() => {
       elapsedRef.current += 1;
-      setRemaining((r) => r - 1);
+      setElapsed(elapsedRef.current);
+      if (!countUp) setRemaining((r) => r - 1);
     }, 1000);
     return () => window.clearInterval(id);
-  }, [running]);
+  }, [running, countUp]);
 
   // Session completion.
   useEffect(() => {
+    if (countUp) return;
     if (remaining > 0) return;
     setRunning(false);
     setRemaining(0);
     save(true);
+    if (alarmOn) playAlarm();
     toast.success(`${FOCUS_MODE_LABEL[mode]} session complete`);
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("DevOS Focus Timer", {
@@ -162,6 +206,7 @@ function FocusPage() {
     if (running && elapsedRef.current >= 10) save(false);
     setRunning(false);
     elapsedRef.current = 0;
+    setElapsed(0);
     startedAtRef.current = null;
     setMode(next);
     setRemaining((durations[next] ?? 25) * 60);
@@ -179,6 +224,7 @@ function FocusPage() {
     if (elapsedRef.current >= 10) save(false);
     setRunning(false);
     elapsedRef.current = 0;
+    setElapsed(0);
     startedAtRef.current = null;
     setRemaining(total);
   };
@@ -187,6 +233,15 @@ function FocusPage() {
     const minutes = Math.max(1, Math.min(180, Number(value) || 1));
     setDurations((d) => ({ ...d, [mode]: minutes }));
     if (!running) setRemaining(minutes * 60);
+  };
+
+  const applyPreset = (minutes: number) => {
+    setDurations((d) => ({ ...d, [mode]: minutes }));
+    if (!running) {
+      elapsedRef.current = 0;
+      setElapsed(0);
+      setRemaining(minutes * 60);
+    }
   };
 
   const stats = useMemo(() => {
@@ -233,6 +288,38 @@ function FocusPage() {
                   {FOCUS_MODE_LABEL[m]}
                 </Button>
               ))}
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={countUp ? "secondary" : "ghost"}
+                  className="h-8"
+                  onClick={() => {
+                    if (running && elapsedRef.current >= 10) save(false);
+                    setRunning(false);
+                    elapsedRef.current = 0;
+                    setElapsed(0);
+                    startedAtRef.current = null;
+                    setRemaining(total);
+                    setCountUp((v) => !v);
+                  }}
+                >
+                  {countUp ? "Count up" : "Countdown"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8"
+                  onClick={() => {
+                    const next = !alarmOn;
+                    setAlarmOn(next);
+                    if (next) playAlarm(1);
+                  }}
+                  aria-label={alarmOn ? "Disable alarm" : "Enable alarm"}
+                >
+                  {alarmOn ? <Bell className="size-4" /> : <BellOff className="size-4" />}
+                  {alarmOn ? "Alarm on" : "Alarm off"}
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-4 py-6">
@@ -242,12 +329,27 @@ function FocusPage() {
                   MODE_ACCENT[mode],
                 )}
               >
-                {formatClock(remaining)}
+                {formatClock(countUp ? elapsed : remaining)}
               </p>
-              <Progress value={pct} className="h-1.5 w-full max-w-md" />
+              {!countUp && <Progress value={pct} className="h-1.5 w-full max-w-md" />}
               <p className="text-xs text-muted-foreground">
-                {FOCUS_MODE_LABEL[mode]} · {durations[mode]} min planned
+                {FOCUS_MODE_LABEL[mode]} ·{" "}
+                {countUp ? "open-ended stopwatch" : `${durations[mode]} min planned`}
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                {PRESETS.map((p) => (
+                  <Button
+                    key={p}
+                    size="sm"
+                    variant={durations[mode] === p ? "secondary" : "outline"}
+                    className="h-7 px-2.5 text-xs"
+                    onClick={() => applyPreset(p)}
+                    disabled={countUp}
+                  >
+                    {p}m
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -257,7 +359,7 @@ function FocusPage() {
                   Pause
                 </Button>
               ) : (
-                <Button onClick={start} disabled={remaining <= 0}>
+                <Button onClick={start} disabled={!countUp && remaining <= 0}>
                   <Play className="size-4" />
                   {elapsedRef.current > 0 ? "Resume" : "Start"}
                 </Button>
