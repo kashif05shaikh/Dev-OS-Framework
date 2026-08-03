@@ -76,7 +76,6 @@ function formatMinutes(seconds: number): string {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
-const PRESETS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
 
 /** Plays a short repeating beep with the WebAudio API (no asset needed). */
 function playAlarm(times = 3) {
@@ -244,15 +243,6 @@ function FocusPage() {
       elapsedRef.current = 0;
       setElapsed(0);
       setRemaining(seconds);
-    }
-  };
-
-  const applyPreset = (minutes: number) => {
-    setDurations((d) => ({ ...d, [mode]: minutes * 60 }));
-    if (!running) {
-      elapsedRef.current = 0;
-      setElapsed(0);
-      setRemaining(minutes * 60);
     }
   };
 
