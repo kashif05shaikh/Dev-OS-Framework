@@ -296,6 +296,28 @@ function CalendarPage() {
   const [remindersOn, setRemindersOn] = useState(false);
   const firedRef = useRef<Set<string>>(new Set());
 
+  const [syncing, setSyncing] = useState(false);
+  const goToToday = () => {
+    const now = new Date();
+    setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelected(toIso(now));
+    setExpandedDay(null);
+  };
+  const handleSync = async () => {
+    if (syncing) return; // debounce rapid clicks
+    setSyncing(true);
+    try {
+      await Promise.all([contests.refetch(), events.refetch()]);
+      goToToday();
+      toast.success("Calendar synced to today");
+    } catch (e) {
+      goToToday();
+      toast.error(describeError(e) || "Couldn't refresh contests");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     setRemindersOn(Notification.permission === "granted");
