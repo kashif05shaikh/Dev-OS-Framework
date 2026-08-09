@@ -253,7 +253,9 @@ function ProfilesPage() {
       }
 
       if (value.id) {
-        await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, payload);
+        // Manual edits shouldn't wipe the heatmap captured by the last sync.
+        const { activity: _activity, ...rest } = payload;
+        await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, rest);
         return;
       }
       await runWithRetry(async () => {
