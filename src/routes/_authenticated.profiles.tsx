@@ -569,6 +569,7 @@ function ProfilesPage() {
                 );
               })}
             </div>
+            </>
           )}
         </div>
       </ScrollArea>
