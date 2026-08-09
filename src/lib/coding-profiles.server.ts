@@ -35,14 +35,6 @@ async function getJson(url: string, init?: RequestInit): Promise<unknown> {
   return response.json();
 }
 
-async function postJson(url: string, body: unknown): Promise<unknown> {
-  return getJson(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
 function base(platform: string, username: string, profile_url: string | null): FetchedStats {
   return {
     platform,
