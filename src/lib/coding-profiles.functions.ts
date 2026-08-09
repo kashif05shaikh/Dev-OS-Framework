@@ -13,16 +13,17 @@ export const fetchCodingStats = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { fetchPlatformStats } = await import("./coding-profiles.server");
-    const { getConnectionSecret, markConnectionExpired } = await import(
-      "./coding-connections.server"
-    );
+    const { getConnection, markConnectionExpired } = await import("./coding-connections.server");
     // Connector platforms (CSES) sync through the signed-in user's own connection.
-    const session =
-      data.platform === "cses"
-        ? ((await getConnectionSecret(context.userId, "cses")) ?? undefined)
-        : undefined;
-    const stats = await fetchPlatformStats(data.platform, data.username, session);
-    if (data.platform === "cses" && session && stats.problems_solved === null) {
+    const connection =
+      data.platform === "cses" ? await getConnection(context.userId, "cses") : null;
+    // Fall back to the connected account's numeric id when the stored handle isn't one.
+    const handle =
+      data.platform === "cses" && !/\d/.test(data.username) && connection?.platformUserId
+        ? connection.platformUserId
+        : data.username;
+    const stats = await fetchPlatformStats(data.platform, handle, connection?.secret);
+    if (connection && stats.problems_solved === null) {
       await markConnectionExpired(context.userId, "cses");
     }
     return stats;
