@@ -603,11 +603,12 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
       if (statsPage.ok) {
         const page = await statsPage.text();
         if (!/Please login to see the statistics/i.test(page)) {
+          // The page literally prints "Solved tasks: 8/400" — that is the source of truth.
+          const printed = /Solved\s+tasks:?\s*<?[^>]*>?\s*(\d+)\s*\/\s*(\d+)/i.exec(
+            page.replace(/&nbsp;/g, " "),
+          )?.[1];
           const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
-          const solvedMatch = /(\d+)\s*\/\s*\d+/.exec(
-            /Solved tasks[\s\S]{0,200}?(\d+\s*\/\s*\d+)/i.exec(page)?.[1] ?? "",
-          );
-          const solved = fullCells || (solvedMatch?.[1] ? Number.parseInt(solvedMatch[1], 10) : 0);
+          const solved = printed ? Number.parseInt(printed, 10) : fullCells;
           if (solved > 0) stats.problems_solved = solved;
 
           // Follow the linked submission results to recover real dates for the heatmap.
