@@ -237,8 +237,11 @@ function ProfilesPage() {
         current_streak: toInt(value.current_streak),
         max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
-        activity: {} as Record<string, number>,
+        activity: {} as Record<string, unknown>,
         last_synced_at: new Date().toISOString(),
+        submissions_count: 0,
+        sync_status: "idle",
+        sync_error: null as string | null,
       };
 
       // New profile on a supported platform: pull the live stats automatically.
@@ -256,7 +259,11 @@ function ProfilesPage() {
              contests_attended: stats.contests_attended ?? payload.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
-             activity: activityPayload(stats) as Record<string, number>,
+             submissions_count: stats.submissions,
+             activity: activityPayload(stats),
+             last_synced_at: stats.lastSyncedAt,
+             sync_status: "success",
+             sync_error: null,
           };
         } catch (error) {
           toast.warning(
@@ -336,24 +343,32 @@ function ProfilesPage() {
       const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
       const results = await Promise.allSettled(
         rows.map(async (profile) => {
-          const stats = await fetchStats({
-            data: { platform: profile.platform, username: profile.username },
-          });
-          await updateRow("coding_profiles", profile, {
-            profile_url: profile.profile_url ?? stats.profile_url,
-            rating: stats.rating,
-            rank_label: stats.rank_label ?? profile.rank_label,
-             problems_solved: stats.problems_solved ?? profile.problems_solved,
-             contests_attended: stats.contests_attended ?? profile.contests_attended,
-             submissions_count: stats.submissions,
-            current_streak: stats.current_streak,
-            max_streak: Math.max(stats.max_streak, profile.max_streak),
-             activity: activityPayload(stats),
-             last_synced_at: stats.lastSyncedAt,
-             sync_status: "success",
-             sync_error: null,
-          });
-          return profile.platform;
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
         }),
       );
       const failed = results
@@ -579,6 +594,10 @@ function ProfilesPage() {
                         <span className="ml-auto">not synced yet</span>
                       )}
                     </div>
+
+                    {p.sync_status === "error" && p.sync_error ? (
+                      <p className="mt-2 text-[11px] text-destructive">Sync failed: {p.sync_error}</p>
+                    ) : null}
 
                     {p.notes ? (
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
