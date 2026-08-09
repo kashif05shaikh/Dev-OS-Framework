@@ -17,7 +17,8 @@ import {
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
-import { ActivityHeatmap } from "@/components/activity-heatmap";
+import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { aggregateCodingActivity, calculateCodingStreaks } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,6 @@ import {
 import {
   CODING_PLATFORMS,
   CODING_PLATFORM_LABEL,
-  CODING_PLATFORM_COLOR,
   PROFILE_URL_TEMPLATE,
   SOLVED_FIELD_LABEL,
   SOLVED_LABEL,
@@ -139,11 +139,12 @@ function canSync(platform: string): boolean {
   return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
 }
 
-function activityOf(profile: CodingProfile): Record<string, number> {
-  const raw = (profile as { activity?: unknown }).activity;
-  return raw && typeof raw === "object" && !Array.isArray(raw)
-    ? (raw as Record<string, number>)
-    : {};
+/** Platforms that simply don't publish a solved count get N/A instead of a fake 0. */
+const SOLVED_UNSUPPORTED = new Set(["cses"]);
+
+function metric(value: number | null, unsupported = false): string {
+  if (unsupported) return "N/A";
+  return value === null ? "N/A" : String(value);
 }
 
 function ProfilesPage() {
