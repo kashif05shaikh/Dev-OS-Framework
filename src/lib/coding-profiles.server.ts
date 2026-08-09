@@ -546,7 +546,11 @@ async function fetchCses(username: string): Promise<FetchedStats> {
   const id = username.replace(/\D/g, "");
   if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
   const url = `https://cses.fi/user/${id}`;
-  const response = await fetch(url, { headers: UA });
+  const session = process.env["CSES_SESSION"]?.trim();
+  const authHeaders = session
+    ? { ...UA, Cookie: session.includes("=") ? session : `PHPSESSID=${session}` }
+    : UA;
+  const response = await fetch(url, { headers: authHeaders });
   if (!response.ok) throw new Error(`CSES returned ${response.status}`);
   const html = await response.text();
   if (/CSES - 404/.test(html)) throw new Error(`No CSES user with id ${id}.`);
@@ -561,9 +565,53 @@ async function fetchCses(username: string): Promise<FetchedStats> {
     stats.rank_label = `${submissions} submissions`;
   }
   if (name) stats.username = id;
-  // The public CSES user page exposes only totals plus first/last timestamps.
-  // It does not expose per-submission rows or solved-task count without a logged-in session,
-  // so these remain null rather than fabricating activity dates or equating submissions to solved.
+
+  // Solved count and per-submission dates only exist behind a CSES login session.
+  if (session) {
+    try {
+      const statsPage = await fetch(`https://cses.fi/problemset/user/${id}/`, {
+        headers: authHeaders,
+      });
+      if (statsPage.ok) {
+        const page = await statsPage.text();
+        if (!/Please login to see the statistics/i.test(page)) {
+          const solvedMatch = /(\d+)\s*\/\s*\d+\s*(?:tasks|solved)/i.exec(page);
+          const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
+          const solved = solvedMatch?.[1] ? Number.parseInt(solvedMatch[1], 10) : fullCells;
+          if (solved > 0) stats.problems_solved = solved;
+
+          // Follow the linked submission results to recover real dates for the heatmap.
+          const ids = Array.from(
+            new Set(
+              Array.from(page.matchAll(/\/problemset\/result\/(\d+)\//g)).map((m) => m[1]!),
+            ),
+          ).slice(0, 80);
+          const activity: Record<
+            string,
+            { submissions: number; solved: number; ids?: Set<string> }
+          > = {};
+          for (const resultId of ids) {
+            const res = await fetch(`https://cses.fi/problemset/result/${resultId}/`, {
+              headers: authHeaders,
+            });
+            if (!res.ok) continue;
+            const body = await res.text();
+            const when = /Submission time:<\/td><td[^>]*>\s*([\d]{4}-[\d]{2}-[\d]{2})/.exec(body)?.[1];
+            if (!when) continue;
+            addSubmission(activity, when, /ACCEPTED/i.test(body), resultId);
+          }
+          if (Object.keys(activity).length > 0) {
+            stats.activity = activityRows(activity);
+            const streaks = streaksFrom(activityMap(stats.activity));
+            stats.current_streak = streaks.current;
+            stats.max_streak = streaks.max;
+          }
+        }
+      }
+    } catch {
+      /* fall back to public totals */
+    }
+  }
   void first;
   void last;
   return stats;
