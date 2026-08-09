@@ -30,9 +30,12 @@ export async function verifyCsesSession(
   });
   if (!response.ok) return null;
   const html = await response.text();
+  // Logged-out pages show "Login"; logged-in pages link to the account and a logout action.
+  if (!/\/logout/.test(html)) return null;
   const link = /<a[^>]+href="\/user\/(\d+)"[^>]*>([^<]*)<\/a>/.exec(html);
-  if (!link?.[1]) return null;
-  return { userId: link[1], handle: (link[2] ?? "").trim() || link[1] };
+  const id = link?.[1] ?? /\/user\/(\d+)/.exec(html)?.[1];
+  if (!id) return null;
+  return { userId: id, handle: (link?.[2] ?? "").trim() || id };
 }
 
 /** Logs into CSES and returns a verified session. Throws a user-readable error. */
