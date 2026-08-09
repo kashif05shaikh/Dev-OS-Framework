@@ -446,7 +446,6 @@ function ProfilesPage() {
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="p-4">
-          <CsesConnect />
           {profiles.isLoading ? (
             <LoadingState label="Loading profiles…" />
           ) : profiles.isError ? (

@@ -21,6 +21,7 @@ import {
   listCodingConnections,
 } from "@/lib/coding-connections.functions";
 import { describeError } from "@/lib/devos-queries";
+import { cn } from "@/lib/utils";
 
 /**
  * CSES exposes no OAuth or public API, so each user links their own account:
