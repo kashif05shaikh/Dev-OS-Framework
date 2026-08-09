@@ -77,16 +77,27 @@ export async function getConnectionSecret(
   userId: string,
   platform: string,
 ): Promise<string | null> {
+  return (await getConnection(userId, platform))?.secret ?? null;
+}
+
+/** Decrypted session plus the platform-side user id, or null when not connected. */
+export async function getConnection(
+  userId: string,
+  platform: string,
+): Promise<{ secret: string; platformUserId: string | null } | null> {
   const db = await admin();
   const { data } = await db
     .from("platform_connections")
-    .select("secret_ciphertext, status")
+    .select("secret_ciphertext, status, platform_user_id")
     .eq("user_id", userId)
     .eq("platform", platform)
     .maybeSingle();
   if (!data?.secret_ciphertext || data.status !== "connected") return null;
   try {
-    return await decryptSecret(data.secret_ciphertext);
+    return {
+      secret: await decryptSecret(data.secret_ciphertext),
+      platformUserId: data.platform_user_id,
+    };
   } catch {
     return null;
   }
