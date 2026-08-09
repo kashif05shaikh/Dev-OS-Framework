@@ -198,23 +198,31 @@ function ProfilesPage() {
 
   const syncProfile = useMutation({
     mutationFn: async (profile: CodingProfile) => {
-      const stats = await fetchStats({
-        data: { platform: profile.platform, username: profile.username },
-      });
-      await updateRow("coding_profiles", profile, {
-        profile_url: profile.profile_url ?? stats.profile_url,
-        rating: stats.rating,
-        rank_label: stats.rank_label ?? profile.rank_label,
-        problems_solved: stats.problems_solved ?? profile.problems_solved,
-        contests_attended: stats.contests_attended ?? profile.contests_attended,
-        submissions_count: stats.submissions,
-        current_streak: stats.current_streak,
-        max_streak: Math.max(stats.max_streak, profile.max_streak),
-        activity: activityPayload(stats),
-        last_synced_at: stats.lastSyncedAt,
-        sync_status: "success",
-        sync_error: null,
-      });
+      try {
+        const stats = await fetchStats({
+          data: { platform: profile.platform, username: profile.username },
+        });
+        await updateRow("coding_profiles", profile, {
+          profile_url: profile.profile_url ?? stats.profile_url,
+          rating: stats.rating,
+          rank_label: stats.rank_label ?? profile.rank_label,
+          problems_solved: stats.problems_solved ?? profile.problems_solved,
+          contests_attended: stats.contests_attended ?? profile.contests_attended,
+          submissions_count: stats.submissions,
+          current_streak: stats.current_streak,
+          max_streak: Math.max(stats.max_streak, profile.max_streak),
+          activity: activityPayload(stats),
+          last_synced_at: stats.lastSyncedAt,
+          sync_status: "success",
+          sync_error: null,
+        });
+      } catch (error) {
+        await updateRow("coding_profiles", profile, {
+          sync_status: "error",
+          sync_error: describeError(error).slice(0, 300),
+        });
+        throw error;
+      }
     },
     onMutate: (profile) => setSyncingId(profile.id),
     onSuccess: (_d, profile) => {

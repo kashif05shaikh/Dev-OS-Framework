@@ -5,7 +5,7 @@ export type PlatformActivity = {
   submissionIds?: string[];
 };
 
-export type FetchedStats = {
+export interface CodingPlatformData {
   platform: string;
   username: string;
   profile_url: string | null;
@@ -18,7 +18,9 @@ export type FetchedStats = {
   max_streak: number;
   activity: PlatformActivity[];
   lastSyncedAt: string;
-};
+}
+
+export type FetchedStats = CodingPlatformData;
 
 const UA = {
   "User-Agent": "Mozilla/5.0 (compatible; DevOS/1.0)",
@@ -242,7 +244,7 @@ async function fetchCodeforces(username: string): Promise<FetchedStats> {
 
   try {
     const submissions = (await getJson(
-      `https://codeforces.com/api/user.status?handle=${encodeURIComponent(username)}&from=1&count=5000`,
+      `https://codeforces.com/api/user.status?handle=${encodeURIComponent(username)}`,
     )) as {
       result?: {
         verdict?: string;
