@@ -75,12 +75,15 @@ function normaliseDate(raw: string): string | null {
   return `${match[1]}-${match[2]!.padStart(2, "0")}-${match[3]!.padStart(2, "0")}`;
 }
 
-/** Keeps only the last 366 days so the stored JSON stays small. */
+/** Keeps only the last 366 calendar days so the stored JSON stays small. */
 function trimActivity(activity: Record<string, number>): Record<string, number> {
-  const cutoff = dayKey(Date.now() - 366 * DAY);
+  const now = new Date();
+  const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const cutoff = dayKey(end - 366 * DAY);
+  const today = dayKey(end);
   const out: Record<string, number> = {};
   for (const [key, value] of Object.entries(activity)) {
-    if (key >= cutoff && value > 0) out[key] = value;
+    if (key >= cutoff && key <= today && value > 0) out[key] = value;
   }
   return out;
 }
@@ -88,9 +91,12 @@ function trimActivity(activity: Record<string, number>): Record<string, number> 
 function activityRows(
   activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }>,
 ): PlatformActivity[] {
-  const cutoff = dayKey(Date.now() - 366 * DAY);
+  const now = new Date();
+  const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const cutoff = dayKey(end - 366 * DAY);
+  const today = dayKey(end);
   return Object.entries(activity)
-    .filter(([date, value]) => date >= cutoff && value.submissions > 0)
+    .filter(([date, value]) => date >= cutoff && date <= today && value.submissions > 0)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, value]) => ({
       date,

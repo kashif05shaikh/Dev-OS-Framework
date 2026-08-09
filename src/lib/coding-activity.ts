@@ -30,6 +30,7 @@ function normaliseDate(raw: string): string | null {
 /** Reads the JSONB activity map stored on a coding_profiles row. */
 export function activityMapOf(row: { activity?: unknown }): Record<string, number> {
   const raw = row.activity;
+  const today = dayKey(Date.now());
   if (Array.isArray(raw)) {
     const out: Record<string, number> = {};
     for (const item of raw) {
@@ -37,7 +38,9 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
       const value = item as Record<string, unknown>;
       const date = normaliseDate(String(value["date"] ?? ""));
       const count = Number(value["submissions"] ?? value["count"] ?? 0);
-      if (date && Number.isFinite(count) && count > 0) out[date] = (out[date] ?? 0) + count;
+      if (date && date <= today && Number.isFinite(count) && count > 0) {
+        out[date] = (out[date] ?? 0) + count;
+      }
     }
     return out;
   }
@@ -47,7 +50,7 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
     const date = normaliseDate(key);
     const count = Number(value);
     // Same date twice (padded + unpadded) must not double count: keep the max.
-    if (date && Number.isFinite(count) && count > 0) {
+    if (date && date <= today && Number.isFinite(count) && count > 0) {
       out[date] = Math.max(out[date] ?? 0, count);
     }
   }
@@ -57,12 +60,15 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
 function solvedMapOf(row: { activity?: unknown }): Record<string, number> {
   if (!Array.isArray(row.activity)) return {};
   const out: Record<string, number> = {};
+  const today = dayKey(Date.now());
   for (const item of row.activity) {
     if (!item || typeof item !== "object") continue;
     const value = item as Record<string, unknown>;
     const date = normaliseDate(String(value["date"] ?? ""));
     const solved = Number(value["solved"] ?? 0);
-    if (date && Number.isFinite(solved) && solved > 0) out[date] = (out[date] ?? 0) + solved;
+    if (date && date <= today && Number.isFinite(solved) && solved > 0) {
+      out[date] = (out[date] ?? 0) + solved;
+    }
   }
   return out;
 }
