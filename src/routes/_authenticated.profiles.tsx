@@ -529,19 +529,24 @@ function ProfilesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cp-username">Username / handle</Label>
+                  <Label htmlFor="cp-username">
+                    {draft.platform === "cses" ? "CSES user id" : "Username / handle"}
+                  </Label>
                   <Input
                     id="cp-username"
                     autoFocus
                     value={draft.username}
                     onChange={(e) => setDraft({ ...draft, username: e.target.value })}
+                    placeholder={draft.platform === "cses" ? "391136" : undefined}
                   />
                 </div>
               </div>
 
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
-                  {canSync(draft.platform)
+                  {draft.platform === "cses"
+                    ? "CSES only exposes submissions publicly — solved count stays manual."
+                    : canSync(draft.platform)
                     ? "Rating, rank, problems solved, contests and streak are fetched automatically."
                     : "Automatic sync isn't available for this platform — fill the numbers in manually."}
                 </p>
