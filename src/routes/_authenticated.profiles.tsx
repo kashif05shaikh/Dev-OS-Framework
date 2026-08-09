@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import {
   Braces,
   ExternalLink,
-  Flame,
   MoreHorizontal,
   Pencil,
   Plus,
