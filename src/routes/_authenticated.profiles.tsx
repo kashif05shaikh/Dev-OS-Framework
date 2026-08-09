@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
+import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import {
 import {
   CODING_PLATFORMS,
   CODING_PLATFORM_LABEL,
+  CODING_PLATFORM_COLOR,
   PROFILE_URL_TEMPLATE,
   SOLVED_FIELD_LABEL,
   SOLVED_LABEL,
@@ -137,6 +139,13 @@ function canSync(platform: string): boolean {
   return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
 }
 
+function activityOf(profile: CodingProfile): Record<string, number> {
+  const raw = (profile as { activity?: unknown }).activity;
+  return raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Record<string, number>)
+    : {};
+}
+
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
@@ -183,10 +192,11 @@ function ProfilesPage() {
         profile_url: profile.profile_url ?? stats.profile_url,
         rating: stats.rating,
         rank_label: stats.rank_label ?? profile.rank_label,
-        problems_solved: stats.problems_solved,
+        problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
         contests_attended: stats.contests_attended,
         current_streak: stats.current_streak,
         max_streak: Math.max(stats.max_streak, profile.max_streak),
+        activity: stats.activity,
         last_synced_at: new Date().toISOString(),
       });
     },
@@ -212,6 +222,7 @@ function ProfilesPage() {
         current_streak: toInt(value.current_streak),
         max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
+        activity: {} as Record<string, number>,
         last_synced_at: new Date().toISOString(),
       };
 
@@ -226,10 +237,13 @@ function ProfilesPage() {
             profile_url: payload.profile_url ?? stats.profile_url,
             rating: stats.rating,
             rank_label: stats.rank_label ?? payload.rank_label,
-            problems_solved: stats.problems_solved,
+            problems_solved: stats.solved_unknown
+              ? payload.problems_solved
+              : stats.problems_solved,
             contests_attended: stats.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
+            activity: stats.activity,
           };
         } catch (error) {
           toast.warning(
@@ -458,6 +472,13 @@ function ProfilesPage() {
                     {p.notes ? (
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
                     ) : null}
+
+                      <div className="mt-3 border-t border-border pt-3">
+                        <ActivityHeatmap
+                          activity={activityOf(p)}
+                          color={CODING_PLATFORM_COLOR[p.platform] ?? CODING_PLATFORM_COLOR["other"]!}
+                        />
+                      </div>
                   </article>
                 );
               })}
