@@ -8,6 +8,10 @@ export type FetchedStats = {
   contests_attended: number;
   current_streak: number;
   max_streak: number;
+  /** Daily activity map: "YYYY-MM-DD" -> count, for the last ~year. */
+  activity: Record<string, number>;
+  /** True when the platform doesn't expose a solved count publicly. */
+  solved_unknown?: boolean;
 };
 
 const UA = {
@@ -34,7 +38,60 @@ function base(platform: string, username: string, profile_url: string | null): F
     contests_attended: 0,
     current_streak: 0,
     max_streak: 0,
+    activity: {},
   };
+}
+
+const DAY = 86_400_000;
+
+function dayKey(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function addDay(activity: Record<string, number>, key: string, count = 1): void {
+  activity[key] = (activity[key] ?? 0) + count;
+}
+
+/** Keeps only the last 366 days so the stored JSON stays small. */
+function trimActivity(activity: Record<string, number>): Record<string, number> {
+  const cutoff = dayKey(Date.now() - 366 * DAY);
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(activity)) {
+    if (key >= cutoff && value > 0) out[key] = value;
+  }
+  return out;
+}
+
+/** Current and longest streak of consecutive active days from an activity map. */
+function streaksFrom(activity: Record<string, number>): { current: number; max: number } {
+  const days = Object.keys(activity)
+    .filter((d) => (activity[d] ?? 0) > 0)
+    .sort();
+  if (days.length === 0) return { current: 0, max: 0 };
+
+  let max = 1;
+  let run = 1;
+  for (let i = 1; i < days.length; i += 1) {
+    const prev = Date.parse(`${days[i - 1]}T00:00:00Z`);
+    const curr = Date.parse(`${days[i]}T00:00:00Z`);
+    run = curr - prev === DAY ? run + 1 : 1;
+    if (run > max) max = run;
+  }
+
+  const today = dayKey(Date.now());
+  const yesterday = dayKey(Date.now() - DAY);
+  const last = days.at(-1)!;
+  let current = 0;
+  if (last === today || last === yesterday) {
+    current = 1;
+    for (let i = days.length - 1; i > 0; i -= 1) {
+      const prev = Date.parse(`${days[i - 1]}T00:00:00Z`);
+      const curr = Date.parse(`${days[i]}T00:00:00Z`);
+      if (curr - prev === DAY) current += 1;
+      else break;
+    }
+  }
+  return { current, max: Math.max(max, current) };
 }
 
 async function fetchLeetCode(username: string): Promise<FetchedStats> {
@@ -43,7 +100,7 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
       username
       profile { ranking reputation }
       submitStatsGlobal { acSubmissionNum { difficulty count } }
-      userCalendar { streak }
+      userCalendar { streak submissionCalendar }
     }
     userContestRanking(username: $username) { attendedContestsCount rating globalRanking }
   }`;
@@ -57,7 +114,7 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
       matchedUser?: {
         profile?: { ranking?: number };
         submitStatsGlobal?: { acSubmissionNum?: { difficulty: string; count: number }[] };
-        userCalendar?: { streak?: number };
+        userCalendar?: { streak?: number; submissionCalendar?: string };
       } | null;
       userContestRanking?: { attendedContestsCount?: number; rating?: number } | null;
     };
@@ -75,6 +132,24 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
   stats.current_streak = user.userCalendar?.streak ?? 0;
   stats.max_streak = stats.current_streak;
   stats.rank_label = user.profile?.ranking ? `Global #${user.profile.ranking}` : null;
+
+  try {
+    const calendar = JSON.parse(user.userCalendar?.submissionCalendar ?? "{}") as Record<
+      string,
+      number
+    >;
+    const activity: Record<string, number> = {};
+    for (const [epoch, count] of Object.entries(calendar)) {
+      addDay(activity, dayKey(Number(epoch) * 1000), Number(count) || 0);
+    }
+    stats.activity = trimActivity(activity);
+    const streaks = streaksFrom(stats.activity);
+    stats.current_streak = Math.max(stats.current_streak, streaks.current);
+    stats.max_streak = Math.max(stats.max_streak, streaks.max);
+  } catch {
+    /* calendar is optional */
+  }
+
   return stats;
 }
 
@@ -102,15 +177,25 @@ async function fetchCodeforces(username: string): Promise<FetchedStats> {
     const submissions = (await getJson(
       `https://codeforces.com/api/user.status?handle=${encodeURIComponent(username)}&from=1&count=5000`,
     )) as {
-      result?: { verdict?: string; problem?: { contestId?: number; index?: string } }[];
+      result?: {
+        verdict?: string;
+        creationTimeSeconds?: number;
+        problem?: { contestId?: number; index?: string };
+      }[];
     };
     const solved = new Set<string>();
+    const activity: Record<string, number> = {};
     for (const sub of submissions.result ?? []) {
+      if (sub.creationTimeSeconds) addDay(activity, dayKey(sub.creationTimeSeconds * 1000));
       if (sub.verdict === "OK" && sub.problem) {
         solved.add(`${sub.problem.contestId ?? "x"}-${sub.problem.index ?? ""}`);
       }
     }
     stats.problems_solved = solved.size;
+    stats.activity = trimActivity(activity);
+    const streaks = streaksFrom(stats.activity);
+    stats.current_streak = streaks.current;
+    stats.max_streak = streaks.max;
   } catch {
     /* solved count is optional */
   }
@@ -128,6 +213,36 @@ async function fetchGitHub(username: string): Promise<FetchedStats> {
   const stats = base("github", username, `https://github.com/${username}`);
   stats.problems_solved = user.public_repos ?? 0;
   stats.rank_label = `${user.followers ?? 0} followers`;
+
+  try {
+    const response = await fetch(
+      `https://github.com/users/${encodeURIComponent(username)}/contributions`,
+      { headers: UA },
+    );
+    if (response.ok) {
+      const html = await response.text();
+      const activity: Record<string, number> = {};
+      const dayIds = new Map<string, string>();
+      const cellRe = /<td[^>]*data-date="(\d{4}-\d{2}-\d{2})"[^>]*id="([^"]+)"[^>]*>/g;
+      for (let m = cellRe.exec(html); m; m = cellRe.exec(html)) {
+        if (m[2] && m[1]) dayIds.set(m[2], m[1]);
+      }
+      const tipRe = /<tool-tip[^>]*for="([^"]+)"[^>]*>\s*(?:No|(\d[\d,]*))\s*contribution/g;
+      for (let m = tipRe.exec(html); m; m = tipRe.exec(html)) {
+        const date = m[1] ? dayIds.get(m[1]) : undefined;
+        if (!date) continue;
+        const count = m[2] ? Number.parseInt(m[2].replace(/,/g, ""), 10) : 0;
+        if (count > 0) addDay(activity, date, count);
+      }
+      stats.activity = trimActivity(activity);
+      const streaks = streaksFrom(stats.activity);
+      stats.current_streak = streaks.current;
+      stats.max_streak = streaks.max;
+    }
+  } catch {
+    /* contribution graph is optional */
+  }
+
   return stats;
 }
 
@@ -151,6 +266,23 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
 
   const contests = /No\. of Contests Participated:\s*<b>(\d+)<\/b>/.exec(html);
   if (contests?.[1]) stats.contests_attended = Number.parseInt(contests[1], 10);
+
+  try {
+    const daily = /userDailySubmissionsStats\s*=\s*(\[[\s\S]*?\]);/.exec(html);
+    if (daily?.[1]) {
+      const rows = JSON.parse(daily[1]) as { date?: string; value?: number }[];
+      const activity: Record<string, number> = {};
+      for (const row of rows) {
+        if (row.date) addDay(activity, row.date.slice(0, 10), Number(row.value) || 0);
+      }
+      stats.activity = trimActivity(activity);
+      const streaks = streaksFrom(stats.activity);
+      stats.current_streak = streaks.current;
+      stats.max_streak = streaks.max;
+    }
+  } catch {
+    /* heatmap is optional */
+  }
 
   return stats;
 }
@@ -254,6 +386,46 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
     /* solved count is optional */
   }
 
+  try {
+    const from = Math.floor((Date.now() - 366 * DAY) / 1000);
+    const subs = (await getJson(
+      `https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${handle}&from_second=${from}`,
+    )) as { epoch_second?: number }[];
+    const activity: Record<string, number> = {};
+    for (const sub of Array.isArray(subs) ? subs : []) {
+      if (sub.epoch_second) addDay(activity, dayKey(sub.epoch_second * 1000));
+    }
+    stats.activity = trimActivity(activity);
+    const streaks = streaksFrom(stats.activity);
+    stats.current_streak = streaks.current;
+    stats.max_streak = streaks.max;
+  } catch {
+    /* heatmap is optional */
+  }
+
+  return stats;
+}
+
+async function fetchCses(username: string): Promise<FetchedStats> {
+  // CSES only exposes /user/<id> publicly; the problemset page needs a login,
+  // so the solved count stays user-editable.
+  const id = username.replace(/\D/g, "");
+  if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
+  const url = `https://cses.fi/user/${id}`;
+  const response = await fetch(url, { headers: UA });
+  if (!response.ok) throw new Error(`CSES returned ${response.status}`);
+  const html = await response.text();
+  if (/CSES - 404/.test(html)) throw new Error(`No CSES user with id ${id}.`);
+
+  const stats = base("cses", id, `https://cses.fi/problemset/user/${id}/`);
+  stats.solved_unknown = true;
+
+  const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
+  const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
+  const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
+  if (submissions) stats.rank_label = `${submissions} submissions`;
+  if (name) stats.username = id;
+  if (last) stats.activity = { [last]: 1 };
   return stats;
 }
 
@@ -265,6 +437,7 @@ const FETCHERS: Record<string, (username: string) => Promise<FetchedStats>> = {
   hackerrank: fetchHackerRank,
   gfg: fetchGfg,
   atcoder: fetchAtCoder,
+  cses: fetchCses,
 };
 
 export const SYNCABLE_PLATFORMS = Object.keys(FETCHERS);
