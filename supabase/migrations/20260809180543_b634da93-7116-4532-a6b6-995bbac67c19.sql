@@ -1,0 +1,1 @@
+ALTER TABLE public.coding_profiles ADD COLUMN IF NOT EXISTS activity jsonb NOT NULL DEFAULT '{}'::jsonb;

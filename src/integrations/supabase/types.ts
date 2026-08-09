@@ -118,6 +118,7 @@ export type Database = {
       }
       coding_profiles: {
         Row: {
+          activity: Json
           contests_attended: number
           created_at: string
           current_streak: number
@@ -136,6 +137,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          activity?: Json
           contests_attended?: number
           created_at?: string
           current_streak?: number
@@ -154,6 +156,7 @@ export type Database = {
           username: string
         }
         Update: {
+          activity?: Json
           contests_attended?: number
           created_at?: string
           current_streak?: number
