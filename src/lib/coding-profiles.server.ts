@@ -455,24 +455,39 @@ async function fetchGfg(username: string): Promise<FetchedStats> {
   if (rank) stats.rank_label = `Institute #${rank}`;
 
   try {
-    const submissions = (await postJson(
+    const response = await fetch(
       "https://practiceapi.geeksforgeeks.org/api/v1/user/problems/submissions/",
-      { handle: username, requestType: "", year: "", month: "" },
-    )) as {
+      {
+        method: "POST",
+        headers: {
+          ...UA,
+          "content-type": "application/json",
+          Referer: url,
+          Origin: "https://www.geeksforgeeks.org",
+        },
+        body: JSON.stringify({ handle: username, requestType: "", year: "", month: "" }),
+      },
+    );
+    if (!response.ok) throw new Error(`GeeksforGeeks feed returned ${response.status}`);
+    const submissions = (await response.json()) as {
       result?: Record<string, Record<string, { slug?: string; user_subtime?: string }>>;
     };
     const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
     for (const difficulty of Object.values(submissions.result ?? {})) {
       for (const [submissionId, submission] of Object.entries(difficulty)) {
-        const date = submission.user_subtime ? normaliseDate(submission.user_subtime) : null;
+        const raw = submission.user_subtime ?? "";
+        // Feed returns "YYYY-MM-DD HH:MM:SS"; keep only the calendar day.
+        const date = raw ? normaliseDate(raw.slice(0, 10)) : null;
         if (date) addSubmission(activity, date, true, submissionId || submission.slug);
       }
     }
-    stats.activity = activityRows(activity);
-    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
-    const streaks = streaksFrom(activityMap(stats.activity));
-    stats.current_streak = streaks.current;
-    stats.max_streak = Math.max(stats.max_streak, streaks.max);
+    if (Object.keys(activity).length > 0) {
+      stats.activity = activityRows(activity);
+      stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+      const streaks = streaksFrom(activityMap(stats.activity));
+      stats.current_streak = Math.max(stats.current_streak, streaks.current);
+      stats.max_streak = Math.max(stats.max_streak, streaks.max);
+    }
   } catch {
     /* Profile totals remain valid when the public practice feed is unavailable. */
   }
