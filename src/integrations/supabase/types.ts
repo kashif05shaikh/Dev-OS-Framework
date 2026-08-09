@@ -132,6 +132,9 @@ export type Database = {
           profile_url: string | null
           rank_label: string | null
           rating: number | null
+          submissions_count: number
+          sync_error: string | null
+          sync_status: string
           updated_at: string
           user_id: string
           username: string
@@ -151,6 +154,9 @@ export type Database = {
           profile_url?: string | null
           rank_label?: string | null
           rating?: number | null
+          submissions_count?: number
+          sync_error?: string | null
+          sync_status?: string
           updated_at?: string
           user_id: string
           username: string
@@ -170,6 +176,9 @@ export type Database = {
           profile_url?: string | null
           rank_label?: string | null
           rating?: number | null
+          submissions_count?: number
+          sync_error?: string | null
+          sync_status?: string
           updated_at?: string
           user_id?: string
           username?: string
