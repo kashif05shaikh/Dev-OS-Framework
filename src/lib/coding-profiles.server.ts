@@ -1,17 +1,23 @@
+export type PlatformActivity = {
+  date: string;
+  submissions: number;
+  solved: number;
+  submissionIds?: string[];
+};
+
 export type FetchedStats = {
   platform: string;
   username: string;
   profile_url: string | null;
   rating: number | null;
   rank_label: string | null;
-  problems_solved: number;
-  contests_attended: number;
+  problems_solved: number | null;
+  contests_attended: number | null;
+  submissions: number;
   current_streak: number;
   max_streak: number;
-  /** Daily activity map: "YYYY-MM-DD" -> count, for the last ~year. */
-  activity: Record<string, number>;
-  /** True when the platform doesn't expose a solved count publicly. */
-  solved_unknown?: boolean;
+  activity: PlatformActivity[];
+  lastSyncedAt: string;
 };
 
 const UA = {
@@ -34,11 +40,13 @@ function base(platform: string, username: string, profile_url: string | null): F
     profile_url,
     rating: null,
     rank_label: null,
-    problems_solved: 0,
-    contests_attended: 0,
+    problems_solved: null,
+    contests_attended: null,
+    submissions: 0,
     current_streak: 0,
     max_streak: 0,
-    activity: {},
+    activity: [],
+    lastSyncedAt: new Date().toISOString(),
   };
 }
 
@@ -67,6 +75,39 @@ function trimActivity(activity: Record<string, number>): Record<string, number> 
     if (key >= cutoff && value > 0) out[key] = value;
   }
   return out;
+}
+
+function activityRows(
+  activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }>,
+): PlatformActivity[] {
+  const cutoff = dayKey(Date.now() - 366 * DAY);
+  return Object.entries(activity)
+    .filter(([date, value]) => date >= cutoff && value.submissions > 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, value]) => ({
+      date,
+      submissions: value.submissions,
+      solved: value.solved,
+      ...(value.ids?.size ? { submissionIds: Array.from(value.ids) } : {}),
+    }));
+}
+
+function addSubmission(
+  activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }>,
+  date: string,
+  solved: boolean,
+  id?: string,
+): void {
+  const row = activity[date] ?? { submissions: 0, solved: 0, ids: new Set<string>() };
+  if (id && row.ids?.has(id)) return;
+  if (id) row.ids?.add(id);
+  row.submissions += 1;
+  if (solved) row.solved += 1;
+  activity[date] = row;
+}
+
+function activityMap(rows: PlatformActivity[]): Record<string, number> {
+  return Object.fromEntries(rows.map((row) => [row.date, row.submissions]));
 }
 
 /** Current and longest streak of consecutive active days from an activity map. */
@@ -133,8 +174,8 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
   const all = user.submitStatsGlobal?.acSubmissionNum?.find((s) => s.difficulty === "All");
   const contest = payload.data?.userContestRanking;
   const stats = base("leetcode", username, `https://leetcode.com/u/${username}/`);
-  stats.problems_solved = all?.count ?? 0;
-  stats.contests_attended = contest?.attendedContestsCount ?? 0;
+  stats.problems_solved = all?.count ?? null;
+  stats.contests_attended = contest?.attendedContestsCount ?? null;
   stats.rating = contest?.rating ? Math.round(contest.rating) : null;
   stats.current_streak = user.userCalendar?.streak ?? 0;
   stats.max_streak = stats.current_streak;
@@ -149,8 +190,13 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
     for (const [epoch, count] of Object.entries(calendar)) {
       addDay(activity, dayKey(Number(epoch) * 1000), Number(count) || 0);
     }
-    stats.activity = trimActivity(activity);
-    const streaks = streaksFrom(stats.activity);
+    stats.activity = Object.entries(trimActivity(activity)).map(([date, submissions]) => ({
+      date,
+      submissions,
+      solved: 0,
+    }));
+    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+    const streaks = streaksFrom(activityMap(stats.activity));
     stats.current_streak = Math.max(stats.current_streak, streaks.current);
     stats.max_streak = Math.max(stats.max_streak, streaks.max);
   } catch {
@@ -186,21 +232,30 @@ async function fetchCodeforces(username: string): Promise<FetchedStats> {
     )) as {
       result?: {
         verdict?: string;
+        id?: number;
         creationTimeSeconds?: number;
         problem?: { contestId?: number; index?: string };
       }[];
     };
     const solved = new Set<string>();
-    const activity: Record<string, number> = {};
+    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
     for (const sub of submissions.result ?? []) {
-      if (sub.creationTimeSeconds) addDay(activity, dayKey(sub.creationTimeSeconds * 1000));
+      if (sub.creationTimeSeconds) {
+        addSubmission(
+          activity,
+          dayKey(sub.creationTimeSeconds * 1000),
+          sub.verdict === "OK",
+          sub.id === undefined ? undefined : String(sub.id),
+        );
+      }
       if (sub.verdict === "OK" && sub.problem) {
         solved.add(`${sub.problem.contestId ?? "x"}-${sub.problem.index ?? ""}`);
       }
     }
     stats.problems_solved = solved.size;
-    stats.activity = trimActivity(activity);
-    const streaks = streaksFrom(stats.activity);
+    stats.activity = activityRows(activity);
+    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+    const streaks = streaksFrom(activityMap(stats.activity));
     stats.current_streak = streaks.current;
     stats.max_streak = streaks.max;
   } catch {
@@ -218,7 +273,7 @@ async function fetchGitHub(username: string): Promise<FetchedStats> {
   };
   if (!user.login) throw new Error(`No GitHub user called "${username}".`);
   const stats = base("github", username, `https://github.com/${username}`);
-  stats.problems_solved = user.public_repos ?? 0;
+  stats.problems_solved = user.public_repos ?? null;
   stats.rank_label = `${user.followers ?? 0} followers`;
 
   try {
@@ -241,8 +296,13 @@ async function fetchGitHub(username: string): Promise<FetchedStats> {
         const count = m[2] ? Number.parseInt(m[2].replace(/,/g, ""), 10) : 0;
         if (count > 0) addDay(activity, date, count);
       }
-      stats.activity = trimActivity(activity);
-      const streaks = streaksFrom(stats.activity);
+      stats.activity = Object.entries(trimActivity(activity)).map(([date, submissions]) => ({
+        date,
+        submissions,
+        solved: 0,
+      }));
+      stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+      const streaks = streaksFrom(activityMap(stats.activity));
       stats.current_streak = streaks.current;
       stats.max_streak = streaks.max;
     }
@@ -278,13 +338,15 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
     const daily = /userDailySubmissionsStats\s*=\s*(\[[\s\S]*?\]);/.exec(html);
     if (daily?.[1]) {
       const rows = JSON.parse(daily[1]) as { date?: string; value?: number }[];
-      const activity: Record<string, number> = {};
+      const activity: Record<string, { submissions: number; solved: number }> = {};
       for (const row of rows) {
         const date = row.date ? normaliseDate(row.date) : null;
-        if (date) addDay(activity, date, Number(row.value) || 0);
+        const submissions = Number(row.value) || 0;
+        if (date && submissions > 0) activity[date] = { submissions, solved: 0 };
       }
-      stats.activity = trimActivity(activity);
-      const streaks = streaksFrom(stats.activity);
+      stats.activity = activityRows(activity);
+      stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+      const streaks = streaksFrom(activityMap(stats.activity));
       stats.current_streak = streaks.current;
       stats.max_streak = streaks.max;
     }
@@ -329,6 +391,25 @@ async function fetchHackerRank(username: string): Promise<FetchedStats> {
     if (latest?.rating) stats.rating = Math.round(latest.rating);
   } catch {
     /* ratings are optional */
+  }
+
+  try {
+    const recent = (await getJson(
+      `https://www.hackerrank.com/rest/hackers/${handle}/recent_challenges?limit=100`,
+    )) as { models?: { ch_slug?: string; created_at?: string }[] };
+    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
+    for (const challenge of recent.models ?? []) {
+      const timestamp = challenge.created_at ? Date.parse(challenge.created_at) : Number.NaN;
+      if (!Number.isFinite(timestamp)) continue;
+      addSubmission(activity, dayKey(timestamp), true, challenge.ch_slug);
+    }
+    stats.activity = activityRows(activity);
+    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+    const streaks = streaksFrom(activityMap(stats.activity));
+    stats.current_streak = streaks.current;
+    stats.max_streak = streaks.max;
+  } catch {
+    /* HackerRank may hide recent challenges for some profiles. */
   }
 
   return stats;
@@ -398,13 +479,21 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
     const from = Math.floor((Date.now() - 366 * DAY) / 1000);
     const subs = (await getJson(
       `https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${handle}&from_second=${from}`,
-    )) as { epoch_second?: number }[];
-    const activity: Record<string, number> = {};
+    )) as { id?: number; epoch_second?: number; problem_id?: string; result?: string }[];
+    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
     for (const sub of Array.isArray(subs) ? subs : []) {
-      if (sub.epoch_second) addDay(activity, dayKey(sub.epoch_second * 1000));
+      if (sub.epoch_second) {
+        addSubmission(
+          activity,
+          dayKey(sub.epoch_second * 1000),
+          sub.result === "AC",
+          sub.id === undefined ? `${sub.problem_id ?? "unknown"}-${sub.epoch_second}` : String(sub.id),
+        );
+      }
     }
-    stats.activity = trimActivity(activity);
-    const streaks = streaksFrom(stats.activity);
+    stats.activity = activityRows(activity);
+    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+    const streaks = streaksFrom(activityMap(stats.activity));
     stats.current_streak = streaks.current;
     stats.max_streak = streaks.max;
   } catch {
@@ -415,8 +504,6 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
 }
 
 async function fetchCses(username: string): Promise<FetchedStats> {
-  // CSES only exposes /user/<id> publicly; the problemset page needs a login,
-  // so the solved count stays user-editable.
   const id = username.replace(/\D/g, "");
   if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
   const url = `https://cses.fi/user/${id}`;
@@ -426,27 +513,20 @@ async function fetchCses(username: string): Promise<FetchedStats> {
   if (/CSES - 404/.test(html)) throw new Error(`No CSES user with id ${id}.`);
 
   const stats = base("cses", id, `https://cses.fi/problemset/user/${id}/`);
-  stats.solved_unknown = true;
-
   const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
   const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
   const first = /First submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
-  if (submissions) stats.rank_label = `${submissions} submissions`;
+  if (submissions) {
+    stats.submissions = Number.parseInt(submissions, 10);
+    stats.rank_label = `${submissions} submissions`;
+  }
   if (name) stats.username = id;
-  const activity: Record<string, number> = {};
-  if (first) {
-    const key = normaliseDate(first);
-    if (key) addDay(activity, key, 1);
-  }
-  if (last) {
-    const key = normaliseDate(last);
-    if (key) addDay(activity, key, 1);
-  }
-  stats.activity = activity;
-  const streaks = streaksFrom(activity);
-  stats.current_streak = streaks.current;
-  stats.max_streak = streaks.max;
+  // The public CSES user page exposes only totals plus first/last timestamps.
+  // It does not expose per-submission rows or solved-task count without a logged-in session,
+  // so these remain null rather than fabricating activity dates or equating submissions to solved.
+  void first;
+  void last;
   return stats;
 }
 
