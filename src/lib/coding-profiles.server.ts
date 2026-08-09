@@ -33,6 +33,14 @@ async function getJson(url: string, init?: RequestInit): Promise<unknown> {
   return response.json();
 }
 
+async function postJson(url: string, body: unknown): Promise<unknown> {
+  return getJson(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 function base(platform: string, username: string, profile_url: string | null): FetchedStats {
   return {
     platform,
@@ -437,6 +445,29 @@ async function fetchGfg(username: string): Promise<FetchedStats> {
   stats.max_streak = readEmbeddedNumber(html, "pod_solved_longest_streak") ?? stats.current_streak;
   const rank = readEmbeddedNumber(html, "institute_rank");
   if (rank) stats.rank_label = `Institute #${rank}`;
+
+  try {
+    const submissions = (await postJson(
+      "https://practiceapi.geeksforgeeks.org/api/v1/user/problems/submissions/",
+      { handle: username, requestType: "", year: "", month: "" },
+    )) as {
+      result?: Record<string, Record<string, { slug?: string; user_subtime?: string }>>;
+    };
+    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
+    for (const difficulty of Object.values(submissions.result ?? {})) {
+      for (const [submissionId, submission] of Object.entries(difficulty)) {
+        const date = submission.user_subtime ? normaliseDate(submission.user_subtime) : null;
+        if (date) addSubmission(activity, date, true, submissionId || submission.slug);
+      }
+    }
+    stats.activity = activityRows(activity);
+    stats.submissions = stats.activity.reduce((sum, row) => sum + row.submissions, 0);
+    const streaks = streaksFrom(activityMap(stats.activity));
+    stats.current_streak = streaks.current;
+    stats.max_streak = Math.max(stats.max_streak, streaks.max);
+  } catch {
+    /* Profile totals remain valid when the public practice feed is unavailable. */
+  }
   return stats;
 }
 
