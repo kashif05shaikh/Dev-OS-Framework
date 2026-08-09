@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 const DAY = 86_400_000;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const CELL = 13; // cell + gap in px
 
 function key(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
@@ -47,14 +46,14 @@ export function CodingActivityHeatmap({
 }) {
   const [hover, setHover] = useState<CombinedDay | null>(null);
 
-  const { columns, months } = useMemo(() => {
+  const { rows, months } = useMemo(() => {
     const now = new Date();
     const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
     const endOfWeek = end + (6 - new Date(end).getUTCDay()) * DAY;
     const weeks = 53;
     const start = endOfWeek - (weeks * 7 - 1) * DAY;
 
-    const cols: { date: string; day: CombinedDay | null; future: boolean }[][] = [];
+    const columns: { date: string; day: CombinedDay | null; future: boolean }[][] = [];
     const labels: { index: number; label: string }[] = [];
     let seen = -1;
 
@@ -72,48 +71,56 @@ export function CodingActivityHeatmap({
           }
         }
       }
-      cols.push(column);
+      columns.push(column);
     }
-    return { columns: cols, months: labels };
+
+    const rows: (typeof columns)[number][] = [];
+    for (let d = 0; d < 7; d += 1) {
+      rows.push(columns.map((col) => col[d]!));
+    }
+
+    return { rows, months: labels };
   }, [days]);
 
   return (
     <div className={cn("relative", className)}>
-      <div className="overflow-x-auto pb-1">
-        <div className="inline-block min-w-full">
-          <div className="relative mb-1 h-3.5">
-            {months.map((m) => (
-              <span
-                key={`${m.label}-${m.index}`}
-                className="absolute text-[10px] text-muted-foreground"
-                style={{ left: `${m.index * CELL}px` }}
-              >
-                {m.label}
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-[3px]">
-            {columns.map((column, i) => (
-              <div key={i} className="flex flex-col gap-[3px]">
-                {column.map((cell) => (
-                  <span
-                    key={cell.date}
-                    onMouseEnter={() =>
-                       setHover(cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] })
-                    }
-                    onMouseLeave={() => setHover(null)}
-                    className="size-[10px] rounded-[2px] transition-transform hover:scale-125"
-                    style={{
-                      backgroundColor: cell.future
-                        ? "transparent"
-                        : LEVEL_BG[level(cell.day?.count ?? 0)],
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div
+        className="grid w-full"
+        style={{
+          gridTemplateColumns: "repeat(53, minmax(0, 1fr))",
+          gridTemplateRows: "auto repeat(7, 1fr)",
+          gap: "3px",
+        }}
+      >
+        {months.map((m) => (
+          <span
+            key={`${m.label}-${m.index}`}
+            className="text-[10px] leading-none text-muted-foreground"
+            style={{ gridColumn: m.index + 1, gridRow: 1 }}
+          >
+            {m.label}
+          </span>
+        ))}
+
+        {rows.map((row, rowIndex) =>
+          row.map((cell, colIndex) => (
+            <span
+              key={cell.date}
+              onMouseEnter={() =>
+                setHover(cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] })
+              }
+              onMouseLeave={() => setHover(null)}
+              className="aspect-square w-full min-w-0 rounded-[2px] transition-transform hover:scale-125"
+              style={{
+                gridColumn: colIndex + 1,
+                gridRow: rowIndex + 2,
+                backgroundColor: cell.future
+                  ? "transparent"
+                  : LEVEL_BG[level(cell.day?.count ?? 0)],
+              }}
+            />
+          )),
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
