@@ -527,13 +527,18 @@ function ProfilesPage() {
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           {SOLVED_LABEL[p.platform] ?? "Solved"}
                         </dt>
-                        <dd className="text-sm font-semibold">{p.problems_solved}</dd>
+                        <dd className="text-sm font-semibold">
+                          {metric(
+                            p.problems_solved,
+                            SOLVED_UNSUPPORTED.has(p.platform) && p.problems_solved === 0,
+                          )}
+                        </dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           Rating
                         </dt>
-                        <dd className="text-sm font-semibold">{p.rating ?? "—"}</dd>
+                        <dd className="text-sm font-semibold">{metric(p.rating)}</dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
