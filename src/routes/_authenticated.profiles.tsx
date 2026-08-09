@@ -555,15 +555,15 @@ function ProfilesPage() {
                           {p.rank_label}
                         </span>
                       ) : null}
-                      <span className="inline-flex items-center gap-1">
-                        <Flame className="size-3.5" />
-                        {p.current_streak}d streak · best {p.max_streak}d
-                      </span>
                       {p.last_synced_at ? (
                         <span className="ml-auto">
-                          synced {new Date(p.last_synced_at).toLocaleDateString()}
+                          {syncingId === p.id
+                            ? "Syncing…"
+                            : `synced ${new Date(p.last_synced_at).toLocaleString()}`}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="ml-auto">not synced yet</span>
+                      )}
                     </div>
 
                     {p.notes ? (
