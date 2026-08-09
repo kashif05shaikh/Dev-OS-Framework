@@ -691,6 +691,51 @@ export type Database = {
           },
         ]
       }
+      platform_connections: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          expires_at: string | null
+          handle: string | null
+          id: string
+          last_error: string | null
+          platform: string
+          platform_user_id: string | null
+          secret_ciphertext: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          handle?: string | null
+          id?: string
+          last_error?: string | null
+          platform: string
+          platform_user_id?: string | null
+          secret_ciphertext?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          handle?: string | null
+          id?: string
+          last_error?: string | null
+          platform?: string
+          platform_user_id?: string | null
+          secret_ciphertext?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           accent_color: string

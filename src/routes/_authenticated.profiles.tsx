@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { CsesConnect } from "@/components/cses-connect";
 import { aggregateCodingActivity, calculateCodingStreaks } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -339,10 +340,7 @@ function ProfilesPage() {
       days,
       submissions,
       ...streaks,
-      solved: rows.reduce(
-        (sum, r) => sum + (SOLVED_UNSUPPORTED.has(r.platform) ? 0 : r.problems_solved),
-        0,
-      ),
+      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
       contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
     };
   }, [profiles.data]);
@@ -448,6 +446,7 @@ function ProfilesPage() {
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="p-4">
+          <CsesConnect />
           {profiles.isLoading ? (
             <LoadingState label="Loading profiles…" />
           ) : profiles.isError ? (
@@ -677,7 +676,7 @@ function ProfilesPage() {
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
                   {draft.platform === "cses"
-                    ? "CSES only exposes submissions publicly — solved count stays manual."
+                    ? "CSES needs a connected account (above) to sync solved tasks and submission dates."
                     : canSync(draft.platform)
                     ? "Rating, rank, problems solved, contests and streak are fetched automatically."
                     : "Automatic sync isn't available for this platform — fill the numbers in manually."}
