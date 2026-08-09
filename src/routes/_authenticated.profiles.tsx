@@ -339,10 +339,7 @@ function ProfilesPage() {
       days,
       submissions,
       ...streaks,
-      solved: rows.reduce(
-        (sum, r) => sum + (SOLVED_UNSUPPORTED.has(r.platform) ? 0 : r.problems_solved),
-        0,
-      ),
+      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
       contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
     };
   }, [profiles.data]);
