@@ -99,7 +99,7 @@ export function CodingActivityHeatmap({
                   <span
                     key={cell.date}
                     onMouseEnter={() =>
-                      setHover(cell.day ?? { date: cell.date, count: 0, byPlatform: [] })
+                       setHover(cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] })
                     }
                     onMouseLeave={() => setHover(null)}
                     className="size-[10px] rounded-[2px] transition-transform hover:scale-125"

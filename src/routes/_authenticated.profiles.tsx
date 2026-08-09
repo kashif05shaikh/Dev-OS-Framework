@@ -35,6 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   assertOk,
@@ -146,6 +147,16 @@ function metric(value: number | null, unsupported = false): string {
   return value === null ? "N/A" : String(value);
 }
 
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
+}
+
+function storedActivity(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const days = (value as { days?: unknown }).days;
+  return Array.isArray(days) ? days : value;
+}
+
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
@@ -171,8 +182,10 @@ function ProfilesPage() {
               profile_url: current.profile_url.trim() || (stats.profile_url ?? ""),
               rating: stats.rating === null ? "" : String(stats.rating),
               rank_label: stats.rank_label ?? current.rank_label,
-              problems_solved: String(stats.problems_solved),
-              contests_attended: String(stats.contests_attended),
+              problems_solved:
+                stats.problems_solved === null ? current.problems_solved : String(stats.problems_solved),
+              contests_attended:
+                stats.contests_attended === null ? current.contests_attended : String(stats.contests_attended),
               current_streak: String(stats.current_streak),
               max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
             }
@@ -185,20 +198,31 @@ function ProfilesPage() {
 
   const syncProfile = useMutation({
     mutationFn: async (profile: CodingProfile) => {
-      const stats = await fetchStats({
-        data: { platform: profile.platform, username: profile.username },
-      });
-      await updateRow("coding_profiles", profile, {
-        profile_url: profile.profile_url ?? stats.profile_url,
-        rating: stats.rating,
-        rank_label: stats.rank_label ?? profile.rank_label,
-        problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
-        contests_attended: stats.contests_attended,
-        current_streak: stats.current_streak,
-        max_streak: Math.max(stats.max_streak, profile.max_streak),
-        activity: stats.activity,
-        last_synced_at: new Date().toISOString(),
-      });
+      try {
+        const stats = await fetchStats({
+          data: { platform: profile.platform, username: profile.username },
+        });
+        await updateRow("coding_profiles", profile, {
+          profile_url: profile.profile_url ?? stats.profile_url,
+          rating: stats.rating,
+          rank_label: stats.rank_label ?? profile.rank_label,
+          problems_solved: stats.problems_solved ?? profile.problems_solved,
+          contests_attended: stats.contests_attended ?? profile.contests_attended,
+          submissions_count: stats.submissions,
+          current_streak: stats.current_streak,
+          max_streak: Math.max(stats.max_streak, profile.max_streak),
+          activity: activityPayload(stats),
+          last_synced_at: stats.lastSyncedAt,
+          sync_status: "success",
+          sync_error: null,
+        });
+      } catch (error) {
+        await updateRow("coding_profiles", profile, {
+          sync_status: "error",
+          sync_error: describeError(error).slice(0, 300),
+        });
+        throw error;
+      }
     },
     onMutate: (profile) => setSyncingId(profile.id),
     onSuccess: (_d, profile) => {
@@ -222,8 +246,11 @@ function ProfilesPage() {
         current_streak: toInt(value.current_streak),
         max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
-        activity: {} as Record<string, number>,
+        activity: {} as Json,
         last_synced_at: new Date().toISOString(),
+        submissions_count: 0,
+        sync_status: "idle",
+        sync_error: null as string | null,
       };
 
       // New profile on a supported platform: pull the live stats automatically.
@@ -237,13 +264,15 @@ function ProfilesPage() {
             profile_url: payload.profile_url ?? stats.profile_url,
             rating: stats.rating,
             rank_label: stats.rank_label ?? payload.rank_label,
-            problems_solved: stats.solved_unknown
-              ? payload.problems_solved
-              : stats.problems_solved,
-            contests_attended: stats.contests_attended,
+             problems_solved: stats.problems_solved ?? payload.problems_solved,
+             contests_attended: stats.contests_attended ?? payload.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
-            activity: stats.activity,
+             submissions_count: stats.submissions,
+             activity: activityPayload(stats),
+             last_synced_at: stats.lastSyncedAt,
+             sync_status: "success",
+             sync_error: null,
           };
         } catch (error) {
           toast.warning(
@@ -303,10 +332,9 @@ function ProfilesPage() {
   // One normalized activity dataset powers the heatmap, active days and streaks.
   const combined = useMemo(() => {
     const rows = profiles.data ?? [];
-    const days = aggregateCodingActivity(rows);
+    const days = aggregateCodingActivity(rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })));
     const streaks = calculateCodingStreaks(days.keys());
-    let submissions = 0;
-    for (const day of days.values()) submissions += day.count;
+    const submissions = rows.reduce((sum, row) => sum + row.submissions_count, 0);
     return {
       days,
       submissions,
@@ -324,21 +352,32 @@ function ProfilesPage() {
       const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
       const results = await Promise.allSettled(
         rows.map(async (profile) => {
-          const stats = await fetchStats({
-            data: { platform: profile.platform, username: profile.username },
-          });
-          await updateRow("coding_profiles", profile, {
-            profile_url: profile.profile_url ?? stats.profile_url,
-            rating: stats.rating,
-            rank_label: stats.rank_label ?? profile.rank_label,
-            problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
-            contests_attended: stats.contests_attended,
-            current_streak: stats.current_streak,
-            max_streak: Math.max(stats.max_streak, profile.max_streak),
-            activity: stats.activity,
-            last_synced_at: new Date().toISOString(),
-          });
-          return profile.platform;
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
         }),
       );
       const failed = results
@@ -564,6 +603,10 @@ function ProfilesPage() {
                         <span className="ml-auto">not synced yet</span>
                       )}
                     </div>
+
+                    {p.sync_status === "error" && p.sync_error ? (
+                      <p className="mt-2 text-[11px] text-destructive">Sync failed: {p.sync_error}</p>
+                    ) : null}
 
                     {p.notes ? (
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
