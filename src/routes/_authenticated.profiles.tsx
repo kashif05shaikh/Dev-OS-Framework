@@ -301,14 +301,64 @@ function ProfilesPage() {
     });
   }, [profiles.data, search, platformFilter]);
 
-  const totals = useMemo(() => {
+  // One normalized activity dataset powers the heatmap, active days and streaks.
+  const combined = useMemo(() => {
     const rows = profiles.data ?? [];
+    const days = aggregateCodingActivity(rows);
+    const streaks = calculateCodingStreaks(days.keys());
+    let submissions = 0;
+    for (const day of days.values()) submissions += day.count;
     return {
-      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
+      days,
+      submissions,
+      ...streaks,
+      solved: rows.reduce(
+        (sum, r) => sum + (SOLVED_UNSUPPORTED.has(r.platform) ? 0 : r.problems_solved),
+        0,
+      ),
       contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
-      streak: rows.reduce((max, r) => Math.max(max, r.current_streak), 0),
     };
   }, [profiles.data]);
+
+  const syncAll = useMutation({
+    mutationFn: async () => {
+      const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          const stats = await fetchStats({
+            data: { platform: profile.platform, username: profile.username },
+          });
+          await updateRow("coding_profiles", profile, {
+            profile_url: profile.profile_url ?? stats.profile_url,
+            rating: stats.rating,
+            rank_label: stats.rank_label ?? profile.rank_label,
+            problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
+            contests_attended: stats.contests_attended,
+            current_streak: stats.current_streak,
+            max_streak: Math.max(stats.max_streak, profile.max_streak),
+            activity: stats.activity,
+            last_synced_at: new Date().toISOString(),
+          });
+          return profile.platform;
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
 
   return (
     <div className="flex h-full min-h-0 flex-col">
