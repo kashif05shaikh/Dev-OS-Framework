@@ -35,8 +35,8 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
     for (const item of raw) {
       if (!item || typeof item !== "object") continue;
       const value = item as Record<string, unknown>;
-      const date = normaliseDate(String(value.date ?? ""));
-      const count = Number(value.submissions ?? value.count ?? 0);
+      const date = normaliseDate(String(value["date"] ?? ""));
+      const count = Number(value["submissions"] ?? value["count"] ?? 0);
       if (date && Number.isFinite(count) && count > 0) out[date] = (out[date] ?? 0) + count;
     }
     return out;
@@ -60,8 +60,8 @@ function solvedMapOf(row: { activity?: unknown }): Record<string, number> {
   for (const item of row.activity) {
     if (!item || typeof item !== "object") continue;
     const value = item as Record<string, unknown>;
-    const date = normaliseDate(String(value.date ?? ""));
-    const solved = Number(value.solved ?? 0);
+    const date = normaliseDate(String(value["date"] ?? ""));
+    const solved = Number(value["solved"] ?? 0);
     if (date && Number.isFinite(solved) && solved > 0) out[date] = (out[date] ?? 0) + solved;
   }
   return out;
