@@ -52,6 +52,13 @@ function addDay(activity: Record<string, number>, key: string, count = 1): void 
   activity[key] = (activity[key] ?? 0) + count;
 }
 
+/** Normalises loose dates like "2026-3-4" into "2026-03-04". */
+function normaliseDate(raw: string): string | null {
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(raw.trim());
+  if (!match) return null;
+  return `${match[1]}-${match[2]!.padStart(2, "0")}-${match[3]!.padStart(2, "0")}`;
+}
+
 /** Keeps only the last 366 days so the stored JSON stays small. */
 function trimActivity(activity: Record<string, number>): Record<string, number> {
   const cutoff = dayKey(Date.now() - 366 * DAY);
@@ -273,7 +280,8 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
       const rows = JSON.parse(daily[1]) as { date?: string; value?: number }[];
       const activity: Record<string, number> = {};
       for (const row of rows) {
-        if (row.date) addDay(activity, row.date.slice(0, 10), Number(row.value) || 0);
+        const date = row.date ? normaliseDate(row.date) : null;
+        if (date) addDay(activity, date, Number(row.value) || 0);
       }
       stats.activity = trimActivity(activity);
       const streaks = streaksFrom(stats.activity);
@@ -422,10 +430,23 @@ async function fetchCses(username: string): Promise<FetchedStats> {
 
   const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
   const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
+  const first = /First submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   if (submissions) stats.rank_label = `${submissions} submissions`;
   if (name) stats.username = id;
-  if (last) stats.activity = { [last]: 1 };
+  const activity: Record<string, number> = {};
+  if (first) {
+    const key = normaliseDate(first);
+    if (key) addDay(activity, key, 1);
+  }
+  if (last) {
+    const key = normaliseDate(last);
+    if (key) addDay(activity, key, 1);
+  }
+  stats.activity = activity;
+  const streaks = streaksFrom(activity);
+  stats.current_streak = streaks.current;
+  stats.max_streak = streaks.max;
   return stats;
 }
 

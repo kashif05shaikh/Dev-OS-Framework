@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import {
   Braces,
   ExternalLink,
-  Flame,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -17,7 +16,8 @@ import {
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
-import { ActivityHeatmap } from "@/components/activity-heatmap";
+import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { aggregateCodingActivity, calculateCodingStreaks } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,6 @@ import {
 import {
   CODING_PLATFORMS,
   CODING_PLATFORM_LABEL,
-  CODING_PLATFORM_COLOR,
   PROFILE_URL_TEMPLATE,
   SOLVED_FIELD_LABEL,
   SOLVED_LABEL,
@@ -139,11 +138,12 @@ function canSync(platform: string): boolean {
   return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
 }
 
-function activityOf(profile: CodingProfile): Record<string, number> {
-  const raw = (profile as { activity?: unknown }).activity;
-  return raw && typeof raw === "object" && !Array.isArray(raw)
-    ? (raw as Record<string, number>)
-    : {};
+/** Platforms that simply don't publish a solved count get N/A instead of a fake 0. */
+const SOLVED_UNSUPPORTED = new Set(["cses"]);
+
+function metric(value: number | null, unsupported = false): string {
+  if (unsupported) return "N/A";
+  return value === null ? "N/A" : String(value);
 }
 
 function ProfilesPage() {
@@ -300,14 +300,64 @@ function ProfilesPage() {
     });
   }, [profiles.data, search, platformFilter]);
 
-  const totals = useMemo(() => {
+  // One normalized activity dataset powers the heatmap, active days and streaks.
+  const combined = useMemo(() => {
     const rows = profiles.data ?? [];
+    const days = aggregateCodingActivity(rows);
+    const streaks = calculateCodingStreaks(days.keys());
+    let submissions = 0;
+    for (const day of days.values()) submissions += day.count;
     return {
-      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
+      days,
+      submissions,
+      ...streaks,
+      solved: rows.reduce(
+        (sum, r) => sum + (SOLVED_UNSUPPORTED.has(r.platform) ? 0 : r.problems_solved),
+        0,
+      ),
       contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
-      streak: rows.reduce((max, r) => Math.max(max, r.current_streak), 0),
     };
   }, [profiles.data]);
+
+  const syncAll = useMutation({
+    mutationFn: async () => {
+      const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          const stats = await fetchStats({
+            data: { platform: profile.platform, username: profile.username },
+          });
+          await updateRow("coding_profiles", profile, {
+            profile_url: profile.profile_url ?? stats.profile_url,
+            rating: stats.rating,
+            rank_label: stats.rank_label ?? profile.rank_label,
+            problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
+            contests_attended: stats.contests_attended,
+            current_streak: stats.current_streak,
+            max_streak: Math.max(stats.max_streak, profile.max_streak),
+            activity: stats.activity,
+            last_synced_at: new Date().toISOString(),
+          });
+          return profile.platform;
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -315,8 +365,8 @@ function ProfilesPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Coding Profiles</h1>
           <p className="text-xs text-muted-foreground">
-            {(profiles.data ?? []).length} platforms · {totals.solved} problems solved ·{" "}
-            {totals.contests} contests · {totals.streak} day streak
+            {(profiles.data ?? []).length} platforms · {combined.solved} problems solved ·{" "}
+            {combined.contests} contests · {combined.currentStreak} day streak
           </p>
         </div>
         <div className="relative">
@@ -345,6 +395,16 @@ function ProfilesPage() {
           <Plus className="size-3.5" />
           Add profile
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={syncAll.isPending || (profiles.data ?? []).length === 0}
+          onClick={() => syncAll.mutate()}
+        >
+          <RefreshCw className={cn("size-3.5", syncAll.isPending && "animate-spin")} />
+          {syncAll.isPending ? "Syncing…" : "Sync all"}
+        </Button>
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -366,7 +426,36 @@ function ProfilesPage() {
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <>
+              <section className="mb-4 grid gap-3 lg:grid-cols-[repeat(4,minmax(0,120px))_minmax(0,1fr)]">
+                {[
+                  { label: "Questions solved", value: combined.solved },
+                  { label: "Active days", value: combined.activeDays },
+                  { label: "Max streak", value: combined.maxStreak },
+                  { label: "Current streak", value: combined.currentStreak },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border border-border bg-card px-4 py-3"
+                  >
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {stat.label}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold tabular-nums">{stat.value}</p>
+                  </div>
+                ))}
+                <div className="min-w-0 rounded-xl border border-border bg-card px-4 py-3">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    <h2 className="text-xs font-semibold">Coding activity</h2>
+                    <span className="text-[11px] text-muted-foreground">
+                      {combined.submissions} submissions across all platforms · last 12 months
+                    </span>
+                  </div>
+                  <CodingActivityHeatmap days={combined.days} className="mt-3" />
+                </div>
+              </section>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((p) => {
                 return (
                   <article key={p.id} className="rounded-xl border border-border bg-card p-4">
@@ -437,13 +526,18 @@ function ProfilesPage() {
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           {SOLVED_LABEL[p.platform] ?? "Solved"}
                         </dt>
-                        <dd className="text-sm font-semibold">{p.problems_solved}</dd>
+                        <dd className="text-sm font-semibold">
+                          {metric(
+                            p.problems_solved,
+                            SOLVED_UNSUPPORTED.has(p.platform) && p.problems_solved === 0,
+                          )}
+                        </dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           Rating
                         </dt>
-                        <dd className="text-sm font-semibold">{p.rating ?? "—"}</dd>
+                        <dd className="text-sm font-semibold">{metric(p.rating)}</dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -460,31 +554,26 @@ function ProfilesPage() {
                           {p.rank_label}
                         </span>
                       ) : null}
-                      <span className="inline-flex items-center gap-1">
-                        <Flame className="size-3.5" />
-                        {p.current_streak}d streak · best {p.max_streak}d
-                      </span>
                       {p.last_synced_at ? (
                         <span className="ml-auto">
-                          synced {new Date(p.last_synced_at).toLocaleDateString()}
+                          {syncingId === p.id
+                            ? "Syncing…"
+                            : `synced ${new Date(p.last_synced_at).toLocaleString()}`}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="ml-auto">not synced yet</span>
+                      )}
                     </div>
 
                     {p.notes ? (
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
                     ) : null}
 
-                      <div className="mt-3 border-t border-border pt-3">
-                        <ActivityHeatmap
-                          activity={activityOf(p)}
-                          color={CODING_PLATFORM_COLOR[p.platform] ?? CODING_PLATFORM_COLOR["other"]!}
-                        />
-                      </div>
                   </article>
                 );
               })}
             </div>
+            </>
           )}
         </div>
       </ScrollArea>
