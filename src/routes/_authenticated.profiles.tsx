@@ -464,24 +464,26 @@ function ProfilesPage() {
             />
           ) : (
             <>
-              <section className="mb-4 grid gap-3 lg:grid-cols-[repeat(4,minmax(0,120px))_minmax(0,1fr)]">
-                {[
-                  { label: "Questions solved", value: combined.solved },
-                  { label: "Active days", value: combined.activeDays },
-                  { label: "Max streak", value: combined.maxStreak },
-                  { label: "Current streak", value: combined.currentStreak },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="rounded-xl border border-border bg-card px-4 py-3"
-                  >
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {stat.label}
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums">{stat.value}</p>
-                  </div>
-                ))}
-                <div className="min-w-0 rounded-xl border border-border bg-card px-4 py-3">
+              <section className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+                <div className="grid grid-cols-2 grid-rows-2 gap-3">
+                  {[
+                    { label: "Questions solved", value: combined.solved },
+                    { label: "Active days", value: combined.activeDays },
+                    { label: "Max streak", value: combined.maxStreak },
+                    { label: "Current streak", value: combined.currentStreak },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="group flex flex-col justify-between rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-surface-raised"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {stat.label}
+                      </p>
+                      <p className="text-xl font-semibold tabular-nums text-foreground">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="min-w-0 rounded-xl border border-border bg-card p-3">
                   <div className="flex flex-wrap items-baseline gap-3">
                     <h2 className="text-xs font-semibold">Coding activity</h2>
                     <span className="text-[11px] text-muted-foreground">
