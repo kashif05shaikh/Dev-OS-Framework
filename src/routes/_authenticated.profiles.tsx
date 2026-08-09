@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { CsesConnect } from "@/components/cses-connect";
 import { aggregateCodingActivity, calculateCodingStreaks } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -445,6 +446,7 @@ function ProfilesPage() {
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="p-4">
+          <CsesConnect />
           {profiles.isLoading ? (
             <LoadingState label="Loading profiles…" />
           ) : profiles.isError ? (
