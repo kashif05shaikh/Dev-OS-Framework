@@ -578,21 +578,21 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
   }
   if (name) stats.username = id;
 
-  // Without a session CSES hides everything but these public submission dates —
-  // surface them so the day still lights up on the global heatmap.
-  if (!session) {
-    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
-    for (const raw of [first, last]) {
-      const date = raw?.slice(0, 10);
-      if (date) addSubmission(activity, date, false, `cses-public-${date}`);
-    }
-    if (Object.keys(activity).length > 0) {
-      stats.activity = activityRows(activity);
-      const streaks = streaksFrom(activityMap(stats.activity));
-      stats.current_streak = streaks.current;
-      stats.max_streak = streaks.max;
-    }
+  // The public profile always exposes first/last submission dates — seed them so those
+  // days stay lit on the global heatmap even when the authenticated crawl adds nothing.
+  const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
+  for (const raw of [first, last]) {
+    const date = raw?.slice(0, 10);
+    if (date) addSubmission(activity, date, false, `cses-public-${date}`);
   }
+  const commitActivity = () => {
+    if (Object.keys(activity).length === 0) return;
+    stats.activity = activityRows(activity);
+    const streaks = streaksFrom(activityMap(stats.activity));
+    stats.current_streak = streaks.current;
+    stats.max_streak = streaks.max;
+  };
+  commitActivity();
 
   // Solved count and per-submission dates only exist behind a CSES login session.
   if (session) {
@@ -617,10 +617,6 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
               Array.from(page.matchAll(/\/problemset\/result\/(\d+)\//g)).map((m) => m[1]!),
             ),
           ).slice(0, 80);
-          const activity: Record<
-            string,
-            { submissions: number; solved: number; ids?: Set<string> }
-          > = {};
           for (const resultId of ids) {
             const res = await fetch(`https://cses.fi/problemset/result/${resultId}/`, {
               headers: authHeaders,
@@ -631,12 +627,7 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
             if (!when) continue;
             addSubmission(activity, when, /ACCEPTED/i.test(body), resultId);
           }
-          if (Object.keys(activity).length > 0) {
-            stats.activity = activityRows(activity);
-            const streaks = streaksFrom(activityMap(stats.activity));
-            stats.current_streak = streaks.current;
-            stats.max_streak = streaks.max;
-          }
+          commitActivity();
         }
       }
     } catch {
