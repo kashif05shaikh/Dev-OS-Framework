@@ -66,37 +66,60 @@ export function CsesConnect() {
   const connected = cses?.status === "connected";
 
   return (
-    <section className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5">
-      <PlatformLogo platform="cses" className="size-5" />
-      <div className="mr-auto min-w-0">
-        <p className="text-xs font-semibold">CSES connection</p>
-        <p className="truncate text-[11px] text-muted-foreground">
-          {connected
-            ? `Connected as ${cses?.handle ?? "your account"}${
-                cses?.platformUserId ? ` (#${cses.platformUserId})` : ""
-              } · solved count and submission dates sync automatically`
-            : cses?.status === "expired"
-              ? "Session expired — reconnect to keep syncing solved tasks."
-              : "CSES hides solved tasks behind login. Connect your own account to sync them."}
-        </p>
+    <section className="relative overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-card/90 via-card/60 to-primary/5 p-3.5 shadow-[0_1px_0_0_hsl(var(--border))]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-primary/10 blur-2xl"
+      />
+      <div className="relative flex flex-wrap items-center gap-3">
+        <span className="flex size-9 items-center justify-center rounded-lg border border-border/70 bg-background/60">
+          <PlatformLogo platform="cses" className="size-5" />
+        </span>
+        <div className="mr-auto min-w-0">
+          <p className="flex items-center gap-2 text-xs font-semibold">
+            CSES connection
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                connected
+                  ? "bg-primary/15 text-primary"
+                  : cses?.status === "expired"
+                    ? "bg-destructive/15 text-destructive"
+                    : "bg-muted text-muted-foreground",
+              )}
+            >
+              {connected ? "Connected" : cses?.status === "expired" ? "Expired" : "Not connected"}
+            </span>
+          </p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {connected
+              ? `${cses?.handle ?? "your account"}${
+                  cses?.platformUserId ? ` (#${cses.platformUserId})` : ""
+                } · solved count and submission dates sync automatically`
+              : cses?.status === "expired"
+                ? "Session expired — reconnect to keep syncing solved tasks."
+                : "CSES hides solved tasks behind login. Connect your own account to sync them."}
+          </p>
+        </div>
+        {connected ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8"
+            disabled={doDisconnect.isPending}
+            onClick={() => doDisconnect.mutate()}
+          >
+            <Link2Off className="size-3.5" />
+            Disconnect
+          </Button>
+        ) : (
+          <Button type="button" size="sm" className="h-8" onClick={() => setOpen(true)}>
+            <Link2 className="size-3.5" />
+            Connect CSES
+          </Button>
+        )}
       </div>
-      {connected ? (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8"
-          disabled={doDisconnect.isPending}
-          onClick={() => doDisconnect.mutate()}
-        >
-          <Link2Off className="size-3.5" />
-          Disconnect
-        </Button>
-      ) : (
-        <Button size="sm" className="h-8" onClick={() => setOpen(true)}>
-          <Link2 className="size-3.5" />
-          Connect CSES
-        </Button>
-      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
