@@ -616,7 +616,7 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
   return stats;
 }
 
-const FETCHERS: Record<string, (username: string) => Promise<FetchedStats>> = {
+const FETCHERS: Record<string, (username: string, session?: string) => Promise<FetchedStats>> = {
   leetcode: fetchLeetCode,
   codeforces: fetchCodeforces,
   github: fetchGitHub,
@@ -632,6 +632,7 @@ export const SYNCABLE_PLATFORMS = Object.keys(FETCHERS);
 export async function fetchPlatformStats(
   platform: string,
   username: string,
+  session?: string,
 ): Promise<FetchedStats> {
   const fetcher = FETCHERS[platform];
   if (!fetcher) {
@@ -641,5 +642,5 @@ export async function fetchPlatformStats(
   }
   const handle = username.trim();
   if (!handle) throw new Error("Enter a username first.");
-  return fetcher(handle);
+  return fetcher(handle, session);
 }
