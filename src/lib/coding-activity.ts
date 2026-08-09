@@ -5,6 +5,7 @@ export type DayBreakdown = { platform: string; count: number };
 export type CombinedDay = {
   date: string;
   count: number;
+  solved: number;
   byPlatform: DayBreakdown[];
 };
 
@@ -29,7 +30,18 @@ function normaliseDate(raw: string): string | null {
 /** Reads the JSONB activity map stored on a coding_profiles row. */
 export function activityMapOf(row: { activity?: unknown }): Record<string, number> {
   const raw = row.activity;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  if (Array.isArray(raw)) {
+    const out: Record<string, number> = {};
+    for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const value = item as Record<string, unknown>;
+      const date = normaliseDate(String(value.date ?? ""));
+      const count = Number(value.submissions ?? value.count ?? 0);
+      if (date && Number.isFinite(count) && count > 0) out[date] = (out[date] ?? 0) + count;
+    }
+    return out;
+  }
+  if (!raw || typeof raw !== "object") return {};
   const out: Record<string, number> = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     const date = normaliseDate(key);
@@ -42,14 +54,28 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
   return out;
 }
 
+function solvedMapOf(row: { activity?: unknown }): Record<string, number> {
+  if (!Array.isArray(row.activity)) return {};
+  const out: Record<string, number> = {};
+  for (const item of row.activity) {
+    if (!item || typeof item !== "object") continue;
+    const value = item as Record<string, unknown>;
+    const date = normaliseDate(String(value.date ?? ""));
+    const solved = Number(value.solved ?? 0);
+    if (date && Number.isFinite(solved) && solved > 0) out[date] = (out[date] ?? 0) + solved;
+  }
+  return out;
+}
+
 /** Merges every platform's activity map into one deduplicated day map. */
 export function aggregateCodingActivity(
   profiles: { platform: string; activity?: unknown }[],
 ): Map<string, CombinedDay> {
   const map = new Map<string, CombinedDay>();
   for (const profile of profiles) {
+    const solvedByDate = solvedMapOf(profile);
     for (const [date, count] of Object.entries(activityMapOf(profile))) {
-      const day = map.get(date) ?? { date, count: 0, byPlatform: [] };
+      const day = map.get(date) ?? { date, count: 0, solved: 0, byPlatform: [] };
       const existing = day.byPlatform.find((b) => b.platform === profile.platform);
       if (existing) {
         // Duplicate row for the same platform/date — keep the larger value.
@@ -58,6 +84,7 @@ export function aggregateCodingActivity(
       } else {
         day.byPlatform.push({ platform: profile.platform, count });
         day.count += count;
+        day.solved += solvedByDate[date] ?? 0;
       }
       map.set(date, day);
     }

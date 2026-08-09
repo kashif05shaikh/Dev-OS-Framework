@@ -146,6 +146,16 @@ function metric(value: number | null, unsupported = false): string {
   return value === null ? "N/A" : String(value);
 }
 
+function activityPayload(stats: { activity: unknown }): Record<string, unknown> {
+  return { version: 2, days: stats.activity };
+}
+
+function storedActivity(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const days = (value as { days?: unknown }).days;
+  return Array.isArray(days) ? days : value;
+}
+
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
@@ -171,8 +181,10 @@ function ProfilesPage() {
               profile_url: current.profile_url.trim() || (stats.profile_url ?? ""),
               rating: stats.rating === null ? "" : String(stats.rating),
               rank_label: stats.rank_label ?? current.rank_label,
-              problems_solved: String(stats.problems_solved),
-              contests_attended: String(stats.contests_attended),
+              problems_solved:
+                stats.problems_solved === null ? current.problems_solved : String(stats.problems_solved),
+              contests_attended:
+                stats.contests_attended === null ? current.contests_attended : String(stats.contests_attended),
               current_streak: String(stats.current_streak),
               max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
             }
@@ -192,12 +204,15 @@ function ProfilesPage() {
         profile_url: profile.profile_url ?? stats.profile_url,
         rating: stats.rating,
         rank_label: stats.rank_label ?? profile.rank_label,
-        problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
-        contests_attended: stats.contests_attended,
+        problems_solved: stats.problems_solved ?? profile.problems_solved,
+        contests_attended: stats.contests_attended ?? profile.contests_attended,
+        submissions_count: stats.submissions,
         current_streak: stats.current_streak,
         max_streak: Math.max(stats.max_streak, profile.max_streak),
-        activity: stats.activity,
-        last_synced_at: new Date().toISOString(),
+        activity: activityPayload(stats),
+        last_synced_at: stats.lastSyncedAt,
+        sync_status: "success",
+        sync_error: null,
       });
     },
     onMutate: (profile) => setSyncingId(profile.id),
@@ -237,13 +252,11 @@ function ProfilesPage() {
             profile_url: payload.profile_url ?? stats.profile_url,
             rating: stats.rating,
             rank_label: stats.rank_label ?? payload.rank_label,
-            problems_solved: stats.solved_unknown
-              ? payload.problems_solved
-              : stats.problems_solved,
-            contests_attended: stats.contests_attended,
+             problems_solved: stats.problems_solved ?? payload.problems_solved,
+             contests_attended: stats.contests_attended ?? payload.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
-            activity: stats.activity,
+             activity: activityPayload(stats) as Record<string, number>,
           };
         } catch (error) {
           toast.warning(
@@ -303,10 +316,9 @@ function ProfilesPage() {
   // One normalized activity dataset powers the heatmap, active days and streaks.
   const combined = useMemo(() => {
     const rows = profiles.data ?? [];
-    const days = aggregateCodingActivity(rows);
+    const days = aggregateCodingActivity(rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })));
     const streaks = calculateCodingStreaks(days.keys());
-    let submissions = 0;
-    for (const day of days.values()) submissions += day.count;
+    const submissions = rows.reduce((sum, row) => sum + row.submissions_count, 0);
     return {
       days,
       submissions,
@@ -331,12 +343,15 @@ function ProfilesPage() {
             profile_url: profile.profile_url ?? stats.profile_url,
             rating: stats.rating,
             rank_label: stats.rank_label ?? profile.rank_label,
-            problems_solved: stats.solved_unknown ? profile.problems_solved : stats.problems_solved,
-            contests_attended: stats.contests_attended,
+             problems_solved: stats.problems_solved ?? profile.problems_solved,
+             contests_attended: stats.contests_attended ?? profile.contests_attended,
+             submissions_count: stats.submissions,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, profile.max_streak),
-            activity: stats.activity,
-            last_synced_at: new Date().toISOString(),
+             activity: activityPayload(stats),
+             last_synced_at: stats.lastSyncedAt,
+             sync_status: "success",
+             sync_error: null,
           });
           return profile.platform;
         }),
