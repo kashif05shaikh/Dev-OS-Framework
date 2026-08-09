@@ -476,12 +476,6 @@ function ProfilesPage() {
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
                     ) : null}
 
-                      <div className="mt-3 border-t border-border pt-3">
-                        <ActivityHeatmap
-                          activity={activityOf(p)}
-                          color={CODING_PLATFORM_COLOR[p.platform] ?? CODING_PLATFORM_COLOR["other"]!}
-                        />
-                      </div>
                   </article>
                 );
               })}
