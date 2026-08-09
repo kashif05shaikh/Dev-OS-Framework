@@ -676,7 +676,7 @@ function ProfilesPage() {
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
                   {draft.platform === "cses"
-                    ? "CSES only exposes submissions publicly — solved count stays manual."
+                    ? "CSES needs a connected account (above) to sync solved tasks and submission dates."
                     : canSync(draft.platform)
                     ? "Rating, rank, problems solved, contests and streak are fetched automatically."
                     : "Automatic sync isn't available for this platform — fill the numbers in manually."}
