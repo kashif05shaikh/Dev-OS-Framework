@@ -542,14 +542,11 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
   return stats;
 }
 
-async function fetchCses(username: string): Promise<FetchedStats> {
+async function fetchCses(username: string, session?: string): Promise<FetchedStats> {
   const id = username.replace(/\D/g, "");
   if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
   const url = `https://cses.fi/user/${id}`;
-  const session = process.env["CSES_SESSION"]?.trim();
-  const authHeaders = session
-    ? { ...UA, Cookie: session.includes("=") ? session : `PHPSESSID=${session}` }
-    : UA;
+  const authHeaders = session ? { ...UA, Cookie: `PHPSESSID=${session}` } : UA;
   const response = await fetch(url, { headers: authHeaders });
   if (!response.ok) throw new Error(`CSES returned ${response.status}`);
   const html = await response.text();
@@ -575,9 +572,11 @@ async function fetchCses(username: string): Promise<FetchedStats> {
       if (statsPage.ok) {
         const page = await statsPage.text();
         if (!/Please login to see the statistics/i.test(page)) {
-          const solvedMatch = /(\d+)\s*\/\s*\d+\s*(?:tasks|solved)/i.exec(page);
           const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
-          const solved = solvedMatch?.[1] ? Number.parseInt(solvedMatch[1], 10) : fullCells;
+          const solvedMatch = /(\d+)\s*\/\s*\d+/.exec(
+            /Solved tasks[\s\S]{0,200}?(\d+\s*\/\s*\d+)/i.exec(page)?.[1] ?? "",
+          );
+          const solved = fullCells || (solvedMatch?.[1] ? Number.parseInt(solvedMatch[1], 10) : 0);
           if (solved > 0) stats.problems_solved = solved;
 
           // Follow the linked submission results to recover real dates for the heatmap.
