@@ -52,6 +52,13 @@ function addDay(activity: Record<string, number>, key: string, count = 1): void 
   activity[key] = (activity[key] ?? 0) + count;
 }
 
+/** Normalises loose dates like "2026-3-4" into "2026-03-04". */
+function normaliseDate(raw: string): string | null {
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(raw.trim());
+  if (!match) return null;
+  return `${match[1]}-${match[2]!.padStart(2, "0")}-${match[3]!.padStart(2, "0")}`;
+}
+
 /** Keeps only the last 366 days so the stored JSON stays small. */
 function trimActivity(activity: Record<string, number>): Record<string, number> {
   const cutoff = dayKey(Date.now() - 366 * DAY);
@@ -273,7 +280,8 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
       const rows = JSON.parse(daily[1]) as { date?: string; value?: number }[];
       const activity: Record<string, number> = {};
       for (const row of rows) {
-        if (row.date) addDay(activity, row.date.slice(0, 10), Number(row.value) || 0);
+        const date = row.date ? normaliseDate(row.date) : null;
+        if (date) addDay(activity, date, Number(row.value) || 0);
       }
       stats.activity = trimActivity(activity);
       const streaks = streaksFrom(stats.activity);
