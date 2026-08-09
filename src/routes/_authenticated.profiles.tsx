@@ -366,8 +366,8 @@ function ProfilesPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Coding Profiles</h1>
           <p className="text-xs text-muted-foreground">
-            {(profiles.data ?? []).length} platforms · {totals.solved} problems solved ·{" "}
-            {totals.contests} contests · {totals.streak} day streak
+            {(profiles.data ?? []).length} platforms · {combined.solved} problems solved ·{" "}
+            {combined.contests} contests · {combined.currentStreak} day streak
           </p>
         </div>
         <div className="relative">
@@ -396,6 +396,16 @@ function ProfilesPage() {
           <Plus className="size-3.5" />
           Add profile
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={syncAll.isPending || (profiles.data ?? []).length === 0}
+          onClick={() => syncAll.mutate()}
+        >
+          <RefreshCw className={cn("size-3.5", syncAll.isPending && "animate-spin")} />
+          {syncAll.isPending ? "Syncing…" : "Sync all"}
+        </Button>
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -417,7 +427,36 @@ function ProfilesPage() {
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <>
+              <section className="mb-4 grid gap-3 lg:grid-cols-[repeat(4,minmax(0,120px))_minmax(0,1fr)]">
+                {[
+                  { label: "Questions solved", value: combined.solved },
+                  { label: "Active days", value: combined.activeDays },
+                  { label: "Max streak", value: combined.maxStreak },
+                  { label: "Current streak", value: combined.currentStreak },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border border-border bg-card px-4 py-3"
+                  >
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {stat.label}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold tabular-nums">{stat.value}</p>
+                  </div>
+                ))}
+                <div className="min-w-0 rounded-xl border border-border bg-card px-4 py-3">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    <h2 className="text-xs font-semibold">Coding activity</h2>
+                    <span className="text-[11px] text-muted-foreground">
+                      {combined.submissions} submissions across all platforms · last 12 months
+                    </span>
+                  </div>
+                  <CodingActivityHeatmap days={combined.days} className="mt-3" />
+                </div>
+              </section>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((p) => {
                 return (
                   <article key={p.id} className="rounded-xl border border-border bg-card p-4">
