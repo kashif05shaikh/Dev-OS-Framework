@@ -35,6 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   assertOk,
@@ -146,8 +147,8 @@ function metric(value: number | null, unsupported = false): string {
   return value === null ? "N/A" : String(value);
 }
 
-function activityPayload(stats: { activity: unknown }): Record<string, unknown> {
-  return { version: 2, days: stats.activity };
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
 }
 
 function storedActivity(value: unknown): unknown {
@@ -237,7 +238,7 @@ function ProfilesPage() {
         current_streak: toInt(value.current_streak),
         max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
-        activity: {} as Record<string, unknown>,
+        activity: {} as Json,
         last_synced_at: new Date().toISOString(),
         submissions_count: 0,
         sync_status: "idle",
