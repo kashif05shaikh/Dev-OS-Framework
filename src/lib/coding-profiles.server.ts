@@ -502,21 +502,25 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
   const history = (await getJson(`https://atcoder.jp/users/${handle}/history/json`).catch(
     () => null,
   )) as { IsRated?: boolean; NewRating?: number }[] | null;
-  if (!Array.isArray(history)) throw new Error(`No AtCoder user called "${username}".`);
-
   const stats = base("atcoder", username, `https://atcoder.jp/users/${username}`);
-  stats.contests_attended = history.length;
-  const rated = history.filter((h) => h.IsRated).at(-1);
-  if (rated?.NewRating !== undefined) {
-    stats.rating = rated.NewRating;
-    stats.rank_label = atcoderColor(rated.NewRating);
+  // atcoder.jp blocks some server IPs, so its absence is not proof the user is missing;
+  // the kenkoooo mirror below is the authoritative check.
+  if (Array.isArray(history)) {
+    stats.contests_attended = history.length;
+    const rated = history.filter((h) => h.IsRated).at(-1);
+    if (rated?.NewRating !== undefined) {
+      stats.rating = rated.NewRating;
+      stats.rank_label = atcoderColor(rated.NewRating);
+    }
   }
+  let mirrorOk = false;
 
   try {
     const ac = (await getJson(
       `https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user=${handle}`,
     )) as { count?: number };
     stats.problems_solved = ac.count ?? 0;
+    mirrorOk = true;
   } catch {
     /* solved count is optional */
   }
@@ -542,10 +546,14 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
     const streaks = streaksFrom(activityMap(stats.activity));
     stats.current_streak = streaks.current;
     stats.max_streak = streaks.max;
+    if (stats.activity.length > 0) mirrorOk = true;
   } catch {
     /* heatmap is optional */
   }
 
+  if (!Array.isArray(history) && !mirrorOk) {
+    throw new Error(`No AtCoder user called "${username}".`);
+  }
   return stats;
 }
 
@@ -569,6 +577,22 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
     stats.rank_label = `${submissions} submissions`;
   }
   if (name) stats.username = id;
+
+  // Without a session CSES hides everything but these public submission dates —
+  // surface them so the day still lights up on the global heatmap.
+  if (!session) {
+    const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
+    for (const raw of [first, last]) {
+      const date = raw?.slice(0, 10);
+      if (date) addSubmission(activity, date, false, `cses-public-${date}`);
+    }
+    if (Object.keys(activity).length > 0) {
+      stats.activity = activityRows(activity);
+      const streaks = streaksFrom(activityMap(stats.activity));
+      stats.current_streak = streaks.current;
+      stats.max_streak = streaks.max;
+    }
+  }
 
   // Solved count and per-submission dates only exist behind a CSES login session.
   if (session) {
