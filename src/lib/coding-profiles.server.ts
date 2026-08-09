@@ -430,10 +430,23 @@ async function fetchCses(username: string): Promise<FetchedStats> {
 
   const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
   const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
+  const first = /First submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   if (submissions) stats.rank_label = `${submissions} submissions`;
   if (name) stats.username = id;
-  if (last) stats.activity = { [last]: 1 };
+  const activity: Record<string, number> = {};
+  if (first) {
+    const key = normaliseDate(first);
+    if (key) addDay(activity, key, 1);
+  }
+  if (last) {
+    const key = normaliseDate(last);
+    if (key) addDay(activity, key, 1);
+  }
+  stats.activity = activity;
+  const streaks = streaksFrom(activity);
+  stats.current_streak = streaks.current;
+  stats.max_streak = streaks.max;
   return stats;
 }
 
