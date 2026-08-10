@@ -639,7 +639,7 @@ function DashboardPage() {
                               {row.title}
                             </span>
                           ) : (
-                            <span className="text-lg font-semibold leading-none text-transparent">\u00A0</span>
+                            <span className="text-lg font-semibold leading-none text-transparent">{"\u00A0"}</span>
                           )}
                         </div>
                         <div className="mt-1 text-xl font-semibold tabular-nums">
