@@ -149,6 +149,10 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString();
 }
 
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
+}
+
 function DashboardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
