@@ -674,9 +674,25 @@ function DashboardPage() {
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     Coding titles
                   </span>
-                  <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
-                    <Trophy className="size-4" />
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={syncAllCoding.isPending || (coding.data ?? []).length === 0}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        syncAllCoding.mutate();
+                      }}
+                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+                      aria-label="Sync coding profiles"
+                      title="Sync coding profiles"
+                    >
+                      <RefreshCw className={cn("size-4", syncAllCoding.isPending && "animate-spin")} />
+                    </button>
+                    <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
+                      <Trophy className="size-4" />
+                    </span>
+                  </div>
                 </div>
                 {titleRows.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">
