@@ -82,7 +82,7 @@ type StatsDraft = {
 };
 
 /** Platforms whose public data cannot be read from a server (login-walled). */
-const MANUAL_PLATFORMS = new Set(["instagram", "linkedin"]);
+const MANUAL_PLATFORMS = new Set(["instagram"]);
 
 function toNumber(value: string): number | null {
   const trimmed = value.trim().replace(/[,\s]/g, "");
@@ -302,6 +302,13 @@ function NetworkPage() {
       void qc.invalidateQueries({ queryKey: ["social_accounts"] });
       void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
       const label = socialPlatform(account.platform)?.label ?? account.platform;
+      if (snapshot?.extra?.["linkOnly"]) {
+        toast.success(`${label} profile verified`, {
+          description:
+            "LinkedIn doesn't publish follower counts to any app, so DevOS keeps your verified profile link and details in sync.",
+        });
+        return;
+      }
       const blocked =
         Boolean(snapshot?.extra?.["unavailable"]) &&
         snapshot?.followers === null &&
