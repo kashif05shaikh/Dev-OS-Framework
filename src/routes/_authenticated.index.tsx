@@ -585,13 +585,64 @@ function DashboardPage() {
                   <p className="mt-3 text-3xl font-semibold tracking-tight">
                     <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
                   </p>
-                  <div className="mt-3">
-                    <Sparkline data={m.series.length ? m.series : [0, 0]} stroke={m.accent} />
-                  </div>
                 </GlassCard>
               </Link>
             </motion.div>
           ))}
+
+          <motion.div variants={riseIn} className="sm:col-span-2">
+            <Link to="/profiles" className="block">
+              <GlassCard className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Coding titles
+                  </span>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
+                    <Trophy className="size-4" />
+                  </span>
+                </div>
+                {titleRows.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Sync a rated platform in Coding Profiles to see your titles here.
+                  </p>
+                ) : (
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {titleRows.map((row) => (
+                      <li
+                        key={row.platform}
+                        className="rounded-xl border border-border bg-white/[0.03] px-3 py-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {row.label}
+                          </span>
+                          {row.title ? (
+                            <span
+                              className="truncate text-[11px] font-semibold"
+                              style={{ color: row.color }}
+                            >
+                              {row.title}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span
+                            className="text-xl font-semibold tabular-nums"
+                            style={{ color: row.color }}
+                          >
+                            {row.rating}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground tabular-nums">
+                            max {row.max}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </GlassCard>
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* ── Charts + right rail ──────────────────────────────── */}
