@@ -213,6 +213,63 @@ function DashboardPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  const fetchStats = useServerFn(fetchCodingStats);
+
+  const syncAllCoding = useMutation({
+    mutationFn: async () => {
+      const rows = (coding.data ?? []).filter((p) =>
+        (SYNCABLE_PLATFORMS as readonly string[]).includes(p.platform),
+      );
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating ?? profile.rating,
+              max_rating:
+                Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} coding platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
+
   const queries = [notes, resources, projects, jobs, goals, events, focus, coding, resumes, prompts];
   const isLoading = queries.some((q) => q.isLoading);
   const error = queries.find((q) => q.error)?.error;
