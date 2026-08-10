@@ -393,18 +393,17 @@ function DashboardPage() {
     },
   ];
 
-  // Live contest titles straight off the synced Coding Profiles rows.
-  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const)
-    .map((platform) => {
+  // Live coding titles straight off the synced Coding Profiles rows.
+  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const).map(
+    (platform) => {
       const row = derived.profiles.find((p) => p.platform === platform);
-      if (!row || row.rating === null) return null;
-      const rating = row.rating;
+      const rating = row?.rating ?? null;
       if (platform === "codeforces") {
         const band = codeforcesBand(rating);
         return {
           platform,
           label: "Codeforces",
-          title: row.rank_label ?? band?.title ?? null,
+          title: row?.rank_label ?? band?.title ?? null,
           color: band?.color ?? "var(--foreground)",
           rating,
           stars: 0,
@@ -422,12 +421,11 @@ function DashboardPage() {
         };
       }
       if (platform === "leetcode") {
-        const band = leetcodeBand(rating);
         return {
           platform,
           label: "LeetCode",
-          title: band?.title ?? null,
-          color: band?.color ?? "var(--foreground)",
+          title: null,
+          color: "var(--foreground)",
           rating,
           stars: 0,
         };
@@ -436,12 +434,12 @@ function DashboardPage() {
         platform,
         label: "CodeChef",
         title: null,
-        color: "var(--foreground)",
+        color: "#facc15",
         rating,
         stars: codechefStars(rating),
       };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
+    },
+  );
 
   const quickActions = [
     { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
