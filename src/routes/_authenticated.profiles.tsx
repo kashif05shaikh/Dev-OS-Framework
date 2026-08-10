@@ -200,6 +200,8 @@ function ProfilesPage() {
         await updateRow("coding_profiles", profile, {
           profile_url: profile.profile_url ?? stats.profile_url,
           rating: stats.rating,
+          max_rating:
+            Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
           rank_label: stats.rank_label ?? profile.rank_label,
           problems_solved: stats.problems_solved ?? profile.problems_solved,
           contests_attended: stats.contests_attended ?? profile.contests_attended,
