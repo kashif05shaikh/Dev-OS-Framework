@@ -76,7 +76,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
-import { atcoderBand, codeforcesBand } from "@/lib/coding-titles";
+import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
