@@ -52,7 +52,6 @@ import {
   ProgressBar,
   Reveal,
   Shimmer,
-  Sparkline,
   Typewriter,
   riseIn,
   stagger,
@@ -76,6 +75,8 @@ import {
 } from "@/lib/devos-queries";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { summariseCodingProfiles } from "@/lib/coding-activity";
+import { atcoderBand, codeforcesBand } from "@/lib/coding-titles";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -220,10 +221,11 @@ function DashboardPage() {
     }));
 
     const profiles = coding.data ?? [];
-    const problems = profiles.reduce((s, p) => s + (p.problems_solved ?? 0), 0);
-    const contests = profiles.reduce((s, p) => s + (p.contests_attended ?? 0), 0);
-    const rating = profiles.reduce((m, p) => Math.max(m, p.rating ?? 0), 0);
-    const streak = profiles.reduce((m, p) => Math.max(m, p.current_streak ?? 0), 0);
+    // Same aggregation the Coding Profiles heatmap uses — one source of truth.
+    const codingSummary = summariseCodingProfiles(profiles);
+    const problems = codingSummary.solved;
+    const contests = codingSummary.contests;
+    const streak = codingSummary.currentStreak;
 
     const jobList = jobs.data ?? [];
     const pipeline = ["applied", "interview", "offer", "rejected"].map((status) => ({
@@ -304,7 +306,6 @@ function DashboardPage() {
       focusSeries,
       problems,
       contests,
-      rating,
       streak,
       pipeline,
       completedRes,
