@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -19,6 +20,7 @@ import {
   GitBranch,
   Plus,
   Quote,
+  RefreshCw,
   Rocket,
   Sparkles,
   Star,
@@ -58,6 +60,7 @@ import {
 } from "@/components/dashboard/ui";
 import { ErrorState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   aiPromptsQuery,
   calendarEventsQuery,
@@ -77,6 +80,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
+import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
+import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
