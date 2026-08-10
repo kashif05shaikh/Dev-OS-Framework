@@ -343,16 +343,7 @@ function DashboardPage() {
       value: derived.problems,
       icon: Code2,
       to: "/profiles" as const,
-      series: derived.focusSeries.map((d) => d.minutes),
       accent: "var(--chart-1)",
-    },
-    {
-      label: "Current rating",
-      value: derived.rating,
-      icon: Trophy,
-      to: "/profiles" as const,
-      series: derived.skills.map((s) => s.value),
-      accent: "var(--chart-3)",
     },
     {
       label: "Coding streak",
@@ -360,7 +351,6 @@ function DashboardPage() {
       suffix: "d",
       icon: Flame,
       to: "/profiles" as const,
-      series: focus7.map((d) => d.minutes),
       accent: "var(--chart-4)",
     },
     {
@@ -370,7 +360,6 @@ function DashboardPage() {
       suffix: "h",
       icon: Timer,
       to: "/focus" as const,
-      series: focus7.map((d) => d.minutes),
       accent: "var(--chart-2)",
     },
     {
@@ -378,7 +367,6 @@ function DashboardPage() {
       value: derived.doneProjects,
       icon: FolderKanban,
       to: "/projects" as const,
-      series: (projects.data ?? []).map((p) => p.progress_percent ?? 0),
       accent: "var(--chart-5)",
     },
     {
@@ -386,7 +374,6 @@ function DashboardPage() {
       value: (jobs.data ?? []).length,
       icon: Briefcase,
       to: "/jobs" as const,
-      series: derived.pipeline.map((p) => p.value),
       accent: "var(--chart-1)",
     },
     {
@@ -394,7 +381,6 @@ function DashboardPage() {
       value: derived.contests,
       icon: Activity,
       to: "/calendar" as const,
-      series: derived.skills.map((s) => s.value),
       accent: "var(--chart-2)",
     },
     {
@@ -403,10 +389,49 @@ function DashboardPage() {
       suffix: "%",
       icon: FileText,
       to: "/resume" as const,
-      series: [20, 40, 55, 70, derived.resumeScore],
       accent: "var(--chart-3)",
     },
   ];
+
+  // Live contest titles straight off the synced Coding Profiles rows.
+  const titleRows = (["leetcode", "codechef", "codeforces", "atcoder"] as const)
+    .map((platform) => {
+      const row = derived.profiles.find((p) => p.platform === platform);
+      if (!row || row.rating === null) return null;
+      const rating = row.rating;
+      const max = Math.max(row.max_rating ?? 0, rating);
+      if (platform === "codeforces") {
+        const band = codeforcesBand(rating);
+        return {
+          platform,
+          label: "Codeforces",
+          title: row.rank_label ?? band?.title ?? null,
+          color: band?.color ?? "var(--foreground)",
+          rating,
+          max,
+        };
+      }
+      if (platform === "atcoder") {
+        const band = atcoderBand(rating);
+        return {
+          platform,
+          label: "AtCoder",
+          title: band?.name ?? null,
+          color: band?.color ?? "var(--foreground)",
+          rating,
+          max,
+        };
+      }
+      return {
+        platform,
+        label: platform === "leetcode" ? "LeetCode" : "CodeChef",
+        title: platform === "codechef" ? (row.rank_label ?? null) : null,
+        color: "var(--foreground)",
+        rating,
+        max,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
 
   const quickActions = [
     { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
