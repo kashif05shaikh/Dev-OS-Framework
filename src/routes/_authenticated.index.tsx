@@ -612,28 +612,26 @@ function DashboardPage() {
                         key={row.platform}
                         className="rounded-xl border border-border bg-white/[0.03] px-3 py-2"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            {row.label}
-                          </span>
-                          {row.title ? (
-                            <span
-                              className="truncate text-[11px] font-semibold"
-                              style={{ color: row.color }}
-                            >
-                              {row.title}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="mt-1 flex items-baseline gap-2">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {row.label}
+                        </span>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span
                             className="text-xl font-semibold tabular-nums"
                             style={{ color: row.color }}
                           >
                             {row.rating}
                           </span>
+                          {row.title ? (
+                            <span
+                              className="text-xl font-semibold"
+                              style={{ color: row.color }}
+                            >
+                              {row.platform === "codechef" ? row.title : `(${row.title})`}
+                            </span>
+                          ) : null}
                           <span className="text-[11px] text-muted-foreground tabular-nums">
-                            max {row.max}
+                            (max: {row.max})
                           </span>
                         </div>
                       </li>
