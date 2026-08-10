@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -19,6 +20,7 @@ import {
   GitBranch,
   Plus,
   Quote,
+  RefreshCw,
   Rocket,
   Sparkles,
   Star,
@@ -58,6 +60,7 @@ import {
 } from "@/components/dashboard/ui";
 import { ErrorState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   aiPromptsQuery,
   calendarEventsQuery,
@@ -77,6 +80,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
+import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
+import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -144,6 +149,10 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString();
 }
 
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
+}
+
 function DashboardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -200,6 +209,63 @@ function DashboardPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["goals"] });
       toast.success("Progress updated");
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
+
+  const fetchStats = useServerFn(fetchCodingStats);
+
+  const syncAllCoding = useMutation({
+    mutationFn: async () => {
+      const rows = (coding.data ?? []).filter((p) =>
+        (SYNCABLE_PLATFORMS as readonly string[]).includes(p.platform),
+      );
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating ?? profile.rating,
+              max_rating:
+                Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} coding platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
     },
     onError: (e: unknown) => toast.error(describeError(e)),
   });
@@ -608,9 +674,25 @@ function DashboardPage() {
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     Coding titles
                   </span>
-                  <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
-                    <Trophy className="size-4" />
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={syncAllCoding.isPending || (coding.data ?? []).length === 0}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        syncAllCoding.mutate();
+                      }}
+                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+                      aria-label="Sync coding profiles"
+                      title="Sync coding profiles"
+                    >
+                      <RefreshCw className={cn("size-4", syncAllCoding.isPending && "animate-spin")} />
+                    </button>
+                    <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
+                      <Trophy className="size-4" />
+                    </span>
+                  </div>
                 </div>
                 {titleRows.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">
