@@ -33,3 +33,28 @@ export function atcoderBand(rating: number | null) {
   if (rating === null) return null;
   return ATCODER_BANDS.find((b) => rating >= b.min) ?? null;
 }
+
+/** LeetCode contest tiers (official rating bands). */
+const LEETCODE_BANDS: { min: number; title: string; color: string }[] = [
+  { min: 2200, title: "Guardian", color: "#ff8c00" },
+  { min: 1850, title: "Knight", color: "#c084fc" },
+  { min: 1600, title: "Contestant", color: "#38bdf8" },
+  { min: 0, title: "Newbie", color: "#9ca3af" },
+];
+
+export function leetcodeBand(rating: number | null) {
+  if (rating === null) return null;
+  return LEETCODE_BANDS.find((b) => rating >= b.min) ?? null;
+}
+
+/** CodeChef star count derived from rating. */
+export function codechefStars(rating: number | null) {
+  if (rating === null) return 0;
+  if (rating >= 2500) return 7;
+  if (rating >= 2200) return 6;
+  if (rating >= 2000) return 5;
+  if (rating >= 1800) return 4;
+  if (rating >= 1600) return 3;
+  if (rating >= 1400) return 2;
+  return 1;
+}

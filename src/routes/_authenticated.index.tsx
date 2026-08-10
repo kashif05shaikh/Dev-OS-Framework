@@ -76,7 +76,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
-import { atcoderBand, codeforcesBand } from "@/lib/coding-titles";
+import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -394,12 +394,11 @@ function DashboardPage() {
   ];
 
   // Live contest titles straight off the synced Coding Profiles rows.
-  const titleRows = (["leetcode", "codechef", "codeforces", "atcoder"] as const)
+  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const)
     .map((platform) => {
       const row = derived.profiles.find((p) => p.platform === platform);
       if (!row || row.rating === null) return null;
       const rating = row.rating;
-      const max = Math.max(row.max_rating ?? 0, rating);
       if (platform === "codeforces") {
         const band = codeforcesBand(rating);
         return {
@@ -408,7 +407,7 @@ function DashboardPage() {
           title: row.rank_label ?? band?.title ?? null,
           color: band?.color ?? "var(--foreground)",
           rating,
-          max,
+          stars: 0,
         };
       }
       if (platform === "atcoder") {
@@ -419,16 +418,27 @@ function DashboardPage() {
           title: band?.name ?? null,
           color: band?.color ?? "var(--foreground)",
           rating,
-          max,
+          stars: 0,
+        };
+      }
+      if (platform === "leetcode") {
+        const band = leetcodeBand(rating);
+        return {
+          platform,
+          label: "LeetCode",
+          title: band?.title ?? null,
+          color: band?.color ?? "var(--foreground)",
+          rating,
+          stars: 0,
         };
       }
       return {
         platform,
-        label: platform === "leetcode" ? "LeetCode" : "CodeChef",
-        title: platform === "codechef" ? (row.rank_label ?? null) : null,
+        label: "CodeChef",
+        title: null,
         color: "var(--foreground)",
         rating,
-        max,
+        stars: codechefStars(rating),
       };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -606,34 +616,28 @@ function DashboardPage() {
                     Sync a rated platform in Coding Profiles to see your titles here.
                   </p>
                 ) : (
-                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <ul className="mt-3 grid gap-2 grid-cols-2 lg:grid-cols-4">
                     {titleRows.map((row) => (
                       <li
                         key={row.platform}
-                        className="rounded-xl border border-border bg-white/[0.03] px-3 py-2"
+                        className="rounded-xl border border-border bg-white/[0.03] px-3 py-3 text-center"
                       >
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {row.label}
                         </span>
-                        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                          <span
-                            className="text-xl font-semibold tabular-nums"
+                        {row.stars > 0 ? (
+                          <div className="mt-1 text-lg leading-none" style={{ color: "#facc15" }}>
+                            {"★".repeat(row.stars)}
+                          </div>
+                        ) : row.title ? (
+                          <div
+                            className="mt-1 text-lg font-semibold leading-tight"
                             style={{ color: row.color }}
                           >
-                            {row.rating}
-                          </span>
-                          {row.title ? (
-                            <span
-                              className="text-xl font-semibold"
-                              style={{ color: row.color }}
-                            >
-                              {row.platform === "codechef" ? row.title : `(${row.title})`}
-                            </span>
-                          ) : null}
-                          <span className="text-[11px] text-muted-foreground tabular-nums">
-                            (max: {row.max})
-                          </span>
-                        </div>
+                            {row.title}
+                          </div>
+                        ) : null}
+                        <div className="mt-1 text-xl font-semibold tabular-nums">{row.rating}</div>
                       </li>
                     ))}
                   </ul>
