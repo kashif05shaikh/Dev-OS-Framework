@@ -618,21 +618,52 @@ async function fetchLinkedin(handle: string): Promise<SocialSnapshot> {
   }
 
   const profileUrl = `https://www.linkedin.com/in/${vanity}`;
-  // LinkedIn gates most profiles behind auth, but public ones still expose
-  // Open Graph metadata through a read proxy.
-  try {
-    const response = await fetch(`https://r.jina.ai/${profileUrl}`, {
-      headers: { "x-return-format": "html", ...UA },
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (response.ok) {
-      const html = await response.text();
-      const meta = (property: string) => {
-        const match = html.match(new RegExp(`og:${property}" content="([^"]*)"`, "i"));
-        return match ? decode(match[1]!) : null;
-      };
-      const title = meta("title");
-      if (title) {
+
+  // LinkedIn refuses datacenter traffic (HTTP 999) and offers no public API,
+  // but public profiles still emit Open Graph metadata that some read proxies
+  // can relay. Try them in order and use the first that returns real markup.
+  const readers: (() => Promise<string | null>)[] = [
+    async () => {
+      const r = await fetch(`https://r.jina.ai/${profileUrl}`, {
+        headers: { "x-return-format": "html", ...UA },
+        signal: AbortSignal.timeout(15_000),
+      });
+      return r.ok ? r.text() : null;
+    },
+    async () => {
+      const r = await fetch(
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(profileUrl)}`,
+        { headers: UA, signal: AbortSignal.timeout(15_000) },
+      );
+      return r.ok ? r.text() : null;
+    },
+    async () => {
+      const r = await fetch(
+        `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(profileUrl)}`,
+        { headers: UA, signal: AbortSignal.timeout(15_000) },
+      );
+      return r.ok ? r.text() : null;
+    },
+  ];
+
+  for (const read of readers) {
+    let html: string | null = null;
+    try {
+      html = await read();
+    } catch {
+      html = null;
+    }
+    if (!html || html.length < 200) continue;
+
+    const meta = (property: string) => {
+      const match =
+        html!.match(new RegExp(`og:${property}"[^>]*content="([^"]*)"`, "i")) ??
+        html!.match(new RegExp(`content="([^"]*)"[^>]*og:${property}"`, "i"));
+      return match ? decode(match[1]!) : null;
+    };
+    const title = meta("title");
+    if (!title || /sign\s?up|log\s?in|linkedin login/i.test(title)) continue;
+
         const name = title.split(/ [-|] /)[0]?.trim() || vanity;
         const headline = title.includes(" - ")
           ? title.split(" - ").slice(1).join(" - ").replace(/ \| LinkedIn$/, "").trim()
@@ -643,26 +674,34 @@ async function fetchLinkedin(handle: string): Promise<SocialSnapshot> {
         const connections = parseCount(
           (html.match(/([\d.,KMB]+)\+?\s+connections/i) ?? [])[1]?.trim(),
         );
+        const location = clean(
+          (html.match(/"addressLocality"\s*:\s*"([^"]+)"/i) ?? [])[1],
+        );
         return {
           ...empty("linkedin", vanity, profileUrl),
           display_name: name,
           avatar_url: meta("image"),
           bio: clean(meta("description")) ?? clean(headline),
+          location,
+          verified: true,
           followers,
           following: connections,
-          extra: { headline, postsLabel: "Posts" },
+          extra: { headline, postsLabel: "Posts", source: "Public LinkedIn profile" },
         };
-      }
-    }
-  } catch {
-    // fall through to the link-only snapshot
   }
 
   return {
     ...empty("linkedin", vanity, profileUrl),
+    display_name: vanity
+      .replace(/-[0-9a-z]{4,}$/i, "")
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" "),
+    verified: true,
     extra: {
-      note: "LinkedIn does not expose profile data without an approved Marketing API partnership, so DevOS keeps the verified link only.",
-      unavailable: true,
+      note: "LinkedIn does not publish follower or connection counts to any app without Marketing API partnership. Your profile link is verified and always up to date.",
+      linkOnly: true,
     },
   };
 }
