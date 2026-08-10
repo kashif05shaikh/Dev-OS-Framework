@@ -511,32 +511,50 @@ function atcoderColor(rating: number): string {
   return "Gray";
 }
 
+type AtCoderHistory = { IsRated?: boolean; NewRating?: number }[];
+
+/** Extracts the history JSON array out of a proxied (possibly markdown-wrapped) body. */
+function parseAtCoderHistory(text: string): AtCoderHistory | null {
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    return Array.isArray(parsed) ? (parsed as AtCoderHistory) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAtCoderHistory(handle: string): Promise<AtCoderHistory | null> {
+  // atcoder.jp blocks some server IPs outright, so fall through a couple of
+  // read-only text proxies for the exact same endpoint before giving up.
+  const urls = [
+    `https://atcoder.jp/users/${handle}/history/json`,
+    `https://r.jina.ai/https://atcoder.jp/users/${handle}/history/json`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(
+      `https://atcoder.jp/users/${handle}/history/json`,
+    )}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(
+      `https://atcoder.jp/users/${handle}/history/json`,
+    )}`,
+  ];
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { headers: UA });
+      if (!response.ok) continue;
+      const history = parseAtCoderHistory(await response.text());
+      if (history) return history;
+    } catch {
+      /* try the next source */
+    }
+  }
+  return null;
+}
+
 async function fetchAtCoder(username: string): Promise<FetchedStats> {
   const handle = encodeURIComponent(username);
-  let history = (await getJson(`https://atcoder.jp/users/${handle}/history/json`).catch(
-    () => null,
-  )) as { IsRated?: boolean; NewRating?: number }[] | null;
-  if (!Array.isArray(history)) {
-    // atcoder.jp blocks some server IPs outright — read the same endpoint through a
-    // text proxy and pull the JSON payload back out of the response body.
-    history = await fetch(
-      `https://r.jina.ai/https://atcoder.jp/users/${handle}/history/json`,
-      { headers: UA },
-    )
-      .then((r) => (r.ok ? r.text() : ""))
-      .then((text) => {
-        const start = text.indexOf("[");
-        const end = text.lastIndexOf("]");
-        if (start === -1 || end <= start) return null;
-        try {
-          const parsed = JSON.parse(text.slice(start, end + 1));
-          return Array.isArray(parsed) ? parsed : null;
-        } catch {
-          return null;
-        }
-      })
-      .catch(() => null);
-  }
+  const history = await fetchAtCoderHistory(handle);
   const stats = base("atcoder", username, `https://atcoder.jp/users/${username}`);
   // atcoder.jp blocks some server IPs, so its absence is not proof the user is missing;
   // the kenkoooo mirror below is the authoritative check.
