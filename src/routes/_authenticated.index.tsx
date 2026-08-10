@@ -626,20 +626,20 @@ function DashboardPage() {
                         <div className="mt-1 flex min-h-[1.5rem] items-center justify-center">
                           {row.stars > 0 ? (
                             <span
-                              className="text-lg font-semibold leading-none"
+                              className="text-xl font-semibold leading-none"
                               style={{ color: row.color }}
                             >
                               {"★".repeat(row.stars)}
                             </span>
                           ) : row.title ? (
                             <span
-                              className="text-lg font-semibold leading-none"
+                              className="text-xl font-semibold leading-none"
                               style={{ color: row.color }}
                             >
                               {row.title}
                             </span>
                           ) : (
-                            <span className="text-lg font-semibold leading-none text-transparent">{"\u00A0"}</span>
+                            <span className="text-xl font-semibold leading-none text-transparent">{"\u00A0"}</span>
                           )}
                         </div>
                         <div className="mt-1 text-xl font-semibold tabular-nums">
