@@ -513,9 +513,30 @@ function atcoderColor(rating: number): string {
 
 async function fetchAtCoder(username: string): Promise<FetchedStats> {
   const handle = encodeURIComponent(username);
-  const history = (await getJson(`https://atcoder.jp/users/${handle}/history/json`).catch(
+  let history = (await getJson(`https://atcoder.jp/users/${handle}/history/json`).catch(
     () => null,
   )) as { IsRated?: boolean; NewRating?: number }[] | null;
+  if (!Array.isArray(history)) {
+    // atcoder.jp blocks some server IPs outright — read the same endpoint through a
+    // text proxy and pull the JSON payload back out of the response body.
+    history = await fetch(
+      `https://r.jina.ai/https://atcoder.jp/users/${handle}/history/json`,
+      { headers: UA },
+    )
+      .then((r) => (r.ok ? r.text() : ""))
+      .then((text) => {
+        const start = text.indexOf("[");
+        const end = text.lastIndexOf("]");
+        if (start === -1 || end <= start) return null;
+        try {
+          const parsed = JSON.parse(text.slice(start, end + 1));
+          return Array.isArray(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      })
+      .catch(() => null);
+  }
   const stats = base("atcoder", username, `https://atcoder.jp/users/${username}`);
   // atcoder.jp blocks some server IPs, so its absence is not proof the user is missing;
   // the kenkoooo mirror below is the authoritative check.

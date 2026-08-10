@@ -598,7 +598,10 @@ function DashboardPage() {
             </motion.div>
           ))}
 
-          <motion.div variants={riseIn} className="sm:col-span-2">
+          <motion.div
+            variants={riseIn}
+            className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
+          >
             <Link to="/profiles" className="block">
               <GlassCard className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -614,11 +617,11 @@ function DashboardPage() {
                     Sync a rated platform in Coding Profiles to see your titles here.
                   </p>
                 ) : (
-                  <ul className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                  <ul className="mt-3 grid w-full grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {titleRows.map((row) => (
                       <li
                         key={row.platform}
-                        className="flex min-h-[92px] flex-col items-center justify-center rounded-xl border border-border bg-white/[0.03] px-2 py-3 text-center"
+                        className="flex min-h-[104px] w-full flex-col items-center justify-center rounded-xl border border-border bg-white/[0.03] px-3 py-4 text-center"
                       >
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {row.label}
