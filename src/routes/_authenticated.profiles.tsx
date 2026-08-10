@@ -199,7 +199,7 @@ function ProfilesPage() {
         });
         await updateRow("coding_profiles", profile, {
           profile_url: profile.profile_url ?? stats.profile_url,
-          rating: stats.rating,
+          rating: stats.rating ?? profile.rating,
           max_rating:
             Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
           rank_label: stats.rank_label ?? profile.rank_label,
