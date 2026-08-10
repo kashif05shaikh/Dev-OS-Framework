@@ -124,6 +124,7 @@ export type Database = {
           current_streak: number
           id: string
           last_synced_at: string | null
+          max_rating: number | null
           max_streak: number
           notes: string | null
           platform: string
@@ -146,6 +147,7 @@ export type Database = {
           current_streak?: number
           id?: string
           last_synced_at?: string | null
+          max_rating?: number | null
           max_streak?: number
           notes?: string | null
           platform?: string
@@ -168,6 +170,7 @@ export type Database = {
           current_streak?: number
           id?: string
           last_synced_at?: string | null
+          max_rating?: number | null
           max_streak?: number
           notes?: string | null
           platform?: string

@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
 import { CsesConnect } from "@/components/cses-connect";
-import { aggregateCodingActivity, calculateCodingStreaks } from "@/lib/coding-activity";
+import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -152,12 +152,6 @@ function activityPayload(stats: { activity: unknown }): Json {
   return { version: 2, days: stats.activity as Json };
 }
 
-function storedActivity(value: unknown): unknown {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
-  const days = (value as { days?: unknown }).days;
-  return Array.isArray(days) ? days : value;
-}
-
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
@@ -206,6 +200,8 @@ function ProfilesPage() {
         await updateRow("coding_profiles", profile, {
           profile_url: profile.profile_url ?? stats.profile_url,
           rating: stats.rating,
+          max_rating:
+            Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
           rank_label: stats.rank_label ?? profile.rank_label,
           problems_solved: stats.problems_solved ?? profile.problems_solved,
           contests_attended: stats.contests_attended ?? profile.contests_attended,
@@ -241,6 +237,7 @@ function ProfilesPage() {
         username: value.username.trim(),
         profile_url: resolveUrl(value),
         rating: value.rating.trim() === "" ? null : toInt(value.rating),
+        max_rating: null as number | null,
         rank_label: value.rank_label.trim() || null,
         problems_solved: toInt(value.problems_solved),
         contests_attended: toInt(value.contests_attended),
@@ -264,6 +261,7 @@ function ProfilesPage() {
             ...payload,
             profile_url: payload.profile_url ?? stats.profile_url,
             rating: stats.rating,
+            max_rating: Math.max(stats.max_rating ?? 0, stats.rating ?? 0) || null,
             rank_label: stats.rank_label ?? payload.rank_label,
              problems_solved: stats.problems_solved ?? payload.problems_solved,
              contests_attended: stats.contests_attended ?? payload.contests_attended,
@@ -331,19 +329,7 @@ function ProfilesPage() {
   }, [profiles.data, search, platformFilter]);
 
   // One normalized activity dataset powers the heatmap, active days and streaks.
-  const combined = useMemo(() => {
-    const rows = profiles.data ?? [];
-    const days = aggregateCodingActivity(rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })));
-    const streaks = calculateCodingStreaks(days.keys());
-    const submissions = rows.reduce((sum, row) => sum + row.submissions_count, 0);
-    return {
-      days,
-      submissions,
-      ...streaks,
-      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
-      contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
-    };
-  }, [profiles.data]);
+  const combined = useMemo(() => summariseCodingProfiles(profiles.data ?? []), [profiles.data]);
 
   const syncAll = useMutation({
     mutationFn: async () => {
@@ -357,6 +343,8 @@ function ProfilesPage() {
             await updateRow("coding_profiles", profile, {
               profile_url: profile.profile_url ?? stats.profile_url,
               rating: stats.rating,
+              max_rating:
+                Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
               rank_label: stats.rank_label ?? profile.rank_label,
               problems_solved: stats.problems_solved ?? profile.problems_solved,
               contests_attended: stats.contests_attended ?? profile.contests_attended,

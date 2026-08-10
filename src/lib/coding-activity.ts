@@ -17,6 +17,13 @@ export type CodingStreaks = {
 
 const DAY = 86_400_000;
 
+/** Unwraps the versioned JSONB payload stored on coding_profiles.activity. */
+export function storedActivity(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const days = (value as { days?: unknown }).days;
+  return Array.isArray(days) ? days : value;
+}
+
 function dayKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
@@ -135,4 +142,27 @@ export function calculateCodingStreaks(dates: Iterable<string>): CodingStreaks {
   }
 
   return { currentStreak, maxStreak: Math.max(maxStreak, currentStreak), activeDays: unique.length };
+}
+
+export type CodingProfileRow = {
+  platform: string;
+  activity?: unknown;
+  problems_solved?: number | null;
+  contests_attended?: number | null;
+  submissions_count?: number | null;
+};
+
+/** The single source of truth used by both Coding Profiles and the Dashboard. */
+export function summariseCodingProfiles(rows: CodingProfileRow[]) {
+  const days = aggregateCodingActivity(
+    rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })),
+  );
+  const streaks = calculateCodingStreaks(days.keys());
+  return {
+    days,
+    ...streaks,
+    solved: rows.reduce((sum, r) => sum + (r.problems_solved ?? 0), 0),
+    contests: rows.reduce((sum, r) => sum + (r.contests_attended ?? 0), 0),
+    submissions: rows.reduce((sum, r) => sum + (r.submissions_count ?? 0), 0),
+  };
 }
