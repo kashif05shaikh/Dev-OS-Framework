@@ -393,18 +393,17 @@ function DashboardPage() {
     },
   ];
 
-  // Live contest titles straight off the synced Coding Profiles rows.
-  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const)
-    .map((platform) => {
+  // Live coding titles straight off the synced Coding Profiles rows.
+  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const).map(
+    (platform) => {
       const row = derived.profiles.find((p) => p.platform === platform);
-      if (!row || row.rating === null) return null;
-      const rating = row.rating;
+      const rating = row?.rating ?? null;
       if (platform === "codeforces") {
         const band = codeforcesBand(rating);
         return {
           platform,
           label: "Codeforces",
-          title: row.rank_label ?? band?.title ?? null,
+          title: row?.rank_label ?? band?.title ?? null,
           color: band?.color ?? "var(--foreground)",
           rating,
           stars: 0,
@@ -422,12 +421,11 @@ function DashboardPage() {
         };
       }
       if (platform === "leetcode") {
-        const band = leetcodeBand(rating);
         return {
           platform,
           label: "LeetCode",
-          title: band?.title ?? null,
-          color: band?.color ?? "var(--foreground)",
+          title: null,
+          color: "var(--foreground)",
           rating,
           stars: 0,
         };
@@ -436,12 +434,12 @@ function DashboardPage() {
         platform,
         label: "CodeChef",
         title: null,
-        color: "var(--foreground)",
+        color: "#facc15",
         rating,
         stars: codechefStars(rating),
       };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
+    },
+  );
 
   const quickActions = [
     { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
@@ -616,28 +614,37 @@ function DashboardPage() {
                     Sync a rated platform in Coding Profiles to see your titles here.
                   </p>
                 ) : (
-                  <ul className="mt-3 grid gap-2 grid-cols-2 lg:grid-cols-4">
+                  <ul className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
                     {titleRows.map((row) => (
                       <li
                         key={row.platform}
-                        className="rounded-xl border border-border bg-white/[0.03] px-3 py-3 text-center"
+                        className="flex min-h-[92px] flex-col items-center justify-center rounded-xl border border-border bg-white/[0.03] px-2 py-3 text-center"
                       >
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {row.label}
                         </span>
-                        {row.stars > 0 ? (
-                          <div className="mt-1 text-lg leading-none" style={{ color: "#facc15" }}>
-                            {"★".repeat(row.stars)}
-                          </div>
-                        ) : row.title ? (
-                          <div
-                            className="mt-1 text-lg font-semibold leading-tight"
-                            style={{ color: row.color }}
-                          >
-                            {row.title}
-                          </div>
-                        ) : null}
-                        <div className="mt-1 text-xl font-semibold tabular-nums">{row.rating}</div>
+                        <div className="mt-1 flex min-h-[1.5rem] items-center justify-center">
+                          {row.stars > 0 ? (
+                            <span
+                              className="text-xl font-semibold leading-none"
+                              style={{ color: row.color }}
+                            >
+                              {"★".repeat(row.stars)}
+                            </span>
+                          ) : row.title ? (
+                            <span
+                              className="text-xl font-semibold leading-none"
+                              style={{ color: row.color }}
+                            >
+                              {row.title}
+                            </span>
+                          ) : (
+                            <span className="text-xl font-semibold leading-none text-transparent">{"\u00A0"}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xl font-semibold tabular-nums">
+                          {row.rating ?? "—"}
+                        </div>
                       </li>
                     ))}
                   </ul>
