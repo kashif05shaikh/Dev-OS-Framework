@@ -10,6 +10,7 @@ export interface CodingPlatformData {
   username: string;
   profile_url: string | null;
   rating: number | null;
+  max_rating: number | null;
   rank_label: string | null;
   problems_solved: number | null;
   contests_attended: number | null;
@@ -41,6 +42,7 @@ function base(platform: string, username: string, profile_url: string | null): F
     username,
     profile_url,
     rating: null,
+    max_rating: null,
     rank_label: null,
     problems_solved: null,
     contests_attended: null,
@@ -159,6 +161,7 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
       userCalendar { streak submissionCalendar }
     }
     userContestRanking(username: $username) { attendedContestsCount rating globalRanking }
+    userContestRankingHistory(username: $username) { rating attended }
   }`;
 
   const payload = (await getJson("https://leetcode.com/graphql", {
@@ -173,6 +176,7 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
         userCalendar?: { streak?: number; submissionCalendar?: string };
       } | null;
       userContestRanking?: { attendedContestsCount?: number; rating?: number } | null;
+      userContestRankingHistory?: { rating?: number; attended?: boolean }[] | null;
     };
   };
 
@@ -185,6 +189,11 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
   stats.problems_solved = all?.count ?? null;
   stats.contests_attended = contest?.attendedContestsCount ?? null;
   stats.rating = contest?.rating ? Math.round(contest.rating) : null;
+  const ratingHistory = (payload.data?.userContestRankingHistory ?? [])
+    .filter((entry) => entry?.attended && typeof entry.rating === "number")
+    .map((entry) => Math.round(entry.rating!));
+  const peak = ratingHistory.length ? Math.max(...ratingHistory) : null;
+  stats.max_rating = Math.max(peak ?? 0, stats.rating ?? 0) || null;
   stats.current_streak = user.userCalendar?.streak ?? 0;
   stats.max_streak = stats.current_streak;
   stats.rank_label = user.profile?.ranking ? `Global #${user.profile.ranking}` : null;
@@ -223,6 +232,7 @@ async function fetchCodeforces(username: string): Promise<FetchedStats> {
 
   const stats = base("codeforces", username, `https://codeforces.com/profile/${username}`);
   stats.rating = user.rating ?? null;
+  stats.max_rating = user.maxRating ?? stats.rating;
   stats.rank_label = user.rank ? user.rank.replace(/\b\w/g, (c) => c.toUpperCase()) : null;
 
   try {
@@ -331,6 +341,10 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
   const stats = base("codechef", username, url);
   const rating = /class="rating-number">\s*([\d]+)/.exec(html);
   if (rating?.[1]) stats.rating = Number.parseInt(rating[1], 10);
+  const highest = /Highest\s*Rating\s*<?[^>]*>?\s*(\d{3,4})/i.exec(html)
+    ?? /highest[^0-9]{0,40}?(\d{3,4})/i.exec(html);
+  if (highest?.[1]) stats.max_rating = Number.parseInt(highest[1], 10);
+  if (stats.rating !== null) stats.max_rating = Math.max(stats.max_rating ?? 0, stats.rating);
 
   const starBlock = /class="rating-star">([\s\S]{0,600}?)<\/div>/.exec(html);
   const starCount = starBlock?.[1] ? (starBlock[1].match(/&#9733;/g) ?? []).length : 0;
@@ -512,6 +526,10 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
       stats.rating = rated.NewRating;
       stats.rank_label = atcoderColor(rated.NewRating);
     }
+    const peaks = history
+      .filter((h) => h.IsRated && typeof h.NewRating === "number")
+      .map((h) => h.NewRating!);
+    if (peaks.length) stats.max_rating = Math.max(...peaks);
   }
   let mirrorOk = false;
 
