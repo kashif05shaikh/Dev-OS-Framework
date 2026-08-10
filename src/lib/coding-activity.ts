@@ -17,6 +17,13 @@ export type CodingStreaks = {
 
 const DAY = 86_400_000;
 
+/** Unwraps the versioned JSONB payload stored on coding_profiles.activity. */
+export function storedActivity(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const days = (value as { days?: unknown }).days;
+  return Array.isArray(days) ? days : value;
+}
+
 function dayKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
