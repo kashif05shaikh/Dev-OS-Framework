@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef } from "react";
 import { CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,21 +16,25 @@ import { describeError } from "@/lib/devos-queries";
 export function CsesConnect({ userId }: { userId: string }) {
   const lookup = useServerFn(lookupCsesUser);
   const id = userId.replace(/\D/g, "");
-  const lastAuto = useRef("");
 
   const verify = useMutation({
-    mutationFn: (value: string) => lookup({ data: { userId: value } }),
+    mutationFn: async (value: string) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("CSES lookup timed out. Please try again.")),
+          10_000,
+        );
+      });
+
+      try {
+        return await Promise.race([lookup({ data: { userId: value } }), timeout]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    },
     onError: (e: unknown) => toast.error(describeError(e)),
   });
-
-  // Auto-verify as soon as a plausible id is typed, so the card is never empty.
-  useEffect(() => {
-    if (id.length >= 5 && lastAuto.current !== id) {
-      lastAuto.current = id;
-      verify.mutate(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
 
   const data = verify.data && verify.data.userId === id ? verify.data : null;
 
