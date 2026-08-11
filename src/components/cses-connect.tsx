@@ -120,8 +120,9 @@ export function CsesConnect({ userId }: { userId: string }) {
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
         )}
         DevOS never asks for your CSES password. Only the public profile page is read, so the
-        solved-task count stays private to CSES — submissions, activity dates and languages sync
-        automatically.
+        submissions, activity dates and languages sync automatically. CSES keeps the solved-task
+        count behind login, so type it in the “Problems solved” field below — syncing never
+        overwrites it.
       </p>
     </section>
   );
