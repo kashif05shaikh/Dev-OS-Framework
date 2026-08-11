@@ -26,7 +26,7 @@ export function CsesConnect({ userId }: { userId: string }) {
 
   // Auto-verify as soon as a plausible id is typed, so the card is never empty.
   useEffect(() => {
-    if (id.length >= 4 && lastAuto.current !== id) {
+    if (id.length >= 5 && lastAuto.current !== id) {
       lastAuto.current = id;
       verify.mutate(id);
     }
@@ -55,7 +55,15 @@ export function CsesConnect({ userId }: { userId: string }) {
                   : "rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
               }
             >
-              {data ? "Verified" : id ? "Not verified yet" : "Enter your id"}
+              {data
+                ? "Verified"
+                : verify.isPending
+                  ? "Checking…"
+                  : verify.isError
+                    ? "Lookup failed"
+                    : id
+                      ? "Not verified yet"
+                      : "Enter your id"}
             </span>
           </p>
           <p className="truncate text-[11px] text-muted-foreground">
@@ -63,6 +71,8 @@ export function CsesConnect({ userId }: { userId: string }) {
               ? `${data.handle} · ${data.submissions ?? 0} submissions${
                   data.lastSubmission ? ` · last ${data.lastSubmission.slice(0, 10)}` : ""
                 }`
+              : verify.isError
+              ? describeError(verify.error)
               : "No password needed — your public CSES profile is read straight from your user id."}
           </p>
         </div>
