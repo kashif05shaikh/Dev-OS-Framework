@@ -662,12 +662,12 @@ function ProfilesPage() {
                 </div>
               </div>
 
-              {draft.platform === "cses" ? <CsesConnect /> : null}
+              {draft.platform === "cses" ? <CsesConnect userId={draft.username} /> : null}
 
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
                   {draft.platform === "cses"
-                    ? "CSES needs your connected account (above) to sync solved tasks and submission dates."
+                    ? "CSES syncs from your public profile — just your user id, no password."
                     : canSync(draft.platform)
                     ? "Rating, rank, problems solved, contests and streak are fetched automatically."
                     : "Automatic sync isn't available for this platform — fill the numbers in manually."}
