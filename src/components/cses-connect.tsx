@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
@@ -13,7 +14,13 @@ import { describeError } from "@/lib/devos-queries";
  * DevOS reads that page directly from the numeric id — no password, no session,
  * nothing stored — and shows exactly what CSES publishes for the account.
  */
-export function CsesConnect({ userId }: { userId: string }) {
+export function CsesConnect({
+  userId,
+  onVerified,
+}: {
+  userId: string;
+  onVerified?: (profile: { handle: string; submissions: number | null; profileUrl: string }) => void;
+}) {
   const lookup = useServerFn(lookupCsesUser);
   const id = userId.replace(/\D/g, "");
 
@@ -36,7 +43,35 @@ export function CsesConnect({ userId }: { userId: string }) {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  // Auto-lookup: as soon as a plausible id is typed we read the public profile
+  // once for that id — no button click, no password. The ref guard keeps this
+  // from re-firing on every render/keystroke.
+  const checked = useRef<string | null>(null);
+  const verifyRef = useRef(verify);
+  verifyRef.current = verify;
+  const onVerifiedRef = useRef(onVerified);
+  onVerifiedRef.current = onVerified;
+
+  useEffect(() => {
+    if (id.length < 4 || checked.current === id) return;
+    const timer = setTimeout(() => {
+      checked.current = id;
+      verifyRef.current.mutate(id);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [id]);
+
   const data = verify.data && verify.data.userId === id ? verify.data : null;
+
+  useEffect(() => {
+    if (data) {
+      onVerifiedRef.current?.({
+        handle: data.handle,
+        submissions: data.submissions,
+        profileUrl: data.profileUrl,
+      });
+    }
+  }, [data]);
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-card/90 via-card/60 to-primary/5 p-3.5">
@@ -61,11 +96,11 @@ export function CsesConnect({ userId }: { userId: string }) {
               {data
                 ? "Verified"
                 : verify.isPending
-                  ? "Checking…"
+                  ? "Reading public profile…"
                   : verify.isError
                     ? "Lookup failed"
                     : id
-                      ? "Not verified yet"
+                      ? "Waiting for id"
                       : "Enter your id"}
             </span>
           </p>
@@ -85,10 +120,13 @@ export function CsesConnect({ userId }: { userId: string }) {
           variant="outline"
           className="h-8"
           disabled={!id || verify.isPending}
-          onClick={() => verify.mutate(id)}
+          onClick={() => {
+            checked.current = id;
+            verify.mutate(id);
+          }}
         >
           <RefreshCw className={verify.isPending ? "size-3.5 animate-spin" : "size-3.5"} />
-          {verify.isPending ? "Checking…" : "Verify id"}
+          {verify.isPending ? "Checking…" : data ? "Refresh" : "Verify id"}
         </Button>
       </div>
 

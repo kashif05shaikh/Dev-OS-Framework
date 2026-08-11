@@ -662,7 +662,21 @@ function ProfilesPage() {
                 </div>
               </div>
 
-              {draft.platform === "cses" ? <CsesConnect userId={draft.username} /> : null}
+              {draft.platform === "cses" ? (
+                <CsesConnect
+                  userId={draft.username}
+                  onVerified={(p) => {
+                    // Public lookup succeeded — pull the real numbers straight into the
+                    // draft and run the normal sync so the card + heatmap update.
+                    setDraft((d) =>
+                      d && d.platform === "cses" && !d.profile_url
+                        ? { ...d, profile_url: p.profileUrl }
+                        : d,
+                    );
+                    if (!fillFromPlatform.isPending) fillFromPlatform.mutate(draft);
+                  }}
+                />
+              ) : null}
 
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
