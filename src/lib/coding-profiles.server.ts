@@ -617,9 +617,15 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
 async function fetchCses(username: string, session?: string): Promise<FetchedStats> {
   const id = username.replace(/\D/g, "");
   if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
-  const url = `https://cses.fi/user/${id}`;
-  const authHeaders = session ? { ...UA, Cookie: `PHPSESSID=${session}` } : UA;
-  const response = await fetch(url, { headers: authHeaders });
+  // Cache-bust: CSES/edge caches can otherwise serve a stale copy of the profile,
+  // which made "Fetch stats" keep returning yesterday's submission count.
+  const url = `https://cses.fi/user/${id}?t=${Date.now()}`;
+  const authHeaders = {
+    ...(session ? { ...UA, Cookie: `PHPSESSID=${session}` } : UA),
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  };
+  const response = await fetch(url, { headers: authHeaders, cache: "no-store" });
   if (!response.ok) throw new Error(`CSES returned ${response.status}`);
   const html = await response.text();
   if (/CSES - 404/.test(html)) throw new Error(`No CSES user with id ${id}.`);
@@ -654,8 +660,9 @@ async function fetchCses(username: string, session?: string): Promise<FetchedSta
   // Solved count and per-submission dates only exist behind a CSES login session.
   if (session) {
     try {
-      const statsPage = await fetch(`https://cses.fi/problemset/user/${id}/`, {
+      const statsPage = await fetch(`https://cses.fi/problemset/user/${id}/?t=${Date.now()}`, {
         headers: authHeaders,
+        cache: "no-store",
       });
       if (statsPage.ok) {
         const page = await statsPage.text();

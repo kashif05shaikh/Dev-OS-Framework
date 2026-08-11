@@ -27,8 +27,9 @@ function text(html: string): string {
 export async function fetchCsesPublicProfile(rawId: string): Promise<CsesPublicProfile> {
   const id = rawId.replace(/\D/g, "");
   if (!id) throw new Error("Enter your numeric CSES user id, e.g. 391136.");
-  const response = await fetch(`https://cses.fi/user/${id}`, {
-    headers: UA,
+  const response = await fetch(`https://cses.fi/user/${id}?t=${Date.now()}`, {
+    headers: { ...UA, "Cache-Control": "no-cache", Pragma: "no-cache" },
+    cache: "no-store",
     signal: AbortSignal.timeout(12_000),
   }).catch(() => {
     throw new Error("CSES did not respond in time. Try again in a moment.");
