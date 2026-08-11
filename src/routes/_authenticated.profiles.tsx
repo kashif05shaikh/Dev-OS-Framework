@@ -669,7 +669,7 @@ function ProfilesPage() {
                     // Public lookup succeeded — pull the real numbers straight into the
                     // draft and run the normal sync so the card + heatmap update.
                     setDraft((d) =>
-                      d.platform === "cses" && !d.profile_url
+                      d && d.platform === "cses" && !d.profile_url
                         ? { ...d, profile_url: p.profileUrl }
                         : d,
                     );
