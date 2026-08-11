@@ -1,73 +1,42 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Link2, Link2Off, ShieldCheck } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PlatformLogo } from "@/components/platform-logo";
-import {
-  connectCses,
-  disconnectPlatform,
-  listCodingConnections,
-} from "@/lib/coding-connections.functions";
+import { lookupCsesUser } from "@/lib/cses-public.functions";
 import { describeError } from "@/lib/devos-queries";
-import { cn } from "@/lib/utils";
 
 /**
- * CSES exposes no OAuth or public API, so each user links their own account:
- * credentials go straight to cses.fi and only the resulting session is stored,
- * encrypted, server-side. Nothing sensitive is ever sent back to the browser.
+ * CSES has no OAuth and no API, but cses.fi/user/{id} is fully public.
+ * DevOS reads that page directly from the numeric id — no password, no session,
+ * nothing stored — and shows exactly what CSES publishes for the account.
  */
-export function CsesConnect() {
-  const qc = useQueryClient();
-  const list = useServerFn(listCodingConnections);
-  const connect = useServerFn(connectCses);
-  const disconnect = useServerFn(disconnectPlatform);
+export function CsesConnect({ userId }: { userId: string }) {
+  const lookup = useServerFn(lookupCsesUser);
+  const id = userId.replace(/\D/g, "");
+  const lastAuto = useRef("");
 
-  const [open, setOpen] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  const connections = useQuery({
-    queryKey: ["coding_connections"],
-    queryFn: () => list(),
-  });
-  const cses = (connections.data ?? []).find((c) => c.platform === "cses");
-
-  const doConnect = useMutation({
-    mutationFn: () => connect({ data: { username: username.trim(), password } }),
-    onSuccess: (result) => {
-      setPassword("");
-      setOpen(false);
-      void qc.invalidateQueries({ queryKey: ["coding_connections"] });
-      toast.success(`CSES connected as ${result.handle}`);
-    },
+  const verify = useMutation({
+    mutationFn: (value: string) => lookup({ data: { userId: value } }),
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
-  const doDisconnect = useMutation({
-    mutationFn: () => disconnect({ data: { platform: "cses" } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["coding_connections"] });
-      toast.success("CSES disconnected");
-    },
-    onError: (e: unknown) => toast.error(describeError(e)),
-  });
+  // Auto-verify as soon as a plausible id is typed, so the card is never empty.
+  useEffect(() => {
+    if (id.length >= 4 && lastAuto.current !== id) {
+      lastAuto.current = id;
+      verify.mutate(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  const connected = cses?.status === "connected";
+  const data = verify.data && verify.data.userId === id ? verify.data : null;
 
   return (
-    <section className="relative overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-card/90 via-card/60 to-primary/5 p-3.5 shadow-[0_1px_0_0_hsl(var(--border))]">
+    <section className="relative overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-card/90 via-card/60 to-primary/5 p-3.5">
       <div
         aria-hidden
         className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-primary/10 blur-2xl"
@@ -78,95 +47,69 @@ export function CsesConnect() {
         </span>
         <div className="mr-auto min-w-0">
           <p className="flex items-center gap-2 text-xs font-semibold">
-            CSES connection
+            CSES account
             <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
-                connected
-                  ? "bg-primary/15 text-primary"
-                  : cses?.status === "expired"
-                    ? "bg-destructive/15 text-destructive"
-                    : "bg-muted text-muted-foreground",
-              )}
+              className={
+                data
+                  ? "rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                  : "rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              }
             >
-              {connected ? "Connected" : cses?.status === "expired" ? "Expired" : "Not connected"}
+              {data ? "Verified" : id ? "Not verified yet" : "Enter your id"}
             </span>
           </p>
           <p className="truncate text-[11px] text-muted-foreground">
-            {connected
-              ? `${cses?.handle ?? "your account"}${
-                  cses?.platformUserId ? ` (#${cses.platformUserId})` : ""
-                } · solved count and submission dates sync automatically`
-              : cses?.status === "expired"
-                ? "Session expired — reconnect to keep syncing solved tasks."
-                : "CSES hides solved tasks behind login. Connect your own account to sync them."}
+            {data
+              ? `${data.handle} · ${data.submissions ?? 0} submissions${
+                  data.lastSubmission ? ` · last ${data.lastSubmission.slice(0, 10)}` : ""
+                }`
+              : "No password needed — your public CSES profile is read straight from your user id."}
           </p>
         </div>
-        {connected ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8"
-            disabled={doDisconnect.isPending}
-            onClick={() => doDisconnect.mutate()}
-          >
-            <Link2Off className="size-3.5" />
-            Disconnect
-          </Button>
-        ) : (
-          <Button type="button" size="sm" className="h-8" onClick={() => setOpen(true)}>
-            <Link2 className="size-3.5" />
-            Connect CSES
-          </Button>
-        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={!id || verify.isPending}
+          onClick={() => verify.mutate(id)}
+        >
+          <RefreshCw className={verify.isPending ? "size-3.5 animate-spin" : "size-3.5"} />
+          {verify.isPending ? "Checking…" : "Verify id"}
+        </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connect your CSES account</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">CSES username</Label>
-              <Input
-                value={username}
-                autoComplete="username"
-                onChange={(e) => setUsername(e.target.value)}
-                className="h-9 text-sm"
-              />
+      {data ? (
+        <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { label: "Submissions", value: String(data.submissions ?? "—") },
+            { label: "First", value: data.firstSubmission?.slice(0, 10) ?? "—" },
+            { label: "Last", value: data.lastSubmission?.slice(0, 10) ?? "—" },
+            {
+              label: "Languages",
+              value: data.languages.map((l) => l.name).join(", ") || "—",
+            },
+          ].map((cell) => (
+            <div key={cell.label} className="rounded-lg border border-border/60 bg-background/40 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {cell.label}
+              </p>
+              <p className="truncate text-xs font-semibold">{cell.value}</p>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">CSES password</Label>
-              <Input
-                type="password"
-                value={password}
-                autoComplete="current-password"
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-            <p className="flex gap-2 rounded-md border border-border bg-muted/30 p-2 text-[11px] text-muted-foreground">
-              <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
-              Your password is sent once to cses.fi to create a session and is never stored. Only
-              the encrypted session is kept on the server, and you can disconnect at any time.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              disabled={doConnect.isPending || !username.trim() || !password}
-              onClick={() => doConnect.mutate()}
-            >
-              {doConnect.isPending ? "Connecting…" : "Connect"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          ))}
+        </div>
+      ) : null}
+
+      <p className="relative mt-3 flex gap-2 rounded-md border border-border bg-muted/30 p-2 text-[11px] text-muted-foreground">
+        {data ? (
+          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
+        ) : (
+          <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
+        )}
+        DevOS never asks for your CSES password. Only the public profile page is read, so the
+        solved-task count stays private to CSES — submissions, activity dates and languages sync
+        automatically.
+      </p>
     </section>
   );
 }
