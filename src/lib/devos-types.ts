@@ -78,7 +78,6 @@ export const CODING_PLATFORMS = [
   "github",
   "gfg",
   "atcoder",
-  "cses",
 ] as const;
 export type CodingPlatform = (typeof CODING_PLATFORMS)[number];
 
@@ -90,7 +89,6 @@ export const CODING_PLATFORM_LABEL: Record<string, string> = {
   github: "GitHub",
   gfg: "GeeksforGeeks",
   atcoder: "AtCoder",
-  cses: "CSES",
   other: "Other",
 };
 
@@ -102,7 +100,6 @@ export const CODING_PLATFORM_COLOR: Record<string, string> = {
   github: "#e5e7eb",
   gfg: "#22c55e",
   atcoder: "#f472b6",
-  cses: "#38bdf8",
   other: "#8b5cf6",
 };
 
@@ -114,7 +111,6 @@ export const PROFILE_URL_TEMPLATE: Record<string, (u: string) => string> = {
   github: (u) => `https://github.com/${u}`,
   gfg: (u) => `https://auth.geeksforgeeks.org/user/${u}`,
   atcoder: (u) => `https://atcoder.jp/users/${u}`,
-  cses: (u) => `https://cses.fi/problemset/user/${u}/`,
 };
 
 /** Platforms whose stats DevOS can fetch automatically from the public APIs. */
@@ -126,7 +122,6 @@ export const SYNCABLE_PLATFORMS = [
   "hackerrank",
   "gfg",
   "atcoder",
-  "cses",
 ] as const;
 
 /** simple-icons slugs used to render each platform's real logo. */

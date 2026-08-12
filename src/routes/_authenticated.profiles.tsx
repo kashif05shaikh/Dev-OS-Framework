@@ -17,7 +17,6 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
-import { CsesConnect } from "@/components/cses-connect";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -141,7 +140,7 @@ function canSync(platform: string): boolean {
 }
 
 /** Platforms that simply don't publish a solved count get N/A instead of a fake 0. */
-const SOLVED_UNSUPPORTED = new Set(["cses"]);
+const SOLVED_UNSUPPORTED = new Set<string>();
 
 function metric(value: number | null, unsupported = false): string {
   if (unsupported) return "N/A";
@@ -650,39 +649,20 @@ function ProfilesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="cp-username">
-                    {draft.platform === "cses" ? "CSES user id" : "Username / handle"}
+                    Username / handle
                   </Label>
                   <Input
                     id="cp-username"
                     autoFocus
                     value={draft.username}
                     onChange={(e) => setDraft({ ...draft, username: e.target.value })}
-                    placeholder={draft.platform === "cses" ? "391136" : undefined}
                   />
                 </div>
               </div>
 
-              {draft.platform === "cses" ? (
-                <CsesConnect
-                  userId={draft.username}
-                  onVerified={(p) => {
-                    // Public lookup succeeded — pull the real numbers straight into the
-                    // draft and run the normal sync so the card + heatmap update.
-                    setDraft((d) =>
-                      d && d.platform === "cses" && !d.profile_url
-                        ? { ...d, profile_url: p.profileUrl }
-                        : d,
-                    );
-                    if (!fillFromPlatform.isPending) fillFromPlatform.mutate(draft);
-                  }}
-                />
-              ) : null}
-
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="mr-auto text-[11px] text-muted-foreground">
-                  {draft.platform === "cses"
-                    ? "CSES syncs from your public profile — just your user id, no password."
-                    : canSync(draft.platform)
+                  {canSync(draft.platform)
                     ? "Rating, rank, problems solved, contests and streak are fetched automatically."
                     : "Automatic sync isn't available for this platform — fill the numbers in manually."}
                 </p>

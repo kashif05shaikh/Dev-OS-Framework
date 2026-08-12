@@ -614,91 +614,6 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
   return stats;
 }
 
-/**
- * CSES — password-free, public pages only.
- *
- * We read https://cses.fi/problemset/user/<id>/ (task statistics) and
- * https://cses.fi/user/<id> (submission totals). No login, no stored
- * credentials, honest User-Agent.
- *
- * Heatmap limitation (by design, not a bug): the public pages do NOT expose
- * per-day submission timestamps beyond first/last. Day-level CSES activity is
- * therefore derived by diffing the solved count against the previously stored
- * one on each sync (see csesDelta in coding-profiles.functions.ts), so CSES
- * granularity is only as fine as the sync/cache interval.
- */
-const CSES_UA = {
-  "User-Agent": "DevOS-CSES-Card/1.0",
-  Accept: "text/html,application/xhtml+xml",
-};
-const CSES_TTL = 3 * 60 * 60 * 1000; // 3h — avoids hammering cses.fi on every load.
-const csesCache = new Map<string, { at: number; stats: FetchedStats }>();
-
-async function csesPage(url: string): Promise<string | null> {
-  const response = await fetch(url, {
-    headers: { ...CSES_UA, "Cache-Control": "no-cache" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(8000),
-  }).catch(() => null);
-  if (!response?.ok) return null;
-  return response.text();
-}
-
-async function fetchCses(username: string): Promise<FetchedStats> {
-  // Accept a raw id or a pasted profile URL like https://cses.fi/user/12345.
-  const id = (/(\d{2,})/.exec(username.trim())?.[1] ?? "").slice(0, 12);
-  if (!id) throw new Error("Enter your numeric CSES user id, e.g. 391136.");
-
-  const cached = csesCache.get(id);
-  if (cached && Date.now() - cached.at < CSES_TTL) {
-    return { ...cached.stats, activity: [...cached.stats.activity] };
-  }
-
-  const tasksPage = await csesPage(`https://cses.fi/problemset/user/${id}/?t=${Date.now()}`);
-  const profilePage = await csesPage(`https://cses.fi/user/${id}?t=${Date.now()}`);
-  if (tasksPage === null && profilePage === null) {
-    throw new Error("CSES did not respond. Please try again in a moment.");
-  }
-  if ((profilePage ?? tasksPage ?? "").includes("CSES - 404")) {
-    throw new Error(`No CSES user with id ${id}.`);
-  }
-
-  const stats = base("cses", id, `https://cses.fi/problemset/user/${id}/`);
-  const html = profilePage ?? "";
-  const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
-  if (name) stats.rank_label = name;
-
-  const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
-  if (submissions) stats.submissions = Number.parseInt(submissions, 10);
-
-  const first = /First submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
-  const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
-  const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
-  for (const raw of [first, last]) {
-    const date = raw?.slice(0, 10);
-    if (date) addSubmission(activity, date, false, `cses-public-${date}`);
-  }
-
-  // Task statistics page: "Solved tasks: 8 / 400" plus per-topic "x/y" rows.
-  const page = (tasksPage ?? "").replace(/&nbsp;/g, " ");
-  if (!/Please login to see the statistics/i.test(page)) {
-    const printed = /Solved\s*tasks:?\s*<?[^>]*>?\s*(\d+)\s*\/\s*(\d+)/i.exec(page)?.[1];
-    const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
-    const solved = printed ? Number.parseInt(printed, 10) : fullCells;
-    if (solved > 0) stats.problems_solved = solved;
-  }
-
-  if (Object.keys(activity).length > 0) {
-    stats.activity = activityRows(activity);
-    const streaks = streaksFrom(activityMap(stats.activity));
-    stats.current_streak = streaks.current;
-    stats.max_streak = streaks.max;
-  }
-
-  csesCache.set(id, { at: Date.now(), stats });
-  return stats;
-}
-
 const FETCHERS: Record<string, (username: string, session?: string) => Promise<FetchedStats>> = {
   leetcode: fetchLeetCode,
   codeforces: fetchCodeforces,
@@ -707,7 +622,6 @@ const FETCHERS: Record<string, (username: string, session?: string) => Promise<F
   hackerrank: fetchHackerRank,
   gfg: fetchGfg,
   atcoder: fetchAtCoder,
-  cses: fetchCses,
 };
 
 export const SYNCABLE_PLATFORMS = Object.keys(FETCHERS);
