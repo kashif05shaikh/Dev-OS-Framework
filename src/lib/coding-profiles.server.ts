@@ -614,92 +614,88 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
   return stats;
 }
 
-async function fetchCses(username: string, session?: string): Promise<FetchedStats> {
-  const id = username.replace(/\D/g, "");
-  if (!id) throw new Error("CSES needs your numeric user id, e.g. 391136.");
-  // Cache-bust: CSES/edge caches can otherwise serve a stale copy of the profile,
-  // which made "Fetch stats" keep returning yesterday's submission count.
-  const url = `https://cses.fi/user/${id}?t=${Date.now()}`;
-  const authHeaders = {
-    ...(session ? { ...UA, Cookie: `PHPSESSID=${session}` } : UA),
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-  };
-  const response = await fetch(url, { headers: authHeaders, cache: "no-store" });
-  if (!response.ok) throw new Error(`CSES returned ${response.status}`);
-  const html = await response.text();
-  if (/CSES - 404/.test(html)) throw new Error(`No CSES user with id ${id}.`);
+/**
+ * CSES — password-free, public pages only.
+ *
+ * We read https://cses.fi/problemset/user/<id>/ (task statistics) and
+ * https://cses.fi/user/<id> (submission totals). No login, no stored
+ * credentials, honest User-Agent.
+ *
+ * Heatmap limitation (by design, not a bug): the public pages do NOT expose
+ * per-day submission timestamps beyond first/last. Day-level CSES activity is
+ * therefore derived by diffing the solved count against the previously stored
+ * one on each sync (see csesDelta in coding-profiles.functions.ts), so CSES
+ * granularity is only as fine as the sync/cache interval.
+ */
+const CSES_UA = {
+  "User-Agent": "DevOS-CSES-Card/1.0",
+  Accept: "text/html,application/xhtml+xml",
+};
+const CSES_TTL = 3 * 60 * 60 * 1000; // 3h — avoids hammering cses.fi on every load.
+const csesCache = new Map<string, { at: number; stats: FetchedStats }>();
+
+async function csesPage(url: string): Promise<string | null> {
+  const response = await fetch(url, {
+    headers: { ...CSES_UA, "Cache-Control": "no-cache" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  }).catch(() => null);
+  if (!response?.ok) return null;
+  return response.text();
+}
+
+async function fetchCses(username: string): Promise<FetchedStats> {
+  // Accept a raw id or a pasted profile URL like https://cses.fi/user/12345.
+  const id = (/(\d{2,})/.exec(username.trim())?.[1] ?? "").slice(0, 12);
+  if (!id) throw new Error("Enter your numeric CSES user id, e.g. 391136.");
+
+  const cached = csesCache.get(id);
+  if (cached && Date.now() - cached.at < CSES_TTL) {
+    return { ...cached.stats, activity: [...cached.stats.activity] };
+  }
+
+  const tasksPage = await csesPage(`https://cses.fi/problemset/user/${id}/?t=${Date.now()}`);
+  const profilePage = await csesPage(`https://cses.fi/user/${id}?t=${Date.now()}`);
+  if (tasksPage === null && profilePage === null) {
+    throw new Error("CSES did not respond. Please try again in a moment.");
+  }
+  if ((profilePage ?? tasksPage ?? "").includes("CSES - 404")) {
+    throw new Error(`No CSES user with id ${id}.`);
+  }
 
   const stats = base("cses", id, `https://cses.fi/problemset/user/${id}/`);
+  const html = profilePage ?? "";
   const name = /<title>CSES - User ([^<]+)<\/title>/.exec(html)?.[1]?.trim();
+  if (name) stats.rank_label = name;
+
   const submissions = /Submission count:<\/td><td[^>]*>\s*(\d+)/.exec(html)?.[1];
+  if (submissions) stats.submissions = Number.parseInt(submissions, 10);
+
   const first = /First submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
   const last = /Last submission:<\/td><td[^>]*>\s*([\d-]+)/.exec(html)?.[1];
-  if (submissions) {
-    stats.submissions = Number.parseInt(submissions, 10);
-    stats.rank_label = `${submissions} submissions`;
-  }
-  if (name) stats.username = id;
-
-  // The public profile always exposes first/last submission dates — seed them so those
-  // days stay lit on the global heatmap even when the authenticated crawl adds nothing.
   const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
   for (const raw of [first, last]) {
     const date = raw?.slice(0, 10);
     if (date) addSubmission(activity, date, false, `cses-public-${date}`);
   }
-  const commitActivity = () => {
-    if (Object.keys(activity).length === 0) return;
+
+  // Task statistics page: "Solved tasks: 8 / 400" plus per-topic "x/y" rows.
+  const page = (tasksPage ?? "").replace(/&nbsp;/g, " ");
+  if (!/Please login to see the statistics/i.test(page)) {
+    const printed = /Solved\s*tasks:?\s*<?[^>]*>?\s*(\d+)\s*\/\s*(\d+)/i.exec(page)?.[1];
+    const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
+    const solved = printed ? Number.parseInt(printed, 10) : fullCells;
+    if (solved > 0) stats.problems_solved = solved;
+  }
+
+  if (Object.keys(activity).length > 0) {
     stats.activity = activityRows(activity);
     const streaks = streaksFrom(activityMap(stats.activity));
     stats.current_streak = streaks.current;
     stats.max_streak = streaks.max;
-  };
-  commitActivity();
-
-  // Solved count and per-submission dates only exist behind a CSES login session.
-  if (session) {
-    try {
-      const statsPage = await fetch(`https://cses.fi/problemset/user/${id}/?t=${Date.now()}`, {
-        headers: authHeaders,
-        cache: "no-store",
-      });
-      if (statsPage.ok) {
-        const page = await statsPage.text();
-        if (!/Please login to see the statistics/i.test(page)) {
-          // The page literally prints "Solved tasks: 8/400" — that is the source of truth.
-          const printed = /Solved\s+tasks:?\s*<?[^>]*>?\s*(\d+)\s*\/\s*(\d+)/i.exec(
-            page.replace(/&nbsp;/g, " "),
-          )?.[1];
-          const fullCells = (page.match(/task-score[^"]*\bfull\b/g) ?? []).length;
-          const solved = printed ? Number.parseInt(printed, 10) : fullCells;
-          if (solved > 0) stats.problems_solved = solved;
-
-          // Follow the linked submission results to recover real dates for the heatmap.
-          const ids = Array.from(
-            new Set(
-              Array.from(page.matchAll(/\/problemset\/result\/(\d+)\//g)).map((m) => m[1]!),
-            ),
-          ).slice(0, 80);
-          for (const resultId of ids) {
-            const res = await fetch(`https://cses.fi/problemset/result/${resultId}/`, {
-              headers: authHeaders,
-            });
-            if (!res.ok) continue;
-            const body = await res.text();
-            const when = /Submission time:<\/td><td[^>]*>\s*([\d]{4}-[\d]{2}-[\d]{2})/.exec(body)?.[1];
-            if (!when) continue;
-            addSubmission(activity, when, /ACCEPTED/i.test(body), resultId);
-          }
-          commitActivity();
-        }
-      }
-    } catch {
-      /* fall back to public totals */
-    }
   }
-  void first;
-  void last;
+
+  csesCache.set(id, { at: Date.now(), stats });
   return stats;
 }
 
