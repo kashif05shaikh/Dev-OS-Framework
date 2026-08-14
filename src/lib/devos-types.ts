@@ -78,7 +78,6 @@ export const CODING_PLATFORMS = [
   "github",
   "gfg",
   "atcoder",
-  "other",
 ] as const;
 export type CodingPlatform = (typeof CODING_PLATFORMS)[number];
 

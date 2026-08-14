@@ -100,11 +100,11 @@ export const SOCIAL_PLATFORMS: SocialPlatformMeta[] = [
     color: "#0a66c2",
     logoUrl: "https://www.google.com/s2/favicons?domain=linkedin.com&sz=64",
     authMode: "username",
-    inputLabel: "LinkedIn vanity name",
-    placeholder: "williamhgates",
+    inputLabel: "LinkedIn profile URL or username",
+    placeholder: "linkedin.com/in/williamhgates",
     profileUrl: (h) => `https://www.linkedin.com/in/${h}`,
     limitation:
-      "LinkedIn blocks profile reads without an approved Marketing API partnership, so DevOS stores the link only.",
+      "DevOS verifies your profile and pulls your public name, photo and headline. LinkedIn publishes no follower counts to any app.",
   },
   {
     id: "portfolio",

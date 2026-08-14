@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -19,6 +20,7 @@ import {
   GitBranch,
   Plus,
   Quote,
+  RefreshCw,
   Rocket,
   Sparkles,
   Star,
@@ -52,13 +54,13 @@ import {
   ProgressBar,
   Reveal,
   Shimmer,
-  Sparkline,
   Typewriter,
   riseIn,
   stagger,
 } from "@/components/dashboard/ui";
 import { ErrorState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   aiPromptsQuery,
   calendarEventsQuery,
@@ -76,6 +78,10 @@ import {
 } from "@/lib/devos-queries";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { summariseCodingProfiles } from "@/lib/coding-activity";
+import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
+import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
+import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -143,6 +149,10 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString();
 }
 
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
+}
+
 function DashboardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -203,6 +213,63 @@ function DashboardPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  const fetchStats = useServerFn(fetchCodingStats);
+
+  const syncAllCoding = useMutation({
+    mutationFn: async () => {
+      const rows = (coding.data ?? []).filter((p) =>
+        (SYNCABLE_PLATFORMS as readonly string[]).includes(p.platform),
+      );
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating ?? profile.rating,
+              max_rating:
+                Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} coding platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
+
   const queries = [notes, resources, projects, jobs, goals, events, focus, coding, resumes, prompts];
   const isLoading = queries.some((q) => q.isLoading);
   const error = queries.find((q) => q.error)?.error;
@@ -220,10 +287,11 @@ function DashboardPage() {
     }));
 
     const profiles = coding.data ?? [];
-    const problems = profiles.reduce((s, p) => s + (p.problems_solved ?? 0), 0);
-    const contests = profiles.reduce((s, p) => s + (p.contests_attended ?? 0), 0);
-    const rating = profiles.reduce((m, p) => Math.max(m, p.rating ?? 0), 0);
-    const streak = profiles.reduce((m, p) => Math.max(m, p.current_streak ?? 0), 0);
+    // Same aggregation the Coding Profiles heatmap uses — one source of truth.
+    const codingSummary = summariseCodingProfiles(profiles);
+    const problems = codingSummary.solved;
+    const contests = codingSummary.contests;
+    const streak = codingSummary.currentStreak;
 
     const jobList = jobs.data ?? [];
     const pipeline = ["applied", "interview", "offer", "rejected"].map((status) => ({
@@ -304,7 +372,6 @@ function DashboardPage() {
       focusSeries,
       problems,
       contests,
-      rating,
       streak,
       pipeline,
       completedRes,
@@ -342,16 +409,7 @@ function DashboardPage() {
       value: derived.problems,
       icon: Code2,
       to: "/profiles" as const,
-      series: derived.focusSeries.map((d) => d.minutes),
       accent: "var(--chart-1)",
-    },
-    {
-      label: "Current rating",
-      value: derived.rating,
-      icon: Trophy,
-      to: "/profiles" as const,
-      series: derived.skills.map((s) => s.value),
-      accent: "var(--chart-3)",
     },
     {
       label: "Coding streak",
@@ -359,7 +417,6 @@ function DashboardPage() {
       suffix: "d",
       icon: Flame,
       to: "/profiles" as const,
-      series: focus7.map((d) => d.minutes),
       accent: "var(--chart-4)",
     },
     {
@@ -369,7 +426,6 @@ function DashboardPage() {
       suffix: "h",
       icon: Timer,
       to: "/focus" as const,
-      series: focus7.map((d) => d.minutes),
       accent: "var(--chart-2)",
     },
     {
@@ -377,7 +433,6 @@ function DashboardPage() {
       value: derived.doneProjects,
       icon: FolderKanban,
       to: "/projects" as const,
-      series: (projects.data ?? []).map((p) => p.progress_percent ?? 0),
       accent: "var(--chart-5)",
     },
     {
@@ -385,7 +440,6 @@ function DashboardPage() {
       value: (jobs.data ?? []).length,
       icon: Briefcase,
       to: "/jobs" as const,
-      series: derived.pipeline.map((p) => p.value),
       accent: "var(--chart-1)",
     },
     {
@@ -393,7 +447,6 @@ function DashboardPage() {
       value: derived.contests,
       icon: Activity,
       to: "/calendar" as const,
-      series: derived.skills.map((s) => s.value),
       accent: "var(--chart-2)",
     },
     {
@@ -402,10 +455,57 @@ function DashboardPage() {
       suffix: "%",
       icon: FileText,
       to: "/resume" as const,
-      series: [20, 40, 55, 70, derived.resumeScore],
       accent: "var(--chart-3)",
     },
   ];
+
+  // Live coding titles straight off the synced Coding Profiles rows.
+  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const).map(
+    (platform) => {
+      const row = derived.profiles.find((p) => p.platform === platform);
+      const rating = row?.rating ?? null;
+      if (platform === "codeforces") {
+        const band = codeforcesBand(rating);
+        return {
+          platform,
+          label: "Codeforces",
+          title: row?.rank_label ?? band?.title ?? null,
+          color: band?.color ?? "var(--foreground)",
+          rating,
+          stars: 0,
+        };
+      }
+      if (platform === "atcoder") {
+        const band = atcoderBand(rating);
+        return {
+          platform,
+          label: "AtCoder",
+          title: band?.name ?? null,
+          color: band?.color ?? "var(--foreground)",
+          rating,
+          stars: 0,
+        };
+      }
+      if (platform === "leetcode") {
+        return {
+          platform,
+          label: "LeetCode",
+          title: null,
+          color: "var(--foreground)",
+          rating,
+          stars: 0,
+        };
+      }
+      return {
+        platform,
+        label: "CodeChef",
+        title: null,
+        color: "#facc15",
+        rating,
+        stars: codechefStars(rating),
+      };
+    },
+  );
 
   const quickActions = [
     { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
@@ -559,13 +659,84 @@ function DashboardPage() {
                   <p className="mt-3 text-3xl font-semibold tracking-tight">
                     <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
                   </p>
-                  <div className="mt-3">
-                    <Sparkline data={m.series.length ? m.series : [0, 0]} stroke={m.accent} />
-                  </div>
                 </GlassCard>
               </Link>
             </motion.div>
           ))}
+
+          <motion.div
+            variants={riseIn}
+            className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
+          >
+            <Link to="/profiles" className="block">
+              <GlassCard className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Coding titles
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={syncAllCoding.isPending || (coding.data ?? []).length === 0}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        syncAllCoding.mutate();
+                      }}
+                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+                      aria-label="Sync coding profiles"
+                      title="Sync coding profiles"
+                    >
+                      <RefreshCw className={cn("size-4", syncAllCoding.isPending && "animate-spin")} />
+                    </button>
+                    <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
+                      <Trophy className="size-4" />
+                    </span>
+                  </div>
+                </div>
+                {titleRows.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Sync a rated platform in Coding Profiles to see your titles here.
+                  </p>
+                ) : (
+                  <ul className="mt-3 grid w-full grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {titleRows.map((row) => (
+                      <li
+                        key={row.platform}
+                        className="flex min-h-[104px] w-full flex-col items-center justify-center rounded-xl border border-border bg-white/[0.03] px-3 py-4 text-center"
+                      >
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {row.label}
+                        </span>
+                        <div className="mt-1 flex min-h-[1.5rem] items-center justify-center">
+                          {row.stars > 0 ? (
+                            <span
+                              className="text-xl font-semibold leading-none"
+                              style={{ color: row.color }}
+                            >
+                              {"★".repeat(row.stars)}
+                            </span>
+                          ) : row.title ? (
+                            <span
+                              className="text-xl font-semibold leading-none"
+                              style={{ color: row.color }}
+                            >
+                              {row.title}
+                            </span>
+                          ) : (
+                            <span className="text-xl font-semibold leading-none text-transparent">{"\u00A0"}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xl font-semibold tabular-nums">
+                          {row.rating ?? "—"}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </GlassCard>
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* ── Charts + right rail ──────────────────────────────── */}

@@ -306,6 +306,8 @@ export const codingProfilesQuery = () =>
         await supabase
           .from("coding_profiles")
           .select("*")
+          // CSES support was removed; legacy rows stay in the DB but are hidden.
+          .neq("platform", "cses")
           .order("position", { ascending: true })
           .order("created_at", { ascending: true }),
       ),
