@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { FileText, Plus, Printer, Star, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FileText, Plus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
@@ -28,7 +28,6 @@ import {
   updateRow,
 } from "@/lib/devos-queries";
 import type { Resume, ResumeEntry } from "@/lib/devos-types";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/resume")({
   head: () => ({
@@ -126,23 +125,6 @@ function ResumePage() {
       if (ctx?.previous) qc.setQueryData(["resumes"], ctx.previous);
       toast.error(describeError(e));
     },
-  });
-
-  const makeDefault = useMutation({
-    mutationFn: async (id: string) =>
-      runWithRetry(async () => {
-        for (const resume of qc.getQueryData<Resume[]>(["resumes"]) ?? []) {
-          if (resume.is_default && resume.id !== id) {
-            await updateRow("resumes", resume, { is_default: false });
-          }
-        }
-        await updateRow("resumes", cachedResume(id), { is_default: true });
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["resumes"] });
-      toast.success("Default resume updated");
-    },
-    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const deleteResume = useMutation({
