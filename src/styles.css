@@ -524,6 +524,38 @@
 .resume-paper .rd-link:hover { text-decoration: underline; }
 .resume-paper .rd-muted { opacity: 0.45; }
 .resume-paper .rd-link-slot { display: inline-flex; align-items: baseline; gap: 4px; }
+.resume-paper .rd-link-slot .rd-url { display: none; }
+.resume-paper .rd-link-slot:hover .rd-url,
+.resume-paper .rd-link-slot:focus-within .rd-url { display: inline-block; }
+.resume-paper .rd-linkbar {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  color: #8a8a8a;
+}
+.resume-paper .rd-linkbar-label { text-transform: uppercase; letter-spacing: 0.08em; }
+.resume-paper .rd-linkfield {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  border: 1px solid #e2e2e2;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #fafafa;
+}
+.resume-paper .rd-linkfield-label { color: #555; font-weight: 600; }
+.resume-paper .rd-linkfield-input {
+  min-width: 6ch;
+  max-width: 22ch;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #444;
+}
 .resume-paper .rd-url {
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 10px;
