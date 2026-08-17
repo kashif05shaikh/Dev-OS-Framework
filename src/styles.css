@@ -618,3 +618,13 @@
   .resume-paper .rd-edit:focus { background: transparent !important; box-shadow: none !important; }
   .resume-paper .rd-edit:empty::before { content: ""; }
 }
+
+@media print {
+  body * { visibility: hidden !important; }
+  .resume-paper, .resume-paper * { visibility: visible !important; }
+  .resume-paper {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+}
