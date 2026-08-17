@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { FileText, Plus, Printer, Star, Trash2 } from "lucide-react";
+import { FileText, Plus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
@@ -28,7 +28,6 @@ import {
   updateRow,
 } from "@/lib/devos-queries";
 import type { Resume, ResumeEntry } from "@/lib/devos-types";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/resume")({
   head: () => ({
@@ -126,23 +125,6 @@ function ResumePage() {
       if (ctx?.previous) qc.setQueryData(["resumes"], ctx.previous);
       toast.error(describeError(e));
     },
-  });
-
-  const makeDefault = useMutation({
-    mutationFn: async (id: string) =>
-      runWithRetry(async () => {
-        for (const resume of qc.getQueryData<Resume[]>(["resumes"]) ?? []) {
-          if (resume.is_default && resume.id !== id) {
-            await updateRow("resumes", resume, { is_default: false });
-          }
-        }
-        await updateRow("resumes", cachedResume(id), { is_default: true });
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["resumes"] });
-      toast.success("Default resume updated");
-    },
-    onError: (e: unknown) => toast.error(describeError(e)),
   });
 
   const deleteResume = useMutation({
@@ -244,51 +226,6 @@ function ResumePage() {
 
   return (
     <div className="flex h-full min-h-0">
-      <aside className="no-print hidden w-56 shrink-0 flex-col border-r border-border md:flex">
-        <div className="flex items-center gap-2 border-b border-border px-3 py-3">
-          <p className="mr-auto text-xs font-medium">Resumes</p>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            aria-label="New resume"
-            disabled={createResume.isPending}
-            onClick={() => createResume.mutate()}
-          >
-            <Plus className="size-3.5" />
-          </Button>
-        </div>
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="space-y-1 p-2">
-            {resumes.isLoading ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">Loading…</p>
-            ) : list.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">No resumes yet.</p>
-            ) : (
-              list.map((resume) => (
-                <button
-                  key={resume.id}
-                  type="button"
-                  onClick={() => setActiveId(resume.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs transition-colors",
-                    resume.id === activeResumeId
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-                  )}
-                >
-                  <FileText className="size-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{resume.title}</span>
-                  {resume.is_default ? (
-                    <Star className="size-3 shrink-0 fill-primary text-primary" />
-                  ) : null}
-                </button>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </aside>
-
       <div className="flex min-w-0 flex-1 flex-col">
         {resumes.isLoading ? (
           <LoadingState label="Loading resumes…" />
@@ -325,16 +262,6 @@ function ResumePage() {
                   }
                 }}
               />
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8"
-                onClick={() => makeDefault.mutate(active.id)}
-                disabled={active.is_default || makeDefault.isPending}
-              >
-                <Star className="size-3.5" />
-                {active.is_default ? "Default" : "Set default"}
-              </Button>
               <Button size="sm" variant="outline" className="h-8" onClick={() => window.print()}>
                 <Printer className="size-3.5" />
                 Print / PDF

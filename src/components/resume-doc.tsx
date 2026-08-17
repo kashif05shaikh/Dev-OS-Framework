@@ -171,14 +171,21 @@ export function ResumeDocument({
     return row.profile_url ?? PROFILE_URL_TEMPLATE[platform]?.(row.username) ?? null;
   };
 
-  const links: { label: string; href: string | null; key: keyof Resume | null }[] = [
-    { label: "LinkedIn", href: resume.linkedin_url, key: "linkedin_url" },
-    { label: "GitHub", href: resume.github_url, key: "github_url" },
-    { label: "LeetCode", href: codingLink("leetcode"), key: null },
-    { label: "Codeforces", href: codingLink("codeforces"), key: null },
-    { label: "CodeChef", href: codingLink("codechef"), key: null },
-    { label: "Codolio", href: resume.website_url, key: "website_url" },
+  const editableKeys: { label: string; key: "linkedin_url" | "github_url" | "website_url" }[] = [
+    { label: "LinkedIn", key: "linkedin_url" },
+    { label: "GitHub", key: "github_url" },
+    { label: "Codolio", key: "website_url" },
   ];
+
+  const links: { label: string; href: string | null }[] = [
+    { label: "LinkedIn", href: resume.linkedin_url },
+    { label: "GitHub", href: resume.github_url },
+    { label: "LeetCode", href: codingLink("leetcode") },
+    { label: "Codeforces", href: codingLink("codeforces") },
+    { label: "CodeChef", href: codingLink("codechef") },
+    { label: "Codolio", href: resume.website_url },
+  ];
+  const visibleLinks = links.filter((l) => Boolean(l.href));
 
   return (
     <div className="resume-paper">
@@ -203,59 +210,51 @@ export function ResumeDocument({
         <h1 className="rd-name">
           <Editable
             value={resume.full_name ?? ""}
-            placeholder="Your Full Name"
+            placeholder="Full name"
             onCommit={(full_name) => onPatchResume({ full_name: full_name || null })}
           />
         </h1>
         <p className="rd-contact">
           <Editable
             value={resume.phone ?? ""}
-            placeholder="+91 00000 00000"
+            placeholder="Phone"
             onCommit={(phone) => onPatchResume({ phone: phone || null })}
           />
           <span className="rd-pipe">|</span>
           <Editable
             className="rd-link"
             value={resume.email ?? ""}
-            placeholder="you@example.com"
+            placeholder="Email"
             onCommit={(email) => onPatchResume({ email: email || null })}
           />
-          {links.map((link) => (
+          {visibleLinks.map((link) => (
             <span key={link.label} className="contents">
               <span className="rd-pipe">|</span>
-              {link.key ? (
-                <span className="rd-link-slot">
-                  {link.href ? (
-                    <a
-                      className="rd-link"
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <span className="rd-link rd-muted">{link.label}</span>
-                  )}
-                  <Editable
-                    className="rd-url no-print"
-                    value={(resume[link.key] as string | null) ?? ""}
-                    placeholder="paste url"
-                    onCommit={(url) =>
-                      onPatchResume({ [link.key as string]: url || null } as Partial<Resume>)
-                    }
-                  />
-                </span>
-              ) : link.href ? (
-                <a className="rd-link" href={link.href} target="_blank" rel="noreferrer noopener">
-                  {link.label}
-                </a>
-              ) : (
-                <span className="rd-link rd-muted">{link.label}</span>
-              )}
+              <a
+                className="rd-link"
+                href={link.href ?? "#"}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {link.label}
+              </a>
             </span>
           ))}
         </p>
+        <div className="rd-linkbar no-print">
+          <span className="rd-linkbar-label">Links</span>
+          {editableKeys.map(({ label, key }) => (
+            <span key={key} className="rd-linkfield">
+              <span className="rd-linkfield-label">{label}</span>
+              <Editable
+                className="rd-linkfield-input"
+                value={(resume[key] as string | null) ?? ""}
+                placeholder="paste URL"
+                onCommit={(url) => onPatchResume({ [key]: url || null } as Partial<Resume>)}
+              />
+            </span>
+          ))}
+        </div>
       </header>
 
       {DOC_SECTIONS.map((meta) => {
