@@ -377,7 +377,7 @@ function EducationRow({
             placeholder="Institute name"
             onCommit={(title) => onPatch(entry.id, { title })}
           />
-          {entry.organization || true ? <span className="rd-sep"> — </span> : null}
+          <span className="rd-sep"> — </span>
           <Editable
             value={entry.organization ?? ""}
             placeholder="University"
