@@ -317,6 +317,15 @@ export const codingProfilesQuery = () =>
       ),
   });
 
+export const resumeFilesQuery = () =>
+  queryOptions({
+    queryKey: ["resume_files"],
+    queryFn: async (): Promise<ResumeFile[]> =>
+      unwrap(
+        await supabase.from("resume_files").select("*").order("created_at", { ascending: false }),
+      ),
+  });
+
 export const resumesQuery = () =>
   queryOptions({
     queryKey: ["resumes"],
