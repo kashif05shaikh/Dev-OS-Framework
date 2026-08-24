@@ -279,7 +279,7 @@ function ResumePage() {
           }
         />
       ) : (
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 items-stretch">
           <aside className="hidden w-64 shrink-0 border-r border-border md:block">
             <ScrollArea className="h-full">
               <div className="space-y-1 p-2">
@@ -363,15 +363,15 @@ function ResumePage() {
               </Button>
             </div>
 
-            <div className="min-h-0 flex-1 bg-muted/20 p-4">
+            <div className="min-h-[calc(100vh-8rem)] flex-1 bg-muted/20 p-4">
               {!previewUrl ? (
                 <LoadingState label="Opening resume…" />
               ) : isPdf ? (
                 <iframe
                   id="resume-preview"
                   title={`${active.title} preview`}
-                  src={previewUrl}
-                  className="h-full w-full rounded-xl border border-border bg-white"
+                  src={`${previewUrl}#view=FitH&toolbar=1`}
+                  className="h-full min-h-[calc(100vh-9rem)] w-full rounded-xl border border-border bg-white"
                 />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
