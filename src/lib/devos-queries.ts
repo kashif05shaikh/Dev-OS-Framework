@@ -17,7 +17,7 @@ import type {
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
-import type { FocusSession, Profile } from "@/lib/devos-types";
+import type { FocusSession, Profile, ResumeFile } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
@@ -114,6 +114,7 @@ type UpdatableTable =
   | "resumes"
   | "resume_sections"
   | "resume_entries"
+  | "resume_files"
   | "ai_prompts"
   | "calendar_events"
   | "goals"
@@ -301,6 +302,9 @@ export const jobApplicationsQuery = () =>
 export const codingProfilesQuery = () =>
   queryOptions({
     queryKey: ["coding_profiles"],
+    staleTime: 60 * 60 * 1000,
+    refetchInterval: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<CodingProfile[]> =>
       unwrap(
         await supabase
@@ -310,6 +314,15 @@ export const codingProfilesQuery = () =>
           .neq("platform", "cses")
           .order("position", { ascending: true })
           .order("created_at", { ascending: true }),
+      ),
+  });
+
+export const resumeFilesQuery = () =>
+  queryOptions({
+    queryKey: ["resume_files"],
+    queryFn: async (): Promise<ResumeFile[]> =>
+      unwrap(
+        await supabase.from("resume_files").select("*").order("created_at", { ascending: false }),
       ),
   });
 

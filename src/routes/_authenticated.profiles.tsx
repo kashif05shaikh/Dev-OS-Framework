@@ -54,6 +54,7 @@ import {
   SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
+import { useCodingAutoSync } from "@/lib/use-coding-autosync";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/profiles")({
@@ -154,6 +155,7 @@ function activityPayload(stats: { activity: unknown }): Json {
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
+  useCodingAutoSync(profiles.data);
   const fetchStats = useServerFn(fetchCodingStats);
 
   const [search, setSearch] = useState("");
