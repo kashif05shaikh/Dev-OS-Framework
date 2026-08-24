@@ -114,6 +114,7 @@ type UpdatableTable =
   | "resumes"
   | "resume_sections"
   | "resume_entries"
+  | "resume_files"
   | "ai_prompts"
   | "calendar_events"
   | "goals"
