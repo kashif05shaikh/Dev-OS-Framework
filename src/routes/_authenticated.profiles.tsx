@@ -54,6 +54,7 @@ import {
   SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
+import { useCodingAutoSync } from "@/lib/use-coding-autosync";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/profiles")({
