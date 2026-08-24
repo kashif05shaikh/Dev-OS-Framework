@@ -17,7 +17,7 @@ import type {
 } from "@/lib/devos-types";
 import type { AiPrompt, CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
-import type { FocusSession, Profile } from "@/lib/devos-types";
+import type { FocusSession, Profile, ResumeFile } from "@/lib/devos-types";
 
 function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(describeError(result.error));
