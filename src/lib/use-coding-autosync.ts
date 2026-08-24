@@ -9,8 +9,6 @@ import { SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
 /** Coding stats are considered fresh for one hour. */
 export const CODING_STALE_MS = 60 * 60 * 1000;
 
-type Json = Parameters<typeof updateRow>[2] extends infer _ ? never : never;
-
 function activityPayload(stats: { activity: unknown }) {
   return { version: 2, days: stats.activity } as never;
 }
@@ -92,5 +90,3 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
     // rowsRef keeps the latest rows without restarting the hourly timer.
   }, [enabled, fetchStats, qc]);
 }
-
-export type { Json };
