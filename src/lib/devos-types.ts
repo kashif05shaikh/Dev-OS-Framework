@@ -13,6 +13,7 @@ export type CodingProfile = Tables<"coding_profiles">;
 export type Resume = Tables<"resumes">;
 export type ResumeSection = Tables<"resume_sections">;
 export type ResumeEntry = Tables<"resume_entries">;
+export type ResumeFile = Tables<"resume_files">;
 export type AiPrompt = Tables<"ai_prompts">;
 export type CalendarEvent = Tables<"calendar_events">;
 
