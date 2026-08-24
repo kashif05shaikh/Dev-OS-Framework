@@ -81,6 +81,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
+import { useCodingAutoSync } from "@/lib/use-coding-autosync";
 import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -183,6 +184,8 @@ function DashboardPage() {
   const events = useQuery(calendarEventsQuery());
   const focus = useQuery(focusSessionsQuery(30));
   const coding = useQuery(codingProfilesQuery());
+  // Keeps streak/titles live: refreshes stale platforms on load and hourly.
+  useCodingAutoSync(coding.data);
   const resumes = useQuery(resumesQuery());
   const prompts = useQuery(aiPromptsQuery());
 

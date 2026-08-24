@@ -154,6 +154,7 @@ function activityPayload(stats: { activity: unknown }): Json {
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
+  useCodingAutoSync(profiles.data);
   const fetchStats = useServerFn(fetchCodingStats);
 
   const [search, setSearch] = useState("");
