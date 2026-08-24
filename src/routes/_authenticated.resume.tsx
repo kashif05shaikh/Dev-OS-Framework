@@ -279,7 +279,7 @@ function ResumePage() {
           }
         />
       ) : (
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 items-stretch">
           <aside className="hidden w-64 shrink-0 border-r border-border md:block">
             <ScrollArea className="h-full">
               <div className="space-y-1 p-2">
