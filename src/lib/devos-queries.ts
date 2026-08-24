@@ -301,6 +301,9 @@ export const jobApplicationsQuery = () =>
 export const codingProfilesQuery = () =>
   queryOptions({
     queryKey: ["coding_profiles"],
+    staleTime: 60 * 60 * 1000,
+    refetchInterval: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<CodingProfile[]> =>
       unwrap(
         await supabase
