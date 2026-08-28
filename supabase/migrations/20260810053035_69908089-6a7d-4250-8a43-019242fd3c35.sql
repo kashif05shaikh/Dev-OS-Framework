@@ -1,0 +1,1 @@
+ALTER TABLE public.coding_profiles ADD COLUMN IF NOT EXISTS max_rating integer;

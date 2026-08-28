@@ -1,0 +1,3 @@
+- [Orval query-options enabled pattern](orval-query-options.md) — `{ query: { enabled: ... } }` requires `as any` cast; Orval omits queryKey from the public type.
+- [OpenAPI date-vs-Drizzle mismatch](openapi-date-drizzle.md) — codegen coerces `format:date` to JS Date; date-only DB columns need string conversion at route boundary.
+- [Orval mutation variable shape](orval-mutation-shape.md) — mutations with an id path param take `{ id, data }` not `{ data: { id, ... } }`; stop/set-primary variants are `{ id }` only.
