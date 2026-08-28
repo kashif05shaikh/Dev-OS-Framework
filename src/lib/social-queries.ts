@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { describeError } from "@/lib/devos-queries";
 
+/** Removed from the Network module; legacy rows are filtered out. */
+export const RETIRED_SOCIAL_PLATFORMS = ["reddit", "devto", "hashnode", "medium", "portfolio"];
+
 export type SocialAccount = Tables<"social_accounts">;
 export type SocialProfileCache = Tables<"social_profile_cache">;
 
@@ -20,6 +23,8 @@ export const socialAccountsQuery = () =>
         await supabase
           .from("social_accounts")
           .select("*")
+          // Retired platforms stay in the DB but are hidden from the Network tab.
+          .not("platform", "in", `(${RETIRED_SOCIAL_PLATFORMS.join(",")})`)
           .order("position", { ascending: true })
           .order("created_at", { ascending: true }),
       ),

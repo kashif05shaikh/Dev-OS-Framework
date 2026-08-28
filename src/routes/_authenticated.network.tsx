@@ -82,7 +82,7 @@ type StatsDraft = {
 };
 
 /** Platforms whose public data cannot be read from a server (login-walled). */
-const MANUAL_PLATFORMS = new Set(["instagram", "linkedin"]);
+const MANUAL_PLATFORMS = new Set(["instagram"]);
 
 function toNumber(value: string): number | null {
   const trimmed = value.trim().replace(/[,\s]/g, "");
@@ -287,6 +287,7 @@ function NetworkPage() {
           last_synced: new Date().toISOString(),
           profile_url: snapshot.profile_url ?? account.profile_url,
         });
+        return snapshot;
       } catch (error) {
         const message = describeError(error);
         await updateRow("social_accounts", account, {
@@ -297,10 +298,48 @@ function NetworkPage() {
       }
     },
     onMutate: (account) => setSyncing(account.id),
-    onSuccess: (_data, account) => {
+    onSuccess: (snapshot, account) => {
       void qc.invalidateQueries({ queryKey: ["social_accounts"] });
       void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
-      toast.success(`${socialPlatform(account.platform)?.label ?? account.platform} synced`);
+      const label = socialPlatform(account.platform)?.label ?? account.platform;
+      if (snapshot?.extra?.["linkOnly"]) {
+        toast.success(`${label} profile verified`, {
+          description:
+            "LinkedIn doesn't publish follower counts to any app, so DevOS keeps your verified profile link and details in sync.",
+        });
+        return;
+      }
+      const blocked =
+        Boolean(snapshot?.extra?.["unavailable"]) &&
+        snapshot?.followers === null &&
+        snapshot?.following === null &&
+        snapshot?.posts === null;
+      if (blocked) {
+        const profile = byPlatform.get(account.platform);
+        const hasManual = Boolean(extraOf(profile)["manual"]);
+        toast.message(`${label} blocks automated profile reads`, {
+          description: hasManual
+            ? "Your saved numbers were kept. Use “Edit stats” to update them."
+            : "Enter your follower / connection counts manually to show them here.",
+          action: hasManual
+            ? undefined
+            : {
+                label: "Enter stats",
+                onClick: () =>
+                  setStats({
+                    account,
+                    display_name: profile?.display_name ?? "",
+                    bio: profile?.bio ?? "",
+                    avatar_url: profile?.avatar_url ?? "",
+                    followers: "",
+                    following: "",
+                    posts: "",
+                  }),
+              },
+        });
+        return;
+      }
+      toast.success(`${label} synced`);
     },
     onError: (error: unknown) => {
       void qc.invalidateQueries({ queryKey: ["social_accounts"] });

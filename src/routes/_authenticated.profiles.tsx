@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import {
   Braces,
   ExternalLink,
-  Flame,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -17,6 +16,8 @@ import {
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
+import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   assertOk,
@@ -52,6 +54,7 @@ import {
   SYNCABLE_PLATFORMS,
   type CodingProfile,
 } from "@/lib/devos-types";
+import { useCodingAutoSync } from "@/lib/use-coding-autosync";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/profiles")({
@@ -137,9 +140,22 @@ function canSync(platform: string): boolean {
   return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
 }
 
+/** Platforms that simply don't publish a solved count get N/A instead of a fake 0. */
+const SOLVED_UNSUPPORTED = new Set<string>();
+
+function metric(value: number | null, unsupported = false): string {
+  if (unsupported) return "N/A";
+  return value === null ? "N/A" : String(value);
+}
+
+function activityPayload(stats: { activity: unknown }): Json {
+  return { version: 2, days: stats.activity as Json };
+}
+
 function ProfilesPage() {
   const qc = useQueryClient();
   const profiles = useQuery(codingProfilesQuery());
+  useCodingAutoSync(profiles.data);
   const fetchStats = useServerFn(fetchCodingStats);
 
   const [search, setSearch] = useState("");
@@ -162,8 +178,10 @@ function ProfilesPage() {
               profile_url: current.profile_url.trim() || (stats.profile_url ?? ""),
               rating: stats.rating === null ? "" : String(stats.rating),
               rank_label: stats.rank_label ?? current.rank_label,
-              problems_solved: String(stats.problems_solved),
-              contests_attended: String(stats.contests_attended),
+              problems_solved:
+                stats.problems_solved === null ? current.problems_solved : String(stats.problems_solved),
+              contests_attended:
+                stats.contests_attended === null ? current.contests_attended : String(stats.contests_attended),
               current_streak: String(stats.current_streak),
               max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
             }
@@ -176,19 +194,33 @@ function ProfilesPage() {
 
   const syncProfile = useMutation({
     mutationFn: async (profile: CodingProfile) => {
-      const stats = await fetchStats({
-        data: { platform: profile.platform, username: profile.username },
-      });
-      await updateRow("coding_profiles", profile, {
-        profile_url: profile.profile_url ?? stats.profile_url,
-        rating: stats.rating,
-        rank_label: stats.rank_label ?? profile.rank_label,
-        problems_solved: stats.problems_solved,
-        contests_attended: stats.contests_attended,
-        current_streak: stats.current_streak,
-        max_streak: Math.max(stats.max_streak, profile.max_streak),
-        last_synced_at: new Date().toISOString(),
-      });
+      try {
+        const stats = await fetchStats({
+          data: { platform: profile.platform, username: profile.username },
+        });
+        await updateRow("coding_profiles", profile, {
+          profile_url: profile.profile_url ?? stats.profile_url,
+          rating: stats.rating ?? profile.rating,
+          max_rating:
+            Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
+          rank_label: stats.rank_label ?? profile.rank_label,
+          problems_solved: stats.problems_solved ?? profile.problems_solved,
+          contests_attended: stats.contests_attended ?? profile.contests_attended,
+          submissions_count: stats.submissions,
+          current_streak: stats.current_streak,
+          max_streak: Math.max(stats.max_streak, profile.max_streak),
+          activity: activityPayload(stats),
+          last_synced_at: stats.lastSyncedAt,
+          sync_status: "success",
+          sync_error: null,
+        });
+      } catch (error) {
+        await updateRow("coding_profiles", profile, {
+          sync_status: "error",
+          sync_error: describeError(error).slice(0, 300),
+        });
+        throw error;
+      }
     },
     onMutate: (profile) => setSyncingId(profile.id),
     onSuccess: (_d, profile) => {
@@ -206,13 +238,18 @@ function ProfilesPage() {
         username: value.username.trim(),
         profile_url: resolveUrl(value),
         rating: value.rating.trim() === "" ? null : toInt(value.rating),
+        max_rating: null as number | null,
         rank_label: value.rank_label.trim() || null,
         problems_solved: toInt(value.problems_solved),
         contests_attended: toInt(value.contests_attended),
         current_streak: toInt(value.current_streak),
         max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
+        activity: {} as Json,
         last_synced_at: new Date().toISOString(),
+        submissions_count: 0,
+        sync_status: "idle",
+        sync_error: null as string | null,
       };
 
       // New profile on a supported platform: pull the live stats automatically.
@@ -225,11 +262,17 @@ function ProfilesPage() {
             ...payload,
             profile_url: payload.profile_url ?? stats.profile_url,
             rating: stats.rating,
+            max_rating: Math.max(stats.max_rating ?? 0, stats.rating ?? 0) || null,
             rank_label: stats.rank_label ?? payload.rank_label,
-            problems_solved: stats.problems_solved,
-            contests_attended: stats.contests_attended,
+             problems_solved: stats.problems_solved ?? payload.problems_solved,
+             contests_attended: stats.contests_attended ?? payload.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
+             submissions_count: stats.submissions,
+             activity: activityPayload(stats),
+             last_synced_at: stats.lastSyncedAt,
+             sync_status: "success",
+             sync_error: null,
           };
         } catch (error) {
           toast.warning(
@@ -239,7 +282,9 @@ function ProfilesPage() {
       }
 
       if (value.id) {
-        await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, payload);
+        // Manual edits shouldn't wipe the heatmap captured by the last sync.
+        const { activity: _activity, ...rest } = payload;
+        await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, rest);
         return;
       }
       await runWithRetry(async () => {
@@ -284,14 +329,61 @@ function ProfilesPage() {
     });
   }, [profiles.data, search, platformFilter]);
 
-  const totals = useMemo(() => {
-    const rows = profiles.data ?? [];
-    return {
-      solved: rows.reduce((sum, r) => sum + r.problems_solved, 0),
-      contests: rows.reduce((sum, r) => sum + r.contests_attended, 0),
-      streak: rows.reduce((max, r) => Math.max(max, r.current_streak), 0),
-    };
-  }, [profiles.data]);
+  // One normalized activity dataset powers the heatmap, active days and streaks.
+  const combined = useMemo(() => summariseCodingProfiles(profiles.data ?? []), [profiles.data]);
+
+  const syncAll = useMutation({
+    mutationFn: async () => {
+      const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
+      const results = await Promise.allSettled(
+        rows.map(async (profile) => {
+          try {
+            const stats = await fetchStats({
+              data: { platform: profile.platform, username: profile.username },
+            });
+            await updateRow("coding_profiles", profile, {
+              profile_url: profile.profile_url ?? stats.profile_url,
+              rating: stats.rating ?? profile.rating,
+              max_rating:
+                Math.max(stats.max_rating ?? 0, stats.rating ?? 0, profile.max_rating ?? 0) || null,
+              rank_label: stats.rank_label ?? profile.rank_label,
+              problems_solved: stats.problems_solved ?? profile.problems_solved,
+              contests_attended: stats.contests_attended ?? profile.contests_attended,
+              submissions_count: stats.submissions,
+              current_streak: stats.current_streak,
+              max_streak: Math.max(stats.max_streak, profile.max_streak),
+              activity: activityPayload(stats),
+              last_synced_at: stats.lastSyncedAt,
+              sync_status: "success",
+              sync_error: null,
+            });
+            return profile.platform;
+          } catch (error) {
+            await updateRow("coding_profiles", profile, {
+              sync_status: "error",
+              sync_error: describeError(error).slice(0, 300),
+            });
+            throw error;
+          }
+        }),
+      );
+      const failed = results
+        .map((r, i) => (r.status === "rejected" ? rows[i]!.platform : null))
+        .filter((p): p is string => Boolean(p));
+      return { total: rows.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      if (failed.length === 0) toast.success(`Synced ${total} platforms`);
+      else
+        toast.warning(
+          `Synced ${total - failed.length}/${total} · failed: ${failed
+            .map((p) => CODING_PLATFORM_LABEL[p] ?? p)
+            .join(", ")}`,
+        );
+    },
+    onError: (e: unknown) => toast.error(describeError(e)),
+  });
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -299,8 +391,8 @@ function ProfilesPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Coding Profiles</h1>
           <p className="text-xs text-muted-foreground">
-            {(profiles.data ?? []).length} platforms · {totals.solved} problems solved ·{" "}
-            {totals.contests} contests · {totals.streak} day streak
+            {(profiles.data ?? []).length} platforms · {combined.solved} problems solved ·{" "}
+            {combined.contests} contests · {combined.currentStreak} day streak
           </p>
         </div>
         <div className="relative">
@@ -329,6 +421,16 @@ function ProfilesPage() {
           <Plus className="size-3.5" />
           Add profile
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={syncAll.isPending || (profiles.data ?? []).length === 0}
+          onClick={() => syncAll.mutate()}
+        >
+          <RefreshCw className={cn("size-3.5", syncAll.isPending && "animate-spin")} />
+          {syncAll.isPending ? "Syncing…" : "Sync all"}
+        </Button>
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -350,7 +452,38 @@ function ProfilesPage() {
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <>
+              <section className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+                <div className="grid grid-cols-2 grid-rows-2 gap-3">
+                  {[
+                    { label: "Questions solved", value: combined.solved },
+                    { label: "Active days", value: combined.activeDays },
+                    { label: "Max streak", value: combined.maxStreak },
+                    { label: "Current streak", value: combined.currentStreak },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="group flex flex-col justify-between rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-surface-raised"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {stat.label}
+                      </p>
+                      <p className="text-xl font-semibold tabular-nums text-foreground">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="min-w-0 rounded-xl border border-border bg-card p-3">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    <h2 className="text-xs font-semibold">Coding activity</h2>
+                    <span className="text-[11px] text-muted-foreground">
+                      {combined.submissions} submissions across all platforms · last 12 months
+                    </span>
+                  </div>
+                  <CodingActivityHeatmap days={combined.days} className="mt-3" />
+                </div>
+              </section>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((p) => {
                 return (
                   <article key={p.id} className="rounded-xl border border-border bg-card p-4">
@@ -421,13 +554,18 @@ function ProfilesPage() {
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           {SOLVED_LABEL[p.platform] ?? "Solved"}
                         </dt>
-                        <dd className="text-sm font-semibold">{p.problems_solved}</dd>
+                        <dd className="text-sm font-semibold">
+                          {metric(
+                            p.problems_solved,
+                            SOLVED_UNSUPPORTED.has(p.platform) && p.problems_solved === 0,
+                          )}
+                        </dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
                           Rating
                         </dt>
-                        <dd className="text-sm font-semibold">{p.rating ?? "—"}</dd>
+                        <dd className="text-sm font-semibold">{metric(p.rating)}</dd>
                       </div>
                       <div className="rounded-lg bg-muted/40 px-2 py-2">
                         <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -444,24 +582,30 @@ function ProfilesPage() {
                           {p.rank_label}
                         </span>
                       ) : null}
-                      <span className="inline-flex items-center gap-1">
-                        <Flame className="size-3.5" />
-                        {p.current_streak}d streak · best {p.max_streak}d
-                      </span>
                       {p.last_synced_at ? (
                         <span className="ml-auto">
-                          synced {new Date(p.last_synced_at).toLocaleDateString()}
+                          {syncingId === p.id
+                            ? "Syncing…"
+                            : `synced ${new Date(p.last_synced_at).toLocaleString()}`}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="ml-auto">not synced yet</span>
+                      )}
                     </div>
+
+                    {p.sync_status === "error" && p.sync_error ? (
+                      <p className="mt-2 text-[11px] text-destructive">Sync failed: {p.sync_error}</p>
+                    ) : null}
 
                     {p.notes ? (
                       <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
                     ) : null}
+
                   </article>
                 );
               })}
             </div>
+            </>
           )}
         </div>
       </ScrollArea>
@@ -506,7 +650,9 @@ function ProfilesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cp-username">Username / handle</Label>
+                  <Label htmlFor="cp-username">
+                    Username / handle
+                  </Label>
                   <Input
                     id="cp-username"
                     autoFocus

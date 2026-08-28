@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const fetchCodingStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { platform: string; username: string }) => {
     const platform = String(input?.platform ?? "").trim();
     const username = String(input?.username ?? "").trim();

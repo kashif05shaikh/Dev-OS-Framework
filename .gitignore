@@ -32,3 +32,4 @@ dist-ssr
 *.sw?
 .pnpm-store/
 devos_dump.sql~
+.env

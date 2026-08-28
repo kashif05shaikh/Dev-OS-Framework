@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, SkipForward, Timer, Trash2 } from "lucide-react";
+import {
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Timer,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -55,9 +62,12 @@ const MODE_ACCENT: Record<string, string> = {
 
 function formatClock(totalSeconds: number): string {
   const s = Math.max(0, totalSeconds);
-  const m = Math.floor(s / 60);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
   const r = s % 60;
-  return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(r).padStart(2, "0");
+  return h > 0 ? `${String(h).padStart(2, "0")}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
 function formatMinutes(seconds: number): string {
@@ -66,19 +76,50 @@ function formatMinutes(seconds: number): string {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
+
+/** Plays a short repeating beep with the WebAudio API (no asset needed). */
+function playAlarm(times = 3) {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    for (let i = 0; i < times; i += 1) {
+      const at = ctx.currentTime + i * 0.55;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, at);
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.35, at + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.4);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + 0.45);
+    }
+    window.setTimeout(() => void ctx.close(), times * 600 + 400);
+  } catch {
+    /* audio unavailable — ignore */
+  }
+}
+
 function FocusPage() {
   const qc = useQueryClient();
   const sessions = useQuery(focusSessionsQuery());
 
-  const [durations, setDurations] = useState<Record<string, number>>(FOCUS_DEFAULT_MINUTES);
+  const [durations, setDurations] = useState<Record<string, number>>(() =>
+    Object.fromEntries(Object.entries(FOCUS_DEFAULT_MINUTES).map(([k, v]) => [k, v * 60])),
+  );
   const [mode, setMode] = useState<string>("focus");
   const [label, setLabel] = useState("");
   const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES['focus']! * 60);
   const [running, setRunning] = useState(false);
   const elapsedRef = useRef(0);
   const startedAtRef = useRef<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
-  const total = (durations[mode] ?? 25) * 60;
+  const total = durations[mode] ?? 25 * 60;
 
   const logSession = useMutation({
     mutationFn: async (payload: {
@@ -122,7 +163,7 @@ function FocusPage() {
       logSession.mutate({
         mode,
         label: label.trim() || null,
-        planned_minutes: durations[mode] ?? 25,
+        planned_minutes: Math.max(1, Math.round((durations[mode] ?? 1500) / 60)),
         actual_seconds: elapsed,
         completed,
         started_at: startedAtRef.current ?? new Date().toISOString(),
@@ -138,6 +179,7 @@ function FocusPage() {
     if (!running) return;
     const id = window.setInterval(() => {
       elapsedRef.current += 1;
+      setElapsed(elapsedRef.current);
       setRemaining((r) => r - 1);
     }, 1000);
     return () => window.clearInterval(id);
@@ -145,10 +187,11 @@ function FocusPage() {
 
   // Session completion.
   useEffect(() => {
-    if (remaining > 0) return;
+    if (remaining > 0 || !running) return;
     setRunning(false);
     setRemaining(0);
     save(true);
+    playAlarm();
     toast.success(`${FOCUS_MODE_LABEL[mode]} session complete`);
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("DevOS Focus Timer", {
@@ -162,9 +205,10 @@ function FocusPage() {
     if (running && elapsedRef.current >= 10) save(false);
     setRunning(false);
     elapsedRef.current = 0;
+    setElapsed(0);
     startedAtRef.current = null;
     setMode(next);
-    setRemaining((durations[next] ?? 25) * 60);
+    setRemaining(durations[next] ?? 1500);
   };
 
   const start = () => {
@@ -179,14 +223,27 @@ function FocusPage() {
     if (elapsedRef.current >= 10) save(false);
     setRunning(false);
     elapsedRef.current = 0;
+    setElapsed(0);
     startedAtRef.current = null;
     setRemaining(total);
   };
 
-  const setDuration = (value: string) => {
-    const minutes = Math.max(1, Math.min(180, Number(value) || 1));
-    setDurations((d) => ({ ...d, [mode]: minutes }));
-    if (!running) setRemaining(minutes * 60);
+  const hms = {
+    h: Math.floor(total / 3600),
+    m: Math.floor((total % 3600) / 60),
+    s: total % 60,
+  };
+
+  const setPart = (part: "h" | "m" | "s", value: string) => {
+    const n = Math.max(0, Math.min(part === "h" ? 23 : 59, Number(value) || 0));
+    const next = { ...hms, [part]: n };
+    const seconds = Math.max(0, next.h * 3600 + next.m * 60 + next.s);
+    setDurations((d) => ({ ...d, [mode]: seconds }));
+    if (!running) {
+      elapsedRef.current = 0;
+      setElapsed(0);
+      setRemaining(seconds);
+    }
   };
 
   const stats = useMemo(() => {
@@ -246,8 +303,36 @@ function FocusPage() {
               </p>
               <Progress value={pct} className="h-1.5 w-full max-w-md" />
               <p className="text-xs text-muted-foreground">
-                {FOCUS_MODE_LABEL[mode]} · {durations[mode]} min planned
+                {FOCUS_MODE_LABEL[mode]} · {formatMinutes(total)} planned
               </p>
+              <div className="flex items-end gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5 shadow-[0_8px_24px_-12px_hsl(var(--foreground)/0.5),inset_0_1px_0_hsl(var(--foreground)/0.05)]">
+                {(["h", "m", "s"] as const).map((part, i) => (
+                  <div key={part} className="flex items-end gap-2">
+                    {i > 0 && (
+                      <span className="pb-5 font-mono text-base text-muted-foreground/60">:</span>
+                    )}
+                    <div className="grid gap-1 text-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={part === "h" ? 23 : 59}
+                        value={String(hms[part])}
+                        onChange={(e) => setPart(part, e.target.value)}
+                        disabled={running}
+                        className={cn(
+                          "h-10 w-14 rounded-lg border-border/70 bg-background/80 text-center font-mono text-lg font-semibold tabular-nums",
+                          "shadow-[inset_0_1px_3px_hsl(var(--background))] transition-colors focus-visible:border-primary/60",
+                          "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                        )}
+                        aria-label={part === "h" ? "Hours" : part === "m" ? "Minutes" : "Seconds"}
+                      />
+                      <span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                        {part === "h" ? "hrs" : part === "m" ? "min" : "sec"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -271,7 +356,9 @@ function FocusPage() {
                 onClick={() => {
                   save(false);
                   setRunning(false);
+                  setElapsed(0);
                   setRemaining(0);
+                  playAlarm(1);
                 }}
                 disabled={!running && elapsedRef.current === 0}
               >
@@ -280,24 +367,13 @@ function FocusPage() {
               </Button>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs">What are you working on?</Label>
                 <Input
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="Refactor auth module"
-                  className="h-9"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label className="text-xs">{FOCUS_MODE_LABEL[mode]} length (minutes)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={180}
-                  value={String(durations[mode] ?? 25)}
-                  onChange={(e) => setDuration(e.target.value)}
                   className="h-9"
                 />
               </div>

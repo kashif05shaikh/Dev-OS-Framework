@@ -118,11 +118,13 @@ export type Database = {
       }
       coding_profiles: {
         Row: {
+          activity: Json
           contests_attended: number
           created_at: string
           current_streak: number
           id: string
           last_synced_at: string | null
+          max_rating: number | null
           max_streak: number
           notes: string | null
           platform: string
@@ -131,16 +133,21 @@ export type Database = {
           profile_url: string | null
           rank_label: string | null
           rating: number | null
+          submissions_count: number
+          sync_error: string | null
+          sync_status: string
           updated_at: string
           user_id: string
           username: string
         }
         Insert: {
+          activity?: Json
           contests_attended?: number
           created_at?: string
           current_streak?: number
           id?: string
           last_synced_at?: string | null
+          max_rating?: number | null
           max_streak?: number
           notes?: string | null
           platform?: string
@@ -149,16 +156,21 @@ export type Database = {
           profile_url?: string | null
           rank_label?: string | null
           rating?: number | null
+          submissions_count?: number
+          sync_error?: string | null
+          sync_status?: string
           updated_at?: string
           user_id: string
           username: string
         }
         Update: {
+          activity?: Json
           contests_attended?: number
           created_at?: string
           current_streak?: number
           id?: string
           last_synced_at?: string | null
+          max_rating?: number | null
           max_streak?: number
           notes?: string | null
           platform?: string
@@ -167,6 +179,9 @@ export type Database = {
           profile_url?: string | null
           rank_label?: string | null
           rating?: number | null
+          submissions_count?: number
+          sync_error?: string | null
+          sync_status?: string
           updated_at?: string
           user_id?: string
           username?: string
@@ -515,6 +530,9 @@ export type Database = {
           created_at: string
           description: string | null
           favorite: boolean
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
           folder_id: string | null
           id: string
           progress_percent: number
@@ -531,6 +549,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           favorite?: boolean
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           folder_id?: string | null
           id?: string
           progress_percent?: number
@@ -547,6 +568,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           favorite?: boolean
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           folder_id?: string | null
           id?: string
           progress_percent?: number
@@ -669,6 +693,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_connections: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          expires_at: string | null
+          handle: string | null
+          id: string
+          last_error: string | null
+          platform: string
+          platform_user_id: string | null
+          secret_ciphertext: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          handle?: string | null
+          id?: string
+          last_error?: string | null
+          platform: string
+          platform_user_id?: string | null
+          secret_ciphertext?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          handle?: string | null
+          id?: string
+          last_error?: string | null
+          platform?: string
+          platform_user_id?: string | null
+          secret_ciphertext?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -847,6 +916,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      resume_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       resume_sections: {
         Row: {
