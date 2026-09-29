@@ -455,7 +455,7 @@ function GoalsPage() {
                 return (
                   <article
                     key={goal.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
+                    className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card p-4"
                   >
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
@@ -464,7 +464,7 @@ function GoalsPage() {
                           <h2 className="truncate text-sm font-medium">{goal.title}</h2>
                         </div>
                         {goal.description ? (
-                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground break-all">
                             {goal.description}
                           </p>
                         ) : null}
@@ -604,7 +604,7 @@ function GoalsPage() {
 
                     <div className="space-y-1 border-t border-border pt-3">
                       {items.map((m) => (
-                        <div key={m.id} className="group flex items-center gap-2">
+                        <div key={m.id} className="group flex min-w-0 items-center gap-2">
                           <Checkbox
                             checked={m.done}
                             onCheckedChange={(v) =>
@@ -636,7 +636,7 @@ function GoalsPage() {
                           if (!title) return;
                           addMilestone.mutate({ goalId: goal.id, title });
                         }}
-                        className="flex items-center gap-2 pt-1"
+                        className="flex min-w-0 items-center gap-2 pt-1"
                       >
                         <Input
                           value={milestoneInput[goal.id] ?? ""}
