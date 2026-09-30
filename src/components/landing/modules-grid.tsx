@@ -120,7 +120,6 @@ export function LandingModulesGrid() {
   return (
     <section id="modules" className="py-24 relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
-        
         {/* Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
@@ -131,7 +130,8 @@ export function LandingModulesGrid() {
             Everything in one developer workspace.
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            14 purpose-built developer modules designed to support every phase of your software engineering lifecycle.
+            14 purpose-built developer modules designed to support every phase of your software
+            engineering lifecycle.
           </p>
         </div>
 
@@ -144,7 +144,9 @@ export function LandingModulesGrid() {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className={`flex size-10 items-center justify-center rounded-lg border ${mod.color}`}>
+                  <div
+                    className={`flex size-10 items-center justify-center rounded-lg border ${mod.color}`}
+                  >
                     <mod.icon className="size-5" />
                   </div>
                   <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
@@ -154,14 +156,11 @@ export function LandingModulesGrid() {
                 <h3 className="text-base font-bold text-foreground group-hover:text-emerald-400 transition-colors">
                   {mod.title}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {mod.desc}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{mod.desc}</p>
               </div>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

@@ -371,11 +371,7 @@ function SettingsPage() {
         </div>
       </Section>
 
-      <Section
-        icon={ShieldCheck}
-        title="Account"
-        description="Your sign-in email and password."
-      >
+      <Section icon={ShieldCheck} title="Account" description="Your sign-in email and password.">
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Email</Label>

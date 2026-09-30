@@ -341,8 +341,9 @@ async function fetchCodeChef(username: string): Promise<FetchedStats> {
   const stats = base("codechef", username, url);
   const rating = /class="rating-number">\s*([\d]+)/.exec(html);
   if (rating?.[1]) stats.rating = Number.parseInt(rating[1], 10);
-  const highest = /Highest\s*Rating\s*<?[^>]*>?\s*(\d{3,4})/i.exec(html)
-    ?? /highest[^0-9]{0,40}?(\d{3,4})/i.exec(html);
+  const highest =
+    /Highest\s*Rating\s*<?[^>]*>?\s*(\d{3,4})/i.exec(html) ??
+    /highest[^0-9]{0,40}?(\d{3,4})/i.exec(html);
   if (highest?.[1]) stats.max_rating = Number.parseInt(highest[1], 10);
   if (stats.rating !== null) stats.max_rating = Math.max(stats.max_rating ?? 0, stats.rating);
 
@@ -594,7 +595,9 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
           activity,
           dayKey(sub.epoch_second * 1000),
           sub.result === "AC",
-          sub.id === undefined ? `${sub.problem_id ?? "unknown"}-${sub.epoch_second}` : String(sub.id),
+          sub.id === undefined
+            ? `${sub.problem_id ?? "unknown"}-${sub.epoch_second}`
+            : String(sub.id),
         );
       }
     }

@@ -91,10 +91,7 @@ export function activityMapOf(
   return out;
 }
 
-function solvedMapOf(
-  row: { activity?: unknown },
-  userTimeZone?: string,
-): Record<string, number> {
+function solvedMapOf(row: { activity?: unknown }, userTimeZone?: string): Record<string, number> {
   if (!Array.isArray(row.activity)) return {};
   const out: Record<string, number> = {};
   const today = dayKey(Date.now(), userTimeZone);
@@ -175,7 +172,11 @@ export function calculateCodingStreaks(
     }
   }
 
-  return { currentStreak, maxStreak: Math.max(maxStreak, currentStreak), activeDays: unique.length };
+  return {
+    currentStreak,
+    maxStreak: Math.max(maxStreak, currentStreak),
+    activeDays: unique.length,
+  };
 }
 
 export type CodingProfileRow = {
@@ -187,10 +188,7 @@ export type CodingProfileRow = {
 };
 
 /** The single source of truth used by both Coding Profiles and the Dashboard. */
-export function summariseCodingProfiles(
-  rows: CodingProfileRow[],
-  userTimeZone?: string,
-) {
+export function summariseCodingProfiles(rows: CodingProfileRow[], userTimeZone?: string) {
   const days = aggregateCodingActivity(
     rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })),
     userTimeZone,

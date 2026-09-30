@@ -177,7 +177,9 @@ function GoalsPage() {
   const cachedGoal = (id: string) =>
     (qc.getQueryData<Goal[]>(["goals"]) ?? []).find((g) => g.id === id) ?? { id };
   const cachedMilestone = (id: string) =>
-    (qc.getQueryData<GoalMilestone[]>(["goal_milestones"]) ?? []).find((m) => m.id === id) ?? { id };
+    (qc.getQueryData<GoalMilestone[]>(["goal_milestones"]) ?? []).find((m) => m.id === id) ?? {
+      id,
+    };
 
   const saveGoal = useMutation({
     mutationFn: async (value: GoalDraft) => {

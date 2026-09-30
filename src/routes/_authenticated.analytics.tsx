@@ -275,7 +275,13 @@ function AnalyticsPage() {
             <div className="mt-2 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={jobStatus} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75}>
+                  <Pie
+                    data={jobStatus}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={75}
+                  >
                     {jobStatus.map((entry, i) => (
                       <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
@@ -351,7 +357,10 @@ function AnalyticsPage() {
                   </span>
                 </div>
                 <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
               </div>
             );

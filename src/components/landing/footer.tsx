@@ -21,12 +21,24 @@ export function LandingFooter() {
 
           {/* Quick Links */}
           <nav className="flex flex-wrap justify-center gap-6 font-medium">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#workflow" className="hover:text-foreground transition-colors">Workflow</a>
-            <a href="#modules" className="hover:text-foreground transition-colors">Modules</a>
-            <a href="#philosophy" className="hover:text-foreground transition-colors">Philosophy</a>
-            <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
-            <Link to="/auth" className="hover:text-foreground transition-colors">Get Started</Link>
+            <a href="#features" className="hover:text-foreground transition-colors">
+              Features
+            </a>
+            <a href="#workflow" className="hover:text-foreground transition-colors">
+              Workflow
+            </a>
+            <a href="#modules" className="hover:text-foreground transition-colors">
+              Modules
+            </a>
+            <a href="#philosophy" className="hover:text-foreground transition-colors">
+              Philosophy
+            </a>
+            <Link to="/auth" className="hover:text-foreground transition-colors">
+              Sign in
+            </Link>
+            <Link to="/auth" className="hover:text-foreground transition-colors">
+              Get Started
+            </Link>
           </nav>
         </div>
 

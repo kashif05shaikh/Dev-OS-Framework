@@ -47,7 +47,7 @@ describe("Component UI States (Loading, Error, Empty)", () => {
           title="No projects found"
           description="Start building your developer portfolio."
           action={<button onClick={actionSpy}>New Project</button>}
-        />
+        />,
       );
 
       expect(screen.getByText("No projects found")).toBeDefined();

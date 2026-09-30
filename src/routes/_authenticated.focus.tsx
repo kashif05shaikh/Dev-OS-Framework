@@ -1,14 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Pause,
-  Play,
-  RotateCcw,
-  SkipForward,
-  Timer,
-  Trash2,
-} from "lucide-react";
+import { Pause, Play, RotateCcw, SkipForward, Timer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -75,7 +68,6 @@ function formatMinutes(seconds: number): string {
   if (m < 60) return `${m}m`;
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
-
 
 /** Plays a short repeating beep with the WebAudio API (no asset needed). */
 function playAlarm(times = 3) {
@@ -198,7 +190,7 @@ function FocusPage() {
   );
   const [mode, setMode] = useState<string>("focus");
   const [label, setLabel] = useState("");
-  const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES['focus']! * 60);
+  const [remaining, setRemaining] = useState(FOCUS_DEFAULT_MINUTES["focus"]! * 60);
   const [running, setRunning] = useState(false);
   const elapsedRef = useRef(0);
   const startedAtRef = useRef<string | null>(null);

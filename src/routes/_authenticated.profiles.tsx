@@ -21,7 +21,13 @@ import { summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +38,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
@@ -179,9 +191,13 @@ function ProfilesPage() {
               rating: stats.rating === null ? "" : String(stats.rating),
               rank_label: stats.rank_label ?? current.rank_label,
               problems_solved:
-                stats.problems_solved === null ? current.problems_solved : String(stats.problems_solved),
+                stats.problems_solved === null
+                  ? current.problems_solved
+                  : String(stats.problems_solved),
               contests_attended:
-                stats.contests_attended === null ? current.contests_attended : String(stats.contests_attended),
+                stats.contests_attended === null
+                  ? current.contests_attended
+                  : String(stats.contests_attended),
               current_streak: String(stats.current_streak),
               max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
             }
@@ -264,20 +280,18 @@ function ProfilesPage() {
             rating: stats.rating,
             max_rating: Math.max(stats.max_rating ?? 0, stats.rating ?? 0) || null,
             rank_label: stats.rank_label ?? payload.rank_label,
-             problems_solved: stats.problems_solved ?? payload.problems_solved,
-             contests_attended: stats.contests_attended ?? payload.contests_attended,
+            problems_solved: stats.problems_solved ?? payload.problems_solved,
+            contests_attended: stats.contests_attended ?? payload.contests_attended,
             current_streak: stats.current_streak,
             max_streak: Math.max(stats.max_streak, payload.max_streak),
-             submissions_count: stats.submissions,
-             activity: activityPayload(stats),
-             last_synced_at: stats.lastSyncedAt,
-             sync_status: "success",
-             sync_error: null,
+            submissions_count: stats.submissions,
+            activity: activityPayload(stats),
+            last_synced_at: stats.lastSyncedAt,
+            sync_status: "success",
+            sync_error: null,
           };
         } catch (error) {
-          toast.warning(
-            `Saved, but live stats could not be fetched: ${describeError(error)}`,
-          );
+          toast.warning(`Saved, but live stats could not be fetched: ${describeError(error)}`);
         }
       }
 
@@ -442,7 +456,9 @@ function ProfilesPage() {
           ) : visible.length === 0 ? (
             <EmptyState
               icon={<Braces className="size-6" />}
-              title={search || platformFilter !== "all" ? "No matching profiles" : "No profiles yet"}
+              title={
+                search || platformFilter !== "all" ? "No matching profiles" : "No profiles yet"
+              }
               description="Add your LeetCode, Codeforces, GitHub and other handles to keep every stat in one place."
               action={
                 <Button size="sm" onClick={() => setDraft(emptyDraft())}>
@@ -468,7 +484,9 @@ function ProfilesPage() {
                       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {stat.label}
                       </p>
-                      <p className="text-xl font-semibold tabular-nums text-foreground">{stat.value}</p>
+                      <p className="text-xl font-semibold tabular-nums text-foreground">
+                        {stat.value}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -484,127 +502,128 @@ function ProfilesPage() {
               </section>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {visible.map((p) => {
-                return (
-                  <article key={p.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex items-start gap-3">
-                      <PlatformLogo platform={p.platform} className="mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h2 className="truncate text-sm font-medium">
-                            {CODING_PLATFORM_LABEL[p.platform] ?? p.platform}
-                          </h2>
-                          {p.profile_url ? (
-                            <a
-                              href={p.profile_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-muted-foreground hover:text-foreground"
-                              aria-label={`Open ${p.username} profile`}
-                            >
-                              <ExternalLink className="size-3.5" />
-                            </a>
-                          ) : null}
+                {visible.map((p) => {
+                  return (
+                    <article key={p.id} className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex items-start gap-3">
+                        <PlatformLogo platform={p.platform} className="mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h2 className="truncate text-sm font-medium">
+                              {CODING_PLATFORM_LABEL[p.platform] ?? p.platform}
+                            </h2>
+                            {p.profile_url ? (
+                              <a
+                                href={p.profile_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-muted-foreground hover:text-foreground"
+                                aria-label={`Open ${p.username} profile`}
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            ) : null}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">@{p.username}</p>
                         </div>
-                        <p className="truncate text-xs text-muted-foreground">@{p.username}</p>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-7">
+                              <MoreHorizontal className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canSync(p.platform) ? (
+                              <DropdownMenuItem
+                                disabled={syncingId === p.id}
+                                onClick={() => syncProfile.mutate(p)}
+                              >
+                                <RefreshCw
+                                  className={cn("size-3.5", syncingId === p.id && "animate-spin")}
+                                />
+                                {syncingId === p.id ? "Syncing…" : "Sync now"}
+                              </DropdownMenuItem>
+                            ) : null}
+                            <DropdownMenuItem onClick={() => setDraft(toDraft(p))}>
+                              <Pencil className="size-3.5" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() =>
+                                setConfirm({
+                                  title: "Remove profile?",
+                                  description: `${CODING_PLATFORM_LABEL[p.platform] ?? p.platform} @${p.username} will be permanently deleted.`,
+                                  confirmLabel: "Delete",
+                                  onConfirm: () => deleteProfile.mutate(p.id),
+                                })
+                              }
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-7">
-                            <MoreHorizontal className="size-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        {canSync(p.platform) ? (
-                          <DropdownMenuItem
-                            disabled={syncingId === p.id}
-                            onClick={() => syncProfile.mutate(p)}
-                          >
-                            <RefreshCw
-                              className={cn("size-3.5", syncingId === p.id && "animate-spin")}
-                            />
-                            {syncingId === p.id ? "Syncing…" : "Sync now"}
-                          </DropdownMenuItem>
+
+                      <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-lg bg-muted/40 px-2 py-2">
+                          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {SOLVED_LABEL[p.platform] ?? "Solved"}
+                          </dt>
+                          <dd className="text-sm font-semibold">
+                            {metric(
+                              p.problems_solved,
+                              SOLVED_UNSUPPORTED.has(p.platform) && p.problems_solved === 0,
+                            )}
+                          </dd>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 px-2 py-2">
+                          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Rating
+                          </dt>
+                          <dd className="text-sm font-semibold">{metric(p.rating)}</dd>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 px-2 py-2">
+                          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Contests
+                          </dt>
+                          <dd className="text-sm font-semibold">{p.contests_attended}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                        {p.rank_label ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Trophy className="size-3.5" />
+                            {p.rank_label}
+                          </span>
                         ) : null}
-                          <DropdownMenuItem onClick={() => setDraft(toDraft(p))}>
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() =>
-                              setConfirm({
-                                title: "Remove profile?",
-                                description: `${CODING_PLATFORM_LABEL[p.platform] ?? p.platform} @${p.username} will be permanently deleted.`,
-                                confirmLabel: "Delete",
-                                onConfirm: () => deleteProfile.mutate(p.id),
-                              })
-                            }
-                          >
-                            <Trash2 className="size-3.5" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                        {p.last_synced_at ? (
+                          <span className="ml-auto">
+                            {syncingId === p.id
+                              ? "Syncing…"
+                              : `synced ${new Date(p.last_synced_at).toLocaleString()}`}
+                          </span>
+                        ) : (
+                          <span className="ml-auto">not synced yet</span>
+                        )}
+                      </div>
 
-                    <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                      <div className="rounded-lg bg-muted/40 px-2 py-2">
-                        <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          {SOLVED_LABEL[p.platform] ?? "Solved"}
-                        </dt>
-                        <dd className="text-sm font-semibold">
-                          {metric(
-                            p.problems_solved,
-                            SOLVED_UNSUPPORTED.has(p.platform) && p.problems_solved === 0,
-                          )}
-                        </dd>
-                      </div>
-                      <div className="rounded-lg bg-muted/40 px-2 py-2">
-                        <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          Rating
-                        </dt>
-                        <dd className="text-sm font-semibold">{metric(p.rating)}</dd>
-                      </div>
-                      <div className="rounded-lg bg-muted/40 px-2 py-2">
-                        <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          Contests
-                        </dt>
-                        <dd className="text-sm font-semibold">{p.contests_attended}</dd>
-                      </div>
-                    </dl>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                      {p.rank_label ? (
-                        <span className="inline-flex items-center gap-1">
-                          <Trophy className="size-3.5" />
-                          {p.rank_label}
-                        </span>
+                      {p.sync_status === "error" && p.sync_error ? (
+                        <p className="mt-2 text-[11px] text-destructive">
+                          Sync failed: {p.sync_error}
+                        </p>
                       ) : null}
-                      {p.last_synced_at ? (
-                        <span className="ml-auto">
-                          {syncingId === p.id
-                            ? "Syncing…"
-                            : `synced ${new Date(p.last_synced_at).toLocaleString()}`}
-                        </span>
-                      ) : (
-                        <span className="ml-auto">not synced yet</span>
-                      )}
-                    </div>
 
-                    {p.sync_status === "error" && p.sync_error ? (
-                      <p className="mt-2 text-[11px] text-destructive">Sync failed: {p.sync_error}</p>
-                    ) : null}
-
-                    {p.notes ? (
-                      <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
-                    ) : null}
-
-                  </article>
-                );
-              })}
-            </div>
+                      {p.notes ? (
+                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{p.notes}</p>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
             </>
           )}
         </div>
@@ -650,9 +669,7 @@ function ProfilesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cp-username">
-                    Username / handle
-                  </Label>
+                  <Label htmlFor="cp-username">Username / handle</Label>
                   <Input
                     id="cp-username"
                     autoFocus
@@ -674,9 +691,7 @@ function ProfilesPage() {
                   variant="outline"
                   className="h-7 text-xs"
                   disabled={
-                    !canSync(draft.platform) ||
-                    !draft.username.trim() ||
-                    fillFromPlatform.isPending
+                    !canSync(draft.platform) || !draft.username.trim() || fillFromPlatform.isPending
                   }
                   onClick={() => fillFromPlatform.mutate(draft)}
                 >

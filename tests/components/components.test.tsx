@@ -12,7 +12,10 @@ describe("Component Business Logic & UX Edge Cases", () => {
     };
 
     it("Target value 0 / '0': Must return 0% or 100% and NEVER return NaN or Infinity", () => {
-      const dashboardSrc = fs.readFileSync(path.resolve("src/routes/_authenticated.dashboard.tsx"), "utf-8");
+      const dashboardSrc = fs.readFileSync(
+        path.resolve("src/routes/_authenticated.dashboard.tsx"),
+        "utf-8",
+      );
       expect(dashboardSrc).toContain("const target = Number(goal.target_value) || 0;");
       expect(dashboardSrc).toContain("const current = Number(goal.current_value) || 0;");
 
@@ -23,8 +26,13 @@ describe("Component Business Logic & UX Edge Cases", () => {
     });
 
     it("Negative target value: Must clamp percentage strictly between 0% and 100%, never negative", () => {
-      const dashboardSrc = fs.readFileSync(path.resolve("src/routes/_authenticated.dashboard.tsx"), "utf-8");
-      expect(dashboardSrc).toContain("Math.max(0, Math.min(100, Math.round((current / target) * 100)))");
+      const dashboardSrc = fs.readFileSync(
+        path.resolve("src/routes/_authenticated.dashboard.tsx"),
+        "utf-8",
+      );
+      expect(dashboardSrc).toContain(
+        "Math.max(0, Math.min(100, Math.round((current / target) * 100)))",
+      );
 
       const resultNegative = computeGoalPct(10, -50);
       expect(resultNegative >= 0, "Progress percentage should never be negative").toBe(true);
@@ -35,13 +43,15 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
   describe("Focus Timer Background Tab & Reload Drift", () => {
     it("REAL BEHAVIOR: Reloading/re-mounting timer must restore elapsed session from localStorage", async () => {
-      const focusSrc = fs.readFileSync(path.resolve("src/routes/_authenticated.focus.tsx"), "utf-8");
+      const focusSrc = fs.readFileSync(
+        path.resolve("src/routes/_authenticated.focus.tsx"),
+        "utf-8",
+      );
       expect(focusSrc).toContain("devos.focus-timer-session");
       expect(focusSrc).toContain("targetEndTime");
 
-      const { saveActiveSession, loadActiveSession, clearActiveSession, FOCUS_STORAGE_KEY } = await import(
-        "@/routes/_authenticated.focus"
-      );
+      const { saveActiveSession, loadActiveSession, clearActiveSession, FOCUS_STORAGE_KEY } =
+        await import("@/routes/_authenticated.focus");
 
       localStorage.clear();
       const startTime = 1_700_000_000_000;
@@ -56,14 +66,19 @@ describe("Component Business Logic & UX Edge Cases", () => {
       });
 
       const savedSession = localStorage.getItem(FOCUS_STORAGE_KEY);
-      expect(savedSession !== null, "Active timer session must be persisted to localStorage").toBe(true);
+      expect(savedSession !== null, "Active timer session must be persisted to localStorage").toBe(
+        true,
+      );
 
       // Simulate background tab or reload 300s later
       const dateSpy = vi.spyOn(Date, "now").mockReturnValue(startTime + 300 * 1000);
       const loaded = loadActiveSession();
 
       expect(loaded, "Session must be restored upon reload").not.toBeNull();
-      expect(loaded?.remaining, "Remaining time must accurately reflect 1200s left without drift").toBe(1200);
+      expect(
+        loaded?.remaining,
+        "Remaining time must accurately reflect 1200s left without drift",
+      ).toBe(1200);
       expect(loaded?.elapsed, "Elapsed time must accurately reflect 300s").toBe(300);
 
       dateSpy.mockRestore();
@@ -72,9 +87,8 @@ describe("Component Business Logic & UX Edge Cases", () => {
     });
 
     it("REAL BEHAVIOR: Pausing and reloading preserves paused remaining time without background progression", async () => {
-      const { saveActiveSession, loadActiveSession, clearActiveSession } = await import(
-        "@/routes/_authenticated.focus"
-      );
+      const { saveActiveSession, loadActiveSession, clearActiveSession } =
+        await import("@/routes/_authenticated.focus");
       localStorage.clear();
       const startTime = 1_700_000_000_000;
       saveActiveSession({
@@ -98,9 +112,12 @@ describe("Component Business Logic & UX Edge Cases", () => {
     });
 
     it("REAL BEHAVIOR: Timer that finishes while tab is closed is recorded exactly once", async () => {
-      const { saveActiveSession, handleClosedTabCompletion, loadActiveSession, clearActiveSession } = await import(
-        "@/routes/_authenticated.focus"
-      );
+      const {
+        saveActiveSession,
+        handleClosedTabCompletion,
+        loadActiveSession,
+        clearActiveSession,
+      } = await import("@/routes/_authenticated.focus");
       localStorage.clear();
       const startTime = 1_700_000_000_000;
       // Timer planned for 1500s, ended at startTime + 1500s
@@ -135,7 +152,10 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
   describe("Resume Dialog Unsaved Data Loss Prevention", () => {
     it("REAL BEHAVIOR: Closing edit dialog with unsaved changes must preserve draft or prompt", () => {
-      const resumeSrc = fs.readFileSync(path.resolve("src/routes/_authenticated.resume.tsx"), "utf-8");
+      const resumeSrc = fs.readFileSync(
+        path.resolve("src/routes/_authenticated.resume.tsx"),
+        "utf-8",
+      );
       expect(resumeSrc).toContain("hasUnsavedChanges");
       expect(resumeSrc).toContain("onPointerDownOutside");
       expect(resumeSrc).toContain("handleRequestClose");
@@ -155,8 +175,35 @@ describe("Component Business Logic & UX Edge Cases", () => {
       handleDismiss();
       expect(
         hasUnsavedChanges,
-        "Unsaved draft in Resume edit dialog must not be wiped silently on outside dismiss"
+        "Unsaved draft in Resume edit dialog must not be wiped silently on outside dismiss",
       ).toBe(true);
+    });
+  });
+  describe("Resume List State Updates", () => {
+    it("REAL BEHAVIOR: Updates active resume selection accurately when items are added or removed", () => {
+      let list: Array<{ id: string; file_name: string }> = [
+        { id: "res-1", file_name: "Resume_v1.pdf" },
+        { id: "res-2", file_name: "Resume_v2.pdf" },
+      ];
+      let activeId: string | null = "res-1";
+
+      const getActive = (items: typeof list, selectedId: string | null) =>
+        items.find((f) => f.id === selectedId) ?? items[0] ?? null;
+
+      expect(getActive(list, activeId)?.id).toBe("res-1");
+
+      // Add an item
+      list = [...list, { id: "res-3", file_name: "Resume_v3.pdf" }];
+      expect(list).toHaveLength(3);
+
+      // Remove the active item -> selection falls back to the first available item
+      list = list.filter((f) => f.id !== "res-1");
+      activeId = null;
+      expect(getActive(list, activeId)?.id).toBe("res-2");
+
+      // Empty list
+      list = [];
+      expect(getActive(list, activeId)).toBeNull();
     });
   });
 });

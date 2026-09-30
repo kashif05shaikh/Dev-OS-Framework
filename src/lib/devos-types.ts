@@ -297,14 +297,7 @@ export const HABIT_FREQUENCY_LABEL: Record<string, string> = {
   weekly: "Weekly",
 };
 
-export const HABIT_COLORS = [
-  "#8b5cf6",
-  "#22d3ee",
-  "#34d399",
-  "#fbbf24",
-  "#fb7185",
-  "#60a5fa",
-];
+export const HABIT_COLORS = ["#8b5cf6", "#22d3ee", "#34d399", "#fbbf24", "#fb7185", "#60a5fa"];
 
 export type FocusSession = Tables<"focus_sessions">;
 

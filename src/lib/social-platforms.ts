@@ -64,7 +64,8 @@ export function socialLogo(p: SocialPlatformMeta): string {
   return `https://cdn.simpleicons.org/${p.icon}/${p.color.replace("#", "")}`;
 }
 
-export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 /** Normalised profile snapshot returned by the sync server function. */
 export type SocialSnapshot = {

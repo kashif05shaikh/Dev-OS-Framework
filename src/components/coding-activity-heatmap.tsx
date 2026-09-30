@@ -127,15 +127,13 @@ export function CodingActivityHeatmap({
         <span className="mr-auto">
           {hover ? (
             <span className="text-foreground">
-              {formatDate(hover.date)} · {hover.count} {hover.count === 1 ? "activity" : "activities"}
+              {formatDate(hover.date)} · {hover.count}{" "}
+              {hover.count === 1 ? "activity" : "activities"}
               {hover.byPlatform.length > 0 ? (
                 <span className="text-muted-foreground">
                   {" — "}
                   {hover.byPlatform
-                    .map(
-                      (b) =>
-                        `${CODING_PLATFORM_LABEL[b.platform] ?? b.platform} ${b.count}`,
-                    )
+                    .map((b) => `${CODING_PLATFORM_LABEL[b.platform] ?? b.platform} ${b.count}`)
                     .join(" · ")}
                 </span>
               ) : null}

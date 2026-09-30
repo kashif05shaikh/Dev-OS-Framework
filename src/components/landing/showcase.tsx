@@ -18,14 +18,8 @@ function CodingProfilesHeatmap() {
   const weeks = 36;
   const daysPerWeek = 7;
   const levels = [
-    0, 1, 2, 0, 3, 1, 0,
-    1, 0, 4, 2, 1, 3, 0,
-    2, 3, 1, 0, 0, 2, 1,
-    0, 2, 4, 3, 1, 0, 2,
-    1, 0, 2, 3, 4, 1, 0,
-    0, 1, 3, 2, 0, 4, 2,
-    3, 2, 0, 1, 4, 3, 1,
-    2, 1, 3, 0, 2, 4, 1,
+    0, 1, 2, 0, 3, 1, 0, 1, 0, 4, 2, 1, 3, 0, 2, 3, 1, 0, 0, 2, 1, 0, 2, 4, 3, 1, 0, 2, 1, 0, 2, 3,
+    4, 1, 0, 0, 1, 3, 2, 0, 4, 2, 3, 2, 0, 1, 4, 3, 1, 2, 1, 3, 0, 2, 4, 1,
   ];
 
   const getColor = (lvl: number) => {
@@ -51,7 +45,9 @@ function CodingProfilesHeatmap() {
             <Activity className="size-4 text-emerald-400" />
             Unified Coding Activity & Contribution Heatmap
           </h3>
-          <p className="text-xs text-muted-foreground font-sans">482 contributions across synced platforms in the last year • 14 day active streak</p>
+          <p className="text-xs text-muted-foreground font-sans">
+            482 contributions across synced platforms in the last year • 14 day active streak
+          </p>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <span>Less</span>
@@ -87,12 +83,13 @@ function CodingProfilesHeatmap() {
 }
 
 export function LandingProductShowcase() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "notes" | "learning" | "projects" | "jobs" | "profiles">("dashboard");
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "notes" | "learning" | "projects" | "jobs" | "profiles"
+  >("dashboard");
 
   return (
     <section className="py-24 relative overflow-hidden bg-card/20 border-t border-border/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-        
         {/* Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
@@ -134,19 +131,26 @@ export function LandingProductShowcase() {
 
         {/* Display Area for Active Tab */}
         <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-6 shadow-2xl backdrop-blur-xl">
-          
           {/* 1. Dashboard Tab View */}
           {activeTab === "dashboard" && (
             <div className="space-y-4 font-sans text-xs">
               <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-950/10 flex justify-between items-center">
                 <div>
-                  <div className="font-mono text-emerald-400 font-semibold">DASHBOARD MISSION CONTROL</div>
+                  <div className="font-mono text-emerald-400 font-semibold">
+                    DASHBOARD MISSION CONTROL
+                  </div>
                   <div className="text-lg font-bold text-foreground">Good evening, ALEX 👋</div>
-                  <div className="text-muted-foreground">Nothing scheduled today — pick a goal and make measurable progress.</div>
+                  <div className="text-muted-foreground">
+                    Nothing scheduled today — pick a goal and make measurable progress.
+                  </div>
                 </div>
                 <div className="hidden sm:flex gap-2">
-                  <span className="px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono">482 Solved</span>
-                  <span className="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono">14d Streak</span>
+                  <span className="px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono">
+                    482 Solved
+                  </span>
+                  <span className="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono">
+                    14d Streak
+                  </span>
                 </div>
               </div>
 
@@ -190,7 +194,10 @@ export function LandingProductShowcase() {
                     { name: "Backend Systems", color: "text-emerald-400" },
                     { name: "DevOps & CI/CD", color: "text-cyan-400" },
                   ].map((sub) => (
-                    <div key={sub.name} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 cursor-pointer">
+                    <div
+                      key={sub.name}
+                      className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 cursor-pointer"
+                    >
                       <span className="text-muted-foreground">›</span>
                       <span className={`size-2 rounded-full ${sub.color}`} />
                       <span className="text-foreground">{sub.name}</span>
@@ -201,9 +208,12 @@ export function LandingProductShowcase() {
 
               <div className="md:col-span-2 rounded-xl border border-border/50 bg-card/20 p-8 flex flex-col items-center justify-center text-center space-y-3">
                 <FileText className="size-12 text-emerald-500/40" />
-                <h4 className="text-sm font-bold text-foreground">Select a note from your subjects tree</h4>
+                <h4 className="text-sm font-bold text-foreground">
+                  Select a note from your subjects tree
+                </h4>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  Write clean Markdown notes with instant syntax highlighting, code snippet blocks, and subject tagging.
+                  Write clean Markdown notes with instant syntax highlighting, code snippet blocks,
+                  and subject tagging.
                 </p>
               </div>
             </div>
@@ -218,14 +228,53 @@ export function LandingProductShowcase() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
                 {[
-                  { title: "SYSTEM DESIGN ARCHITECTURE", type: "YOUTUBE", category: "SYSTEM DESIGN", pct: "100%", status: "Completed" },
-                  { title: "DISTRIBUTED SYSTEMS 101", type: "DOCS", category: "BACKEND", pct: "100%", status: "Completed" },
-                  { title: "REACT VIRTUAL DOM", type: "YOUTUBE", category: "FRONTEND", pct: "100%", status: "Completed" },
-                  { title: "GO CONCURRENCY PATTERNS", type: "YOUTUBE", category: "BACKEND", pct: "100%", status: "Completed" },
-                  { title: "TCP/IP & SOCKETS", type: "ARTICLE", category: "NETWORKS", pct: "100%", status: "Completed" },
-                  { title: "DATABASE INDEXING B-TREES", type: "DOCS", category: "DBMS", pct: "100%", status: "Completed" },
+                  {
+                    title: "SYSTEM DESIGN ARCHITECTURE",
+                    type: "YOUTUBE",
+                    category: "SYSTEM DESIGN",
+                    pct: "100%",
+                    status: "Completed",
+                  },
+                  {
+                    title: "DISTRIBUTED SYSTEMS 101",
+                    type: "DOCS",
+                    category: "BACKEND",
+                    pct: "100%",
+                    status: "Completed",
+                  },
+                  {
+                    title: "REACT VIRTUAL DOM",
+                    type: "YOUTUBE",
+                    category: "FRONTEND",
+                    pct: "100%",
+                    status: "Completed",
+                  },
+                  {
+                    title: "GO CONCURRENCY PATTERNS",
+                    type: "YOUTUBE",
+                    category: "BACKEND",
+                    pct: "100%",
+                    status: "Completed",
+                  },
+                  {
+                    title: "TCP/IP & SOCKETS",
+                    type: "ARTICLE",
+                    category: "NETWORKS",
+                    pct: "100%",
+                    status: "Completed",
+                  },
+                  {
+                    title: "DATABASE INDEXING B-TREES",
+                    type: "DOCS",
+                    category: "DBMS",
+                    pct: "100%",
+                    status: "Completed",
+                  },
                 ].map((res) => (
-                  <div key={res.title} className="p-3.5 rounded-xl border border-border/40 bg-card/40 space-y-2">
+                  <div
+                    key={res.title}
+                    className="p-3.5 rounded-xl border border-border/40 bg-card/40 space-y-2"
+                  >
                     <div className="flex justify-between text-[10px]">
                       <span className="text-emerald-400">{res.type}</span>
                       <span className="text-muted-foreground">{res.category}</span>
@@ -248,12 +297,27 @@ export function LandingProductShowcase() {
             <div className="space-y-3 font-sans text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { name: "DevOS Developer Workspace", stack: "React • Tailwind • TypeScript", pct: 95 },
-                  { name: "Distributed KV Cache Engine", stack: "Go • Raft Consensus • gRPC", pct: 100 },
-                  { name: "Realtime Collab Code Editor", stack: "Next.js • WebSockets • Redis", pct: 75 },
+                  {
+                    name: "DevOS Developer Workspace",
+                    stack: "React • Tailwind • TypeScript",
+                    pct: 95,
+                  },
+                  {
+                    name: "Distributed KV Cache Engine",
+                    stack: "Go • Raft Consensus • gRPC",
+                    pct: 100,
+                  },
+                  {
+                    name: "Realtime Collab Code Editor",
+                    stack: "Next.js • WebSockets • Redis",
+                    pct: 75,
+                  },
                   { name: "CLI Tooling Suite", stack: "Rust • Clap • Tokio", pct: 100 },
                 ].map((p) => (
-                  <div key={p.name} className="p-4 rounded-xl border border-border/40 bg-card/40 space-y-2 font-mono">
+                  <div
+                    key={p.name}
+                    className="p-4 rounded-xl border border-border/40 bg-card/40 space-y-2 font-mono"
+                  >
                     <div className="flex justify-between font-bold text-foreground">
                       <span>{p.name}</span>
                       <span className="text-emerald-400">{p.pct}%</span>
@@ -279,13 +343,33 @@ export function LandingProductShowcase() {
               </div>
               <div className="space-y-2">
                 {[
-                  { company: "Vercel", role: "Frontend Platform Engineer", status: "Interviewing", date: "2d ago" },
-                  { company: "Stripe", role: "Software Engineer", status: "Applied", date: "5d ago" },
-                  { company: "Linear", role: "Full Stack Engineer", status: "Offer Received", date: "1d ago" },
+                  {
+                    company: "Vercel",
+                    role: "Frontend Platform Engineer",
+                    status: "Interviewing",
+                    date: "2d ago",
+                  },
+                  {
+                    company: "Stripe",
+                    role: "Software Engineer",
+                    status: "Applied",
+                    date: "5d ago",
+                  },
+                  {
+                    company: "Linear",
+                    role: "Full Stack Engineer",
+                    status: "Offer Received",
+                    date: "1d ago",
+                  },
                 ].map((j) => (
-                  <div key={j.company} className="flex justify-between items-center p-3 rounded-lg border border-border/40 bg-card/40">
+                  <div
+                    key={j.company}
+                    className="flex justify-between items-center p-3 rounded-lg border border-border/40 bg-card/40"
+                  >
                     <div>
-                      <div className="font-bold text-foreground">{j.role} @ {j.company}</div>
+                      <div className="font-bold text-foreground">
+                        {j.role} @ {j.company}
+                      </div>
                       <div className="text-[10px] text-muted-foreground">{j.date}</div>
                     </div>
                     <span className="px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
@@ -309,7 +393,10 @@ export function LandingProductShowcase() {
                   { platform: "GeeksforGeeks", solved: "85 solved", icon: CheckCircle2 },
                   { platform: "HackerRank", solved: "25 solved", icon: Star },
                 ].map((prof) => (
-                  <div key={prof.platform} className="p-3.5 rounded-xl border border-border/40 bg-card/40 flex items-center gap-3">
+                  <div
+                    key={prof.platform}
+                    className="p-3.5 rounded-xl border border-border/40 bg-card/40 flex items-center gap-3"
+                  >
                     <prof.icon className="size-5 text-emerald-400" />
                     <div>
                       <div className="font-bold text-foreground">{prof.platform}</div>
@@ -323,9 +410,7 @@ export function LandingProductShowcase() {
               <CodingProfilesHeatmap />
             </div>
           )}
-
         </div>
-
       </div>
     </section>
   );

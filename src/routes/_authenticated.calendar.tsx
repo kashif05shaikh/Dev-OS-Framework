@@ -467,9 +467,7 @@ function CalendarPage() {
                         "calendar-day absolute inset-0 z-[1] flex flex-col gap-1.5 overflow-hidden bg-card p-2 text-left hover:bg-accent/40",
                         !inMonth && "bg-card/40 text-muted-foreground/50",
                         selected === iso && "ring-1 ring-inset ring-primary",
-                        expanded &&
-                          hasItems &&
-                          "is-expanded ring-1 ring-primary/50",
+                        expanded && hasItems && "is-expanded ring-1 ring-primary/50",
                       )}
                     >
                       <span

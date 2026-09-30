@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Download,
-  ExternalLink,
-  FileText,
-  Pencil,
-  Printer,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { Download, ExternalLink, FileText, Pencil, Printer, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
@@ -81,7 +73,7 @@ async function uploadResumeFile(file: File): Promise<{
   mime_type: string;
 }> {
   const userId = await requireUserId();
-  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+  const safeName = file.name.replace(/[^\w.-]+/g, "_");
   const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
   const contentType = file.type || "application/octet-stream";
 
@@ -98,7 +90,6 @@ async function uploadResumeFile(file: File): Promise<{
   };
 }
 
-
 function ResumePage() {
   const qc = useQueryClient();
   const files = useQuery(resumeFilesQuery());
@@ -111,7 +102,7 @@ function ResumePage() {
 
   const uploadRef = useRef<HTMLInputElement>(null);
 
-  const list = files.data ?? [];
+  const list = useMemo(() => files.data ?? [], [files.data]);
   const active = useMemo(
     () => list.find((f) => f.id === activeId) ?? list[0] ?? null,
     [list, activeId],
@@ -227,7 +218,6 @@ function ResumePage() {
       toast.error(describeError(e));
     }
   }
-
 
   function printActive() {
     const frame = document.getElementById("resume-preview") as HTMLIFrameElement | null;
@@ -383,8 +373,8 @@ function ResumePage() {
                 <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
                   <FileText className="size-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Preview is only available for PDF files. Download or open{" "}
-                    {active.file_name} to view it.
+                    Preview is only available for PDF files. Download or open {active.file_name} to
+                    view it.
                   </p>
                   <Button size="sm" variant="outline" onClick={() => void download(active)}>
                     <Download className="size-3.5" />
@@ -449,7 +439,10 @@ function EditResumeDialog({
 
   const handleRequestClose = () => {
     if (hasUnsavedChanges) {
-      if (typeof window !== "undefined" && window.confirm("You have unsaved changes. Discard them?")) {
+      if (
+        typeof window !== "undefined" &&
+        window.confirm("You have unsaved changes. Discard them?")
+      ) {
         onClose();
       }
       return;

@@ -431,9 +431,13 @@ function NotesPage() {
                                 description:
                                   "This permanently deletes the subject and every folder and note inside it.",
                                 onConfirm: async () => {
-                                  await deleteRow.mutateAsync({ table: "subjects", id: subject.id });
+                                  await deleteRow.mutateAsync({
+                                    table: "subjects",
+                                    id: subject.id,
+                                  });
                                   setConfirm(null);
-                                  if (selectedNote?.subject_id === subject.id) selectNote(undefined);
+                                  if (selectedNote?.subject_id === subject.id)
+                                    selectNote(undefined);
                                 },
                               })
                             }

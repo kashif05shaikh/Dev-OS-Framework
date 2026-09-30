@@ -241,8 +241,8 @@ function JobsPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Job Tracker</h1>
           <p className="text-xs text-muted-foreground">
-            {(jobs.data ?? []).length} applications · {counts['interview'] ?? 0} interviewing ·{" "}
-            {counts['offer'] ?? 0} offers
+            {(jobs.data ?? []).length} applications · {counts["interview"] ?? 0} interviewing ·{" "}
+            {counts["offer"] ?? 0} offers
           </p>
         </div>
         <div className="relative">
@@ -283,7 +283,9 @@ function JobsPage() {
             <EmptyState
               icon={<Briefcase className="size-6" />}
               title={
-                search || statusFilter !== "all" ? "No matching applications" : "No applications yet"
+                search || statusFilter !== "all"
+                  ? "No matching applications"
+                  : "No applications yet"
               }
               description="Track roles you want, applications you sent, and follow-up dates."
               action={
@@ -336,7 +338,7 @@ function JobsPage() {
                     <SelectTrigger
                       className={cn(
                         "h-7 w-28 border-0 text-[11px]",
-                        STATUS_CLASS[job.status] ?? STATUS_CLASS['wishlist'],
+                        STATUS_CLASS[job.status] ?? STATUS_CLASS["wishlist"],
                       )}
                     >
                       <SelectValue />

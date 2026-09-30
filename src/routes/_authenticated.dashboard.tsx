@@ -280,7 +280,8 @@ function DashboardPage() {
     const focusByDay = new Map(days.map((d) => [d, 0]));
     for (const s of focus.data ?? []) {
       const k = (s.started_at ?? s.created_at).slice(0, 10);
-      if (focusByDay.has(k)) focusByDay.set(k, (focusByDay.get(k) ?? 0) + (s.actual_seconds ?? 0) / 60);
+      if (focusByDay.has(k))
+        focusByDay.set(k, (focusByDay.get(k) ?? 0) + (s.actual_seconds ?? 0) / 60);
     }
     const focusSeries = days.map((d) => ({
       day: d.slice(5),
@@ -309,7 +310,7 @@ function DashboardPage() {
     const resumeScore = (() => {
       const r = resumes.data ?? [];
       if (!r.length) return 0;
-      return Math.min(100, 40 + r.length * 10 + Math.min(30, (notes.data?.length ?? 0)));
+      return Math.min(100, 40 + r.length * 10 + Math.min(30, notes.data?.length ?? 0));
     })();
 
     const activity = [
@@ -379,10 +380,10 @@ function DashboardPage() {
   }, [focus.data, coding.data, jobs.data, resources.data, projects.data, notes.data, resumes.data]);
 
   if (isLoading) return <DashboardSkeleton />;
-  if (error) return <ErrorState error={error} onRetry={() => queries.forEach((q) => void q.refetch())} />;
+  if (error)
+    return <ErrorState error={error} onRetry={() => queries.forEach((q) => void q.refetch())} />;
 
-  const name =
-    profile.data?.display_name?.trim() || user?.email?.split("@")[0] || "developer";
+  const name = profile.data?.display_name?.trim() || user?.email?.split("@")[0] || "developer";
   const today = dayKey(new Date());
   const todayEvents = (events.data ?? []).filter((e) => e.event_date === today);
   const upcoming = (events.data ?? [])
@@ -393,7 +394,9 @@ function DashboardPage() {
   const pinnedNotes = [...(notes.data ?? [])]
     .sort((a, b) => Number(b.pinned) - Number(a.pinned))
     .slice(0, 5);
-  const openJobs = (jobs.data ?? []).filter((j) => j.status !== "rejected" && j.status !== "offer").length;
+  const openJobs = (jobs.data ?? []).filter(
+    (j) => j.status !== "rejected" && j.status !== "offer",
+  ).length;
   const focus7 = derived.focusSeries.slice(-7);
   const focusMinutes7 = focus7.reduce((s, d) => s + d.minutes, 0);
 
@@ -454,53 +457,51 @@ function DashboardPage() {
   ];
 
   // Live coding titles straight off the synced Coding Profiles rows.
-  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const).map(
-    (platform) => {
-      const row = derived.profiles.find((p) => p.platform === platform);
-      const rating = row?.rating ?? null;
-      if (platform === "codeforces") {
-        const band = codeforcesBand(rating);
-        return {
-          platform,
-          label: "Codeforces",
-          title: row?.rank_label ?? band?.title ?? null,
-          color: band?.color ?? "var(--foreground)",
-          rating,
-          stars: 0,
-        };
-      }
-      if (platform === "atcoder") {
-        const band = atcoderBand(rating);
-        return {
-          platform,
-          label: "AtCoder",
-          title: band?.name ?? null,
-          color: band?.color ?? "var(--foreground)",
-          rating,
-          stars: 0,
-        };
-      }
-      if (platform === "leetcode") {
-        const band = leetcodeBand(rating);
-        return {
-          platform,
-          label: "LeetCode",
-          title: row?.rank_label ?? band?.title ?? null,
-          color: band?.color ?? "var(--foreground)",
-          rating,
-          stars: 0,
-        };
-      }
+  const titleRows = (["codeforces", "codechef", "leetcode", "atcoder"] as const).map((platform) => {
+    const row = derived.profiles.find((p) => p.platform === platform);
+    const rating = row?.rating ?? null;
+    if (platform === "codeforces") {
+      const band = codeforcesBand(rating);
       return {
         platform,
-        label: "CodeChef",
-        title: null,
-        color: "#facc15",
+        label: "Codeforces",
+        title: row?.rank_label ?? band?.title ?? null,
+        color: band?.color ?? "var(--foreground)",
         rating,
-        stars: codechefStars(rating),
+        stars: 0,
       };
-    },
-  );
+    }
+    if (platform === "atcoder") {
+      const band = atcoderBand(rating);
+      return {
+        platform,
+        label: "AtCoder",
+        title: band?.name ?? null,
+        color: band?.color ?? "var(--foreground)",
+        rating,
+        stars: 0,
+      };
+    }
+    if (platform === "leetcode") {
+      const band = leetcodeBand(rating);
+      return {
+        platform,
+        label: "LeetCode",
+        title: row?.rank_label ?? band?.title ?? null,
+        color: band?.color ?? "var(--foreground)",
+        rating,
+        stars: 0,
+      };
+    }
+    return {
+      platform,
+      label: "CodeChef",
+      title: null,
+      color: "#facc15",
+      rating,
+      stars: codechefStars(rating),
+    };
+  });
 
   const quickActions = [
     { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
@@ -620,7 +621,11 @@ function DashboardPage() {
                     {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "short" })}
+                    {now.toLocaleDateString([], {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "short",
+                    })}
                   </span>
                 </div>
               </motion.div>
@@ -659,10 +664,7 @@ function DashboardPage() {
             </motion.div>
           ))}
 
-          <motion.div
-            variants={riseIn}
-            className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
-          >
+          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
             <Link to="/profiles" className="block">
               <GlassCard className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -682,7 +684,9 @@ function DashboardPage() {
                       aria-label="Sync coding profiles"
                       title="Sync coding profiles"
                     >
-                      <RefreshCw className={cn("size-4", syncAllCoding.isPending && "animate-spin")} />
+                      <RefreshCw
+                        className={cn("size-4", syncAllCoding.isPending && "animate-spin")}
+                      />
                     </button>
                     <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
                       <Trophy className="size-4" />
@@ -741,7 +745,9 @@ function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold">Focus trend</h2>
-                  <p className="text-xs text-muted-foreground">Minutes of deep work, last 14 days</p>
+                  <p className="text-xs text-muted-foreground">
+                    Minutes of deep work, last 14 days
+                  </p>
                 </div>
                 <Link
                   to="/focus"
@@ -752,7 +758,10 @@ function DashboardPage() {
               </div>
               <div className="mt-5 h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={derived.focusSeries} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                  <AreaChart
+                    data={derived.focusSeries}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                  >
                     <defs>
                       <linearGradient id="focusFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.55} />
@@ -848,7 +857,12 @@ function DashboardPage() {
                           ) : (
                             <Circle className="size-4 shrink-0 text-muted-foreground" />
                           )}
-                          <span className={cn("truncate", event.completed && "text-muted-foreground line-through")}>
+                          <span
+                            className={cn(
+                              "truncate",
+                              event.completed && "text-muted-foreground line-through",
+                            )}
+                          >
                             {event.title}
                           </span>
                           {event.start_time ? (
@@ -865,10 +879,15 @@ function DashboardPage() {
 
               {upcoming.length ? (
                 <div className="mt-4 border-t border-border pt-4">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Up next</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Up next
+                  </p>
                   <ul className="mt-2 space-y-1.5">
                     {upcoming.map((e) => (
-                      <li key={e.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <li
+                        key={e.id}
+                        className="flex items-center gap-2 text-xs text-muted-foreground"
+                      >
                         <CalendarDays className="size-3.5 shrink-0" />
                         <span className="truncate">{e.title}</span>
                         <span className="ml-auto shrink-0 tabular-nums">{e.event_date}</span>
@@ -895,9 +914,10 @@ function DashboardPage() {
                   {activeGoals.map((goal) => {
                     const target = Number(goal.target_value) || 0;
                     const current = Number(goal.current_value) || 0;
-                    const pct = target > 0
-                      ? Math.max(0, Math.min(100, Math.round((current / target) * 100)))
-                      : 0;
+                    const pct =
+                      target > 0
+                        ? Math.max(0, Math.min(100, Math.round((current / target) * 100)))
+                        : 0;
                     return (
                       <li key={goal.id}>
                         <div className="flex items-center gap-2">
@@ -1096,7 +1116,10 @@ function DashboardPage() {
                 <ul className="mt-4 space-y-3">
                   {activeProjects.map((p) => (
                     <li key={p.id}>
-                      <Link to="/projects" className="block rounded-xl px-2 py-1.5 hover:bg-white/[0.05]">
+                      <Link
+                        to="/projects"
+                        className="block rounded-xl px-2 py-1.5 hover:bg-white/[0.05]"
+                      >
                         <div className="flex items-center gap-2">
                           <FolderKanban className="size-3.5 shrink-0 text-primary" />
                           <span className="truncate text-sm">{p.name}</span>

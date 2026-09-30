@@ -14,7 +14,7 @@ describe("Database RLS Policies (Staging Environment Required)", () => {
       // const supabaseA = createClient(process.env.SUPABASE_TEST_URL!, process.env.SUPABASE_TEST_KEY!, { auth: { token: userAToken } });
       // const { data } = await supabaseA.from("goals").select("*").eq("user_id", userBId);
       // expect(data).toHaveLength(0);
-    }
+    },
   );
 
   it.skipIf(!hasTestProject)(
@@ -23,6 +23,6 @@ describe("Database RLS Policies (Staging Environment Required)", () => {
       // const supabaseA = createClient(process.env.SUPABASE_TEST_URL!, process.env.SUPABASE_TEST_KEY!);
       // const { error } = await supabaseA.storage.from("resume-files").remove([`userB_id/resume.pdf`]);
       // expect(error).toBeDefined();
-    }
+    },
   );
 });

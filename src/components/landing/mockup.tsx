@@ -36,7 +36,6 @@ export function LandingProductMockup() {
 
       {/* Main Window Dashboard Content Mockup */}
       <div className="overflow-hidden rounded-b-xl bg-background p-4 sm:p-6 text-foreground font-sans text-sm space-y-6">
-        
         {/* Top Hero Banner in Workspace */}
         <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 p-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -70,7 +69,14 @@ export function LandingProductMockup() {
 
               {/* Quick Action Pills */}
               <div className="flex flex-wrap gap-2 pt-2 text-xs">
-                {["Continue learning", "Resume", "Projects", "AI Workspace", "Coding profiles", "Calendar"].map((pill) => (
+                {[
+                  "Continue learning",
+                  "Resume",
+                  "Projects",
+                  "AI Workspace",
+                  "Coding profiles",
+                  "Calendar",
+                ].map((pill) => (
                   <div
                     key={pill}
                     className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5 font-medium text-foreground hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all cursor-pointer flex items-center gap-1.5"
@@ -109,10 +115,14 @@ export function LandingProductMockup() {
               className="rounded-xl border border-border/50 bg-card/60 p-4 space-y-2 hover:border-emerald-500/30 transition-colors"
             >
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-[10px] font-mono font-semibold tracking-wider">{stat.label}</span>
+                <span className="text-[10px] font-mono font-semibold tracking-wider">
+                  {stat.label}
+                </span>
                 <stat.icon className={`size-4 ${stat.color}`} />
               </div>
-              <div className="text-2xl font-bold text-foreground tracking-tight font-mono">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground tracking-tight font-mono">
+                {stat.value}
+              </div>
             </div>
           ))}
         </div>
@@ -124,14 +134,41 @@ export function LandingProductMockup() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { platform: "CODEFORCES", title: "Specialist", rating: "1450", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
-              { platform: "CODECHEF", title: "★★", rating: "1520", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-              { platform: "LEETCODE", title: "Global #184200", rating: "1580", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-              { platform: "ATCODER", title: "Green", rating: "820", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+              {
+                platform: "CODEFORCES",
+                title: "Specialist",
+                rating: "1450",
+                color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+              },
+              {
+                platform: "CODECHEF",
+                title: "★★",
+                rating: "1520",
+                color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+              },
+              {
+                platform: "LEETCODE",
+                title: "Global #184200",
+                rating: "1580",
+                color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+              },
+              {
+                platform: "ATCODER",
+                title: "Green",
+                rating: "820",
+                color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+              },
             ].map((p) => (
-              <div key={p.platform} className="rounded-lg border border-border/40 bg-background/50 p-3 text-center space-y-1">
+              <div
+                key={p.platform}
+                className="rounded-lg border border-border/40 bg-background/50 p-3 text-center space-y-1"
+              >
                 <div className="text-[10px] font-mono text-muted-foreground">{p.platform}</div>
-                <div className={`text-xs font-bold px-2 py-0.5 rounded border inline-block ${p.color}`}>{p.title}</div>
+                <div
+                  className={`text-xs font-bold px-2 py-0.5 rounded border inline-block ${p.color}`}
+                >
+                  {p.title}
+                </div>
                 <div className="text-base font-extrabold font-mono text-foreground">{p.rating}</div>
               </div>
             ))}
@@ -140,7 +177,6 @@ export function LandingProductMockup() {
 
         {/* Grid: Focus Trend & Skills Radar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
           {/* Focus Trend Chart Mock */}
           <div className="md:col-span-2 rounded-xl border border-border/50 bg-card/40 p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -155,7 +191,11 @@ export function LandingProductMockup() {
 
             {/* Simulated Chart Wave */}
             <div className="h-32 w-full pt-4 relative">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 500 100" preserveAspectRatio="none">
+              <svg
+                className="w-full h-full overflow-visible"
+                viewBox="0 0 500 100"
+                preserveAspectRatio="none"
+              >
                 <defs>
                   <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
@@ -196,9 +236,25 @@ export function LandingProductMockup() {
             </div>
             <div className="flex justify-center items-center h-32 pt-2">
               <svg className="size-32" viewBox="0 0 100 100">
-                <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" fill="none" stroke="#27272a" strokeWidth="1" />
-                <polygon points="50,25 72,37 72,63 50,75 28,63 28,37" fill="none" stroke="#27272a" strokeWidth="1" />
-                <polygon points="50,15 78,35 65,65 50,70 30,55 35,32" fill="#10b981" fillOpacity="0.3" stroke="#10b981" strokeWidth="1.5" />
+                <polygon
+                  points="50,10 85,30 85,70 50,90 15,70 15,30"
+                  fill="none"
+                  stroke="#27272a"
+                  strokeWidth="1"
+                />
+                <polygon
+                  points="50,25 72,37 72,63 50,75 28,63 28,37"
+                  fill="none"
+                  stroke="#27272a"
+                  strokeWidth="1"
+                />
+                <polygon
+                  points="50,15 78,35 65,65 50,70 30,55 35,32"
+                  fill="#10b981"
+                  fillOpacity="0.3"
+                  stroke="#10b981"
+                  strokeWidth="1.5"
+                />
               </svg>
             </div>
             <div className="flex justify-around text-[10px] font-mono text-muted-foreground text-center">
@@ -208,7 +264,6 @@ export function LandingProductMockup() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

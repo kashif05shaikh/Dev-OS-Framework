@@ -55,7 +55,6 @@ export function LandingWorkflow() {
   return (
     <section id="workflow" className="py-24 relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
-        
         {/* Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
@@ -66,7 +65,8 @@ export function LandingWorkflow() {
             From learning to shipping.
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            DevOS supports your complete engineering loop — helping you stay disciplined, focused, and organized at every milestone.
+            DevOS supports your complete engineering loop — helping you stay disciplined, focused,
+            and organized at every milestone.
           </p>
         </div>
 
@@ -79,19 +79,24 @@ export function LandingWorkflow() {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-2xl font-black text-muted-foreground/30">{item.num}</span>
-                  <div className={`flex size-10 items-center justify-center rounded-lg border ${item.color}`}>
+                  <span className="font-mono text-2xl font-black text-muted-foreground/30">
+                    {item.num}
+                  </span>
+                  <div
+                    className={`flex size-10 items-center justify-center rounded-lg border ${item.color}`}
+                  >
                     <item.icon className="size-5" />
                   </div>
                 </div>
-                <div className="font-mono text-xs font-bold text-emerald-400 tracking-wider">{item.step}</div>
+                <div className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
+                  {item.step}
+                </div>
                 <h3 className="text-lg font-bold text-foreground">{item.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

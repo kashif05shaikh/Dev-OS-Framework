@@ -1,9 +1,4 @@
-import {
-  motion,
-  useReducedMotion,
-  useSpring,
-  type HTMLMotionProps,
-} from "motion/react";
+import { motion, useReducedMotion, useSpring, type HTMLMotionProps } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -22,7 +17,6 @@ export const riseIn = {
   },
 };
 
-
 /** Section wrapper that fades/rises into view and staggers its children. */
 export function Reveal({
   children,
@@ -30,13 +24,7 @@ export function Reveal({
   ...rest
 }: { children: ReactNode; className?: string } & HTMLMotionProps<"div">) {
   return (
-    <motion.div
-      variants={riseIn}
-      initial="hidden"
-      animate="show"
-      className={className}
-      {...rest}
-    >
+    <motion.div variants={riseIn} initial="hidden" animate="show" className={className} {...rest}>
       {children}
     </motion.div>
   );
@@ -66,7 +54,6 @@ export function GlassCard({
     </div>
   );
 }
-
 
 /** Animated number counter with spring easing. */
 export function Counter({
@@ -137,7 +124,11 @@ export function Sparkline({
   const id = `spark-${stroke.replace(/\W/g, "")}`;
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={cn("h-7 w-full", className)}>
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      className={cn("h-7 w-full", className)}
+    >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />

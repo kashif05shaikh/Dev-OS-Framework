@@ -16,7 +16,7 @@ describe("src/lib Core Utilities & Validators", () => {
       const isHidden = false;
       const isVisible = true;
       expect(cn("base-class", isHidden && "hidden", isVisible && "block", null, undefined)).toBe(
-        "base-class block"
+        "base-class block",
       );
     });
   });
@@ -33,10 +33,19 @@ describe("src/lib Core Utilities & Validators", () => {
         return { platform, handle };
       };
 
-      expect(() => validateSocial({ platform: "", handle: "alice" })).toThrow("Platform is required.");
-      expect(() => validateSocial({ platform: "github", handle: "" })).toThrow("Username is required.");
-      expect(() => validateSocial({ platform: "github", handle: "a".repeat(301) })).toThrow("That username or URL looks invalid.");
-      expect(validateSocial({ platform: "github", handle: "alice" })).toEqual({ platform: "github", handle: "alice" });
+      expect(() => validateSocial({ platform: "", handle: "alice" })).toThrow(
+        "Platform is required.",
+      );
+      expect(() => validateSocial({ platform: "github", handle: "" })).toThrow(
+        "Username is required.",
+      );
+      expect(() => validateSocial({ platform: "github", handle: "a".repeat(301) })).toThrow(
+        "That username or URL looks invalid.",
+      );
+      expect(validateSocial({ platform: "github", handle: "alice" })).toEqual({
+        platform: "github",
+        handle: "alice",
+      });
     });
 
     it("coding-profiles validator rejects long usernames (>100 chars)", () => {
@@ -49,8 +58,12 @@ describe("src/lib Core Utilities & Validators", () => {
         return { platform, username };
       };
 
-      expect(() => validateCoding({ platform: "", username: "bob" })).toThrow("Platform is required.");
-      expect(() => validateCoding({ platform: "leetcode", username: "b".repeat(101) })).toThrow("Username looks invalid.");
+      expect(() => validateCoding({ platform: "", username: "bob" })).toThrow(
+        "Platform is required.",
+      );
+      expect(() => validateCoding({ platform: "leetcode", username: "b".repeat(101) })).toThrow(
+        "Username looks invalid.",
+      );
       expect(validateCoding({ platform: "leetcode", username: "valid_handle" })).toEqual({
         platform: "leetcode",
         username: "valid_handle",

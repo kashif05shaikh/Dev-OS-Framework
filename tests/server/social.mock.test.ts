@@ -20,9 +20,8 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
     });
 
     it("Maintains a 15-minute in-memory cache to avoid hammering contest APIs", async () => {
-      const { CONTESTS_CACHE_TTL_MS, clearContestsCache, getContestsCache } = await import(
-        "../../src/lib/contests.functions"
-      );
+      const { CONTESTS_CACHE_TTL_MS, clearContestsCache, getContestsCache } =
+        await import("../../src/lib/contests.functions");
       expect(CONTESTS_CACHE_TTL_MS).toBe(15 * 60 * 1000);
       clearContestsCache();
       expect(getContestsCache()).toBeNull();
@@ -43,9 +42,9 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
         following: 0,
       };
 
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify(mockGithub), { status: 200 })
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify(mockGithub), { status: 200 }));
 
       const snapshot = await fetchSocialSnapshot("github", "torvalds");
       expect(snapshot.platform).toBe("github");
@@ -56,12 +55,10 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
     });
 
     it("Dev.to: Handles non-existent profile (404) gracefully with friendly message", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response("Not Found", { status: 404 })
-      );
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response("Not Found", { status: 404 }));
 
       await expect(fetchSocialSnapshot("devto", "ghost_user_12345")).rejects.toThrow(
-        "That profile does not exist"
+        "That profile does not exist",
       );
     });
 
@@ -73,13 +70,13 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
       });
 
       await expect(fetchSocialSnapshot("github", "timeout_user")).rejects.toThrow(
-        "Could not reach api.github.com"
+        "Could not reach api.github.com",
       );
     });
 
     it("Throws error when unsupported platform is requested", async () => {
       await expect(fetchSocialSnapshot("unknown_platform", "test")).rejects.toThrow(
-        'DevOS does not support "unknown_platform" yet.'
+        'DevOS does not support "unknown_platform" yet.',
       );
     });
   });

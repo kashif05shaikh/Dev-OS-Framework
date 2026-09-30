@@ -1,10 +1,4 @@
-export type AccentKey =
-  | "violet"
-  | "blue"
-  | "emerald"
-  | "amber"
-  | "rose"
-  | "cyan";
+export type AccentKey = "violet" | "blue" | "emerald" | "amber" | "rose" | "cyan";
 
 export type AccentOption = {
   key: AccentKey;

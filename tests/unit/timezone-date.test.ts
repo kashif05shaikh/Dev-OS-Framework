@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { calculateCodingStreaks, activityMapOf, dayKey, getUserTimeZone } from "../../src/lib/coding-activity";
+import {
+  calculateCodingStreaks,
+  activityMapOf,
+  dayKey,
+  getUserTimeZone,
+} from "../../src/lib/coding-activity";
 import { formatLastUsed } from "../../src/lib/ai-usage";
 
 describe("Timezone and Date Edge Cases", () => {
@@ -47,9 +52,7 @@ describe("Timezone and Date Edge Cases", () => {
 
       // The user solved a problem on their local day: Oct 1st (2026-10-01)
       const userActivityRow = {
-        activity: [
-          { date: "2026-10-01", submissions: 3 }
-        ]
+        activity: [{ date: "2026-10-01", submissions: 3 }],
       };
 
       const map = activityMapOf(userActivityRow, "Asia/Tokyo");
@@ -58,7 +61,9 @@ describe("Timezone and Date Edge Cases", () => {
       // Currently, dayKey(Date.now()) returns '2026-09-30' (UTC yesterday).
       // Because activityMapOf checks `date <= today`, '2026-10-01' <= '2026-09-30' is false,
       // and today's activity is completely dropped!
-      expect(map["2026-10-01"], "Today's local submission must not be dropped by UTC dayKey").toBe(3);
+      expect(map["2026-10-01"], "Today's local submission must not be dropped by UTC dayKey").toBe(
+        3,
+      );
     });
 
     it("Correctly computes local dayKey and activity for India at 11:30 PM and 12:30 AM local", () => {
@@ -86,22 +91,25 @@ describe("Timezone and Date Edge Cases", () => {
     });
   });
 
-    it("Strictly enforces user's local date and rejects future submissions (tomorrow locally)", () => {
-      // Local time in Asia/Kolkata at 12:00 UTC is Sept 30th 17:30 IST
-      const fixedTime = Date.parse("2026-09-30T12:00:00.000Z");
-      vi.spyOn(Date, "now").mockReturnValue(fixedTime);
+  it("Strictly enforces user's local date and rejects future submissions (tomorrow locally)", () => {
+    // Local time in Asia/Kolkata at 12:00 UTC is Sept 30th 17:30 IST
+    const fixedTime = Date.parse("2026-09-30T12:00:00.000Z");
+    vi.spyOn(Date, "now").mockReturnValue(fixedTime);
 
-      const userActivityRow = {
-        activity: [
-          { date: "2026-09-30", submissions: 5 },
-          { date: "2026-10-01", submissions: 2 }, // future relative to user local day!
-        ],
-      };
+    const userActivityRow = {
+      activity: [
+        { date: "2026-09-30", submissions: 5 },
+        { date: "2026-10-01", submissions: 2 }, // future relative to user local day!
+      ],
+    };
 
-      const map = activityMapOf(userActivityRow, "Asia/Kolkata");
-      expect(map["2026-09-30"]).toBe(5);
-      expect(map["2026-10-01"], "Future dates relative to user local timezone must be dropped").toBeUndefined();
-    });
+    const map = activityMapOf(userActivityRow, "Asia/Kolkata");
+    expect(map["2026-09-30"]).toBe(5);
+    expect(
+      map["2026-10-01"],
+      "Future dates relative to user local timezone must be dropped",
+    ).toBeUndefined();
+  });
 
   describe("formatLastUsed Date Formatting", () => {
     it("Returns 'Never opened' for null or undefined timestamps", () => {

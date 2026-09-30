@@ -7,13 +7,7 @@ import {
 } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
 
-export function PlatformLogo({
-  platform,
-  className,
-}: {
-  platform: string;
-  className?: string;
-}) {
+export function PlatformLogo({ platform, className }: { platform: string; className?: string }) {
   const [failed, setFailed] = useState(false);
   const color = CODING_PLATFORM_COLOR[platform] ?? CODING_PLATFORM_COLOR["other"]!;
   const slug = CODING_PLATFORM_ICON[platform];

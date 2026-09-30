@@ -27,7 +27,6 @@ export function LandingWhyDevOS() {
   return (
     <section className="py-24 relative overflow-hidden bg-card/20 border-t border-border/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
-        
         {/* Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
@@ -38,7 +37,8 @@ export function LandingWhyDevOS() {
             Built for the way developers actually work.
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            Designed to bring structure, focus, and clarity to your daily software development routine.
+            Designed to bring structure, focus, and clarity to your daily software development
+            routine.
           </p>
         </div>
 
@@ -57,7 +57,6 @@ export function LandingWhyDevOS() {
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

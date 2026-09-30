@@ -144,7 +144,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <ScrollArea className="flex-1 px-3">
           <nav className="space-y-1 pb-4">
             {PRIMARY_NAV.map((item) => {
-              const active = item.to === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.to!);
+              const active =
+                item.to === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname.startsWith(item.to!);
               return (
                 <Link
                   key={item.label}
@@ -166,7 +169,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="border-t border-sidebar-border p-3">
           <div className="mb-2 truncate px-2 text-xs text-muted-foreground">{user?.email}</div>
-          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => void signOut()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => void signOut()}
+          >
             <LogOut className="size-4" />
             Sign out
           </Button>
@@ -212,7 +220,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </button>
-            <Link to="/settings" className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground">
+            <Link
+              to="/settings"
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
+            >
               <Settings className="size-4" />
             </Link>
             <button
@@ -248,7 +259,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ScrollArea className="flex-1 p-4">
               <nav className="space-y-1">
                 {PRIMARY_NAV.map((item) => {
-                  const active = item.to === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.to!);
+                  const active =
+                    item.to === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : pathname.startsWith(item.to!);
                   return (
                     <Link
                       key={item.label}
@@ -258,7 +272,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         "flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-medium transition-colors",
                         active
                           ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
                       )}
                     >
                       <item.icon className="size-4" />

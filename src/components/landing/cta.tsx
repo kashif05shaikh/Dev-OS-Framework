@@ -18,20 +18,28 @@ export function LandingCTA() {
               Ready to build your own DevOS?
             </h2>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-              Bring your learning, projects, goals, habits, job search, and coding analytics into one focused developer workspace.
+              Bring your learning, projects, goals, habits, job search, and coding analytics into
+              one focused developer workspace.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 pt-2">
             <Link to={user ? "/dashboard" : "/auth"}>
-              <Button size="lg" className="h-12 px-8 text-base bg-emerald-500 hover:bg-emerald-600 text-black font-semibold shadow-xl shadow-emerald-500/25 gap-2 transition-all hover:scale-[1.02] w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="h-12 px-8 text-base bg-emerald-500 hover:bg-emerald-600 text-black font-semibold shadow-xl shadow-emerald-500/25 gap-2 transition-all hover:scale-[1.02] w-full sm:w-auto"
+              >
                 {user ? "Open DevOS Workspace" : "Get Started"}
                 <ArrowRight className="size-5" />
               </Button>
             </Link>
 
             <a href="#features">
-              <Button size="lg" variant="outline" className="h-12 px-8 text-base border-border/60 hover:bg-muted/40 w-full sm:w-auto">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 px-8 text-base border-border/60 hover:bg-muted/40 w-full sm:w-auto"
+              >
                 Explore Features
               </Button>
             </a>

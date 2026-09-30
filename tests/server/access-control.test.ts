@@ -24,7 +24,10 @@ describe("Access Control & IDOR Checks across Server Functions", () => {
     expect(results["src/lib/coding-connections.functions.ts"]).toBe(true);
     expect(results["src/lib/coding-profiles.functions.ts"]).toBe(true);
     // Real bug: social.functions has NO auth middleware!
-    expect(results["src/lib/social.functions.ts"], "social.functions.ts is missing auth middleware").toBe(true);
+    expect(
+      results["src/lib/social.functions.ts"],
+      "social.functions.ts is missing auth middleware",
+    ).toBe(true);
   });
 
   it("Coding connections server logic binds strictly to context.userId and prevents User A from querying User B", () => {
@@ -43,7 +46,10 @@ describe("Access Control & IDOR Checks across Server Functions", () => {
   });
 
   it("Auth middleware enforces Bearer token structure and rejects forged or missing headers", () => {
-    const middlewarePath = path.resolve(process.cwd(), "src/integrations/supabase/auth-middleware.ts");
+    const middlewarePath = path.resolve(
+      process.cwd(),
+      "src/integrations/supabase/auth-middleware.ts",
+    );
     const content = fs.readFileSync(middlewarePath, "utf-8");
 
     expect(content).toContain("Unauthorized: No authorization header provided");

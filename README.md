@@ -8,49 +8,49 @@ The project already has a working frontend and backend. I do not want a redesign
 
 Current Stack
 
- Frontend: React + TypeScript
+Frontend: React + TypeScript
 
- Backend: Node/Express
+Backend: Node/Express
 
- Database: Live database (no hardcoded data)
+Database: Live database (no hardcoded data)
 
- Authentication already exists
+Authentication already exists
 
- Everything should remain connected to the backend.
+Everything should remain connected to the backend.
 
 Major Features Already Present
 
- Dashboard
+Dashboard
 
- Notes
+Notes
 
- Learning Hub
+Learning Hub
 
- Coding Profiles
+Coding Profiles
 
- Projects
+Projects
 
- Job Tracker
+Job Tracker
 
- Resume
+Resume
 
- AI Prompts
+AI Prompts
 
- Calendar
+Calendar
 
- Goals
+Goals
 
- Habits
+Habits
 
- Focus Timer
+Focus Timer
 
- Analytics
+Analytics
 
- Settings
+Settings
 
- Network
+Network
 
- Dev Tools
+Dev Tools
 
 Main Issues To Fix
 
@@ -58,19 +58,19 @@ Notes
 
 Problems
 
- Cannot delete folders.
+Cannot delete folders.
 
- Cannot edit folders.
+Cannot edit folders.
 
- Confusing hierarchy.
+Confusing hierarchy.
 
- Clicking one note sometimes opens another.
+Clicking one note sometimes opens another.
 
- Subject/folder selection is confusing.
+Subject/folder selection is confusing.
 
- No edit note.
+No edit note.
 
- No delete note.
+No delete note.
 
 Need hierarchy
 
@@ -82,21 +82,21 @@ Subject
 
 Need
 
- Create
+Create
 
- Edit
+Edit
 
- Delete
+Delete
 
- Rename
+Rename
 
- Move note
+Move note
 
- Duplicate note
+Duplicate note
 
- Markdown
+Markdown
 
- Autosave
+Autosave
 
 Learning Hub
 
@@ -110,27 +110,27 @@ Subject
 
 Resources
 
- Youtube
+Youtube
 
- Docs
+Docs
 
- PDF
+PDF
 
- Course
+Course
 
- GitHub
+GitHub
 
 Need
 
- Edit
+Edit
 
- Delete
+Delete
 
- Favorite
+Favorite
 
- Progress
+Progress
 
- Completed
+Completed
 
 Coding Profiles
 
@@ -138,37 +138,37 @@ Need proper fetching.
 
 Leetcode
 
- Rating
+Rating
 
- Ranking
+Ranking
 
- Solved
+Solved
 
- Easy
+Easy
 
- Medium
+Medium
 
- Hard
+Hard
 
- Contest Rating
+Contest Rating
 
- Contest History
+Contest History
 
 Codeforces
 
 Need
 
- Solved count
+Solved count
 
- Rating
+Rating
 
- Max Rating
+Max Rating
 
- Rank
+Rank
 
- Contribution
+Contribution
 
- Last Contest
+Last Contest
 
 CodeChef
 
@@ -176,17 +176,17 @@ Currently doesn't fetch.
 
 Need
 
- Rating
+Rating
 
- Stars
+Stars
 
- Solved
+Solved
 
- Global Rank
+Global Rank
 
- Country Rank
+Country Rank
 
- Contest History
+Contest History
 
 Also
 
@@ -194,17 +194,17 @@ Github
 
 Need
 
- Followers
+Followers
 
- Following
+Following
 
- Stars
+Stars
 
- Contributions
+Contributions
 
- Activity Graph
+Activity Graph
 
- Languages
+Languages
 
 Also
 
@@ -268,15 +268,15 @@ Documentation
 
 Need
 
- Edit
+Edit
 
- Delete
+Delete
 
- Progress
+Progress
 
- Drag tasks
+Drag tasks
 
- Kanban
+Kanban
 
 Progress should calculate automatically.
 
@@ -324,27 +324,27 @@ Current page mostly static.
 
 Need
 
- Upload resume
+Upload resume
 
- Multiple resumes
+Multiple resumes
 
- Resume dropdown
+Resume dropdown
 
- Rename
+Rename
 
- Delete
+Delete
 
- ATS Score
+ATS Score
 
- AI Analysis
+AI Analysis
 
- Missing keywords
+Missing keywords
 
- Suggestions
+Suggestions
 
- Tailored Resume
+Tailored Resume
 
- Resume version history
+Resume version history
 
 AI Prompts
 
@@ -370,17 +370,17 @@ Grok
 
 Need
 
- Categories
+Categories
 
- Search
+Search
 
- Favorite
+Favorite
 
- Duplicate
+Duplicate
 
- Delete
+Delete
 
- Usage Counter
+Usage Counter
 
 Dev Tools
 

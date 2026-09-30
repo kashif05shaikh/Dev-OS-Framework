@@ -75,12 +75,12 @@ describe("Coding Stats Parser (Success, Timeout, Error, Empty)", () => {
     globalThis.fetch = vi.fn().mockImplementation(async () => {
       return new Response(
         JSON.stringify({ status: "FAILED", comment: "handles: User not found" }),
-        { status: 200 }
+        { status: 200 },
       );
     });
 
     await expect(fetchPlatformStats("codeforces", "non_existent_user_99999")).rejects.toThrow(
-      'No Codeforces user called "non_existent_user_99999".'
+      'No Codeforces user called "non_existent_user_99999".',
     );
   });
 
@@ -90,7 +90,7 @@ describe("Coding Stats Parser (Success, Timeout, Error, Empty)", () => {
     });
 
     await expect(fetchPlatformStats("codeforces", "ghost_user")).rejects.toThrow(
-      'No Codeforces user called "ghost_user".'
+      'No Codeforces user called "ghost_user".',
     );
   });
 
@@ -117,9 +117,9 @@ describe("Coding Stats Parser (Success, Timeout, Error, Empty)", () => {
       },
     };
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(mockGraphQLResponse), { status: 200 })
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(mockGraphQLResponse), { status: 200 }));
 
     const stats = await fetchPlatformStats("leetcode", "testuser");
     expect(stats.problems_solved).toBe(150);
@@ -135,12 +135,12 @@ describe("Coding Stats Parser (Success, Timeout, Error, Empty)", () => {
       },
     };
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(mockNullUser), { status: 200 })
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(mockNullUser), { status: 200 }));
 
     await expect(fetchPlatformStats("leetcode", "unknown_user")).rejects.toThrow(
-      'No LeetCode user called "unknown_user".'
+      'No LeetCode user called "unknown_user".',
     );
   });
 });

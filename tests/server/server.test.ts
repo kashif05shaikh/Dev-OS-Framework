@@ -7,11 +7,17 @@ describe("Server Functions Security & Secret Leak Audit", () => {
   it("fetchSocialProfile should enforce authentication middleware", async () => {
     const fnAny = fetchSocialProfile as any;
     // Check options.middleware, middleware property, or the file declaration
-    const content = fs.readFileSync(path.resolve(process.cwd(), "src/lib/social.functions.ts"), "utf-8");
+    const content = fs.readFileSync(
+      path.resolve(process.cwd(), "src/lib/social.functions.ts"),
+      "utf-8",
+    );
     const hasMiddlewareImport = content.includes("requireSupabaseAuth");
     const attachesMiddleware = content.includes(".middleware([requireSupabaseAuth])");
-    
-    expect(hasMiddlewareImport && attachesMiddleware, "fetchSocialProfile must have requireSupabaseAuth middleware attached").toBe(true);
+
+    expect(
+      hasMiddlewareImport && attachesMiddleware,
+      "fetchSocialProfile must have requireSupabaseAuth middleware attached",
+    ).toBe(true);
   });
 
   it("Client-side route files must NEVER import or use supabaseAdmin", () => {
@@ -24,14 +30,19 @@ describe("Server Functions Security & Secret Leak Audit", () => {
     const learningHasAdmin = learningCode.includes("supabaseAdmin");
     const resumeHasAdmin = resumeCode.includes("supabaseAdmin");
 
-    expect(learningHasAdmin, "src/routes/_authenticated.learning.tsx leaks supabaseAdmin to client").toBe(false);
-    expect(resumeHasAdmin, "src/routes/_authenticated.resume.tsx leaks supabaseAdmin to client").toBe(false);
+    expect(
+      learningHasAdmin,
+      "src/routes/_authenticated.learning.tsx leaks supabaseAdmin to client",
+    ).toBe(false);
+    expect(
+      resumeHasAdmin,
+      "src/routes/_authenticated.resume.tsx leaks supabaseAdmin to client",
+    ).toBe(false);
   });
 
   it("Rate Limiter: Limits requests per authenticated user and rejects when threshold exceeded", async () => {
-    const { checkUserRateLimit, assertUserRateLimit, resetRateLimits } = await import(
-      "../../src/lib/rate-limit.server"
-    );
+    const { checkUserRateLimit, assertUserRateLimit, resetRateLimits } =
+      await import("../../src/lib/rate-limit.server");
     resetRateLimits();
 
     const user1 = "test-user-1";
@@ -47,7 +58,9 @@ describe("Server Functions Security & Secret Leak Audit", () => {
     expect(checkUserRateLimit(user2, { maxRequests: 2, windowMs: 10_000 }).success).toBe(true);
 
     // assertUserRateLimit should throw for user1
-    expect(() => assertUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 })).toThrow(/Rate limit exceeded/);
+    expect(() => assertUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 })).toThrow(
+      /Rate limit exceeded/,
+    );
 
     resetRateLimits();
   });

@@ -154,7 +154,11 @@ function ProjectsPage() {
         progress_percent: value.progress_percent,
       };
       if (value.id) {
-        await updateRow("projects", findCachedRow("projects", value.id) ?? { id: value.id }, payload);
+        await updateRow(
+          "projects",
+          findCachedRow("projects", value.id) ?? { id: value.id },
+          payload,
+        );
         return;
       }
       await runWithRetry(async () => {
@@ -336,7 +340,7 @@ function ProjectsPage() {
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                          STATUS_CLASS[project.status] ?? STATUS_CLASS['idea'],
+                          STATUS_CLASS[project.status] ?? STATUS_CLASS["idea"],
                         )}
                       >
                         {PROJECT_STATUS_LABEL[project.status] ?? project.status}

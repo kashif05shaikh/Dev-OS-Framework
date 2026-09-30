@@ -9,12 +9,7 @@ import type {
   Subject,
 } from "@/lib/devos-types";
 import type { JobApplication, Project, ProjectTask } from "@/lib/devos-types";
-import type {
-  CodingProfile,
-  Resume,
-  ResumeEntry,
-  ResumeSection,
-} from "@/lib/devos-types";
+import type { CodingProfile, Resume, ResumeEntry, ResumeSection } from "@/lib/devos-types";
 import type { CalendarEvent } from "@/lib/devos-types";
 import type { Goal, GoalMilestone, Habit, HabitLog } from "@/lib/devos-types";
 import type { FocusSession, Profile, ResumeFile } from "@/lib/devos-types";
@@ -46,7 +41,7 @@ export function describeError(error: unknown): string {
     lower.includes("supabase.co") ||
     lower.includes("password") ||
     lower.includes("secret") ||
-    lower.includes("relation \"") ||
+    lower.includes('relation "') ||
     lower.includes("foreign key") ||
     lower.includes("syntax error at") ||
     lower.includes("violates") ||

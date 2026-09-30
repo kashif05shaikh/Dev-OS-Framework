@@ -2,7 +2,10 @@ import { Terminal } from "lucide-react";
 
 export function LandingPhilosophy() {
   return (
-    <section id="philosophy" className="py-28 relative overflow-hidden bg-gradient-to-b from-card/30 via-background to-card/20 border-t border-border/40">
+    <section
+      id="philosophy"
+      className="py-28 relative overflow-hidden bg-gradient-to-b from-card/30 via-background to-card/20 border-t border-border/40"
+    >
       {/* Background Subtle Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-emerald-500/10 blur-[150px] pointer-events-none" />
 
@@ -23,7 +26,8 @@ export function LandingPhilosophy() {
         </blockquote>
 
         <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          DevOS is engineered to help you organize the process behind becoming better at building software — bridging theory, practice, discipline, and execution.
+          DevOS is engineered to help you organize the process behind becoming better at building
+          software — bridging theory, practice, discipline, and execution.
         </p>
       </div>
     </section>

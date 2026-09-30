@@ -5,7 +5,14 @@ import type { Tables } from "@/integrations/supabase/types";
 import { describeError } from "@/lib/devos-queries";
 
 /** Removed from the Network module; legacy rows are filtered out. */
-export const RETIRED_SOCIAL_PLATFORMS = ["instagram", "reddit", "devto", "hashnode", "medium", "portfolio"];
+export const RETIRED_SOCIAL_PLATFORMS = [
+  "instagram",
+  "reddit",
+  "devto",
+  "hashnode",
+  "medium",
+  "portfolio",
+];
 
 export type SocialAccount = Tables<"social_accounts">;
 export type SocialProfileCache = Tables<"social_profile_cache">;

@@ -42,10 +42,7 @@ export function checkUserRateLimit(
 /**
  * Throws an error if the user exceeded their rate limit.
  */
-export function assertUserRateLimit(
-  userId: string,
-  options: RateLimitOptions = {},
-): void {
+export function assertUserRateLimit(userId: string, options: RateLimitOptions = {}): void {
   const result = checkUserRateLimit(userId, options);
   if (!result.success) {
     const waitSeconds = Math.ceil((result.resetAt - Date.now()) / 1000);

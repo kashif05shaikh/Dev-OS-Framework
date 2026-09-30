@@ -30,7 +30,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { assertOk, describeError, requireUserId, runWithRetry, updateRow } from "@/lib/devos-queries";
+import {
+  assertOk,
+  describeError,
+  requireUserId,
+  runWithRetry,
+  updateRow,
+} from "@/lib/devos-queries";
 import { fetchRedditFromBrowser } from "@/lib/social-client";
 import { fetchSocialProfile } from "@/lib/social.functions";
 import {
@@ -229,7 +235,6 @@ function NetworkPage() {
       const handle = value.handle.trim();
       if (!handle) throw new Error(`${meta.inputLabel} is required.`);
 
-
       const userId = await requireUserId();
       let snapshot: SocialSnapshot | null = null;
       let lastError: string | null = null;
@@ -270,7 +275,8 @@ function NetworkPage() {
       setDraft(null);
       void qc.invalidateQueries({ queryKey: ["social_accounts"] });
       void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
-      if (result.lastError) toast.warning(`${result.label} linked, but sync failed: ${result.lastError}`);
+      if (result.lastError)
+        toast.warning(`${result.label} linked, but sync failed: ${result.lastError}`);
       else toast.success(`${result.label} connected`);
     },
     onError: (error: unknown) => toast.error(describeError(error)),

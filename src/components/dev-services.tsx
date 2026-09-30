@@ -15,16 +15,76 @@ type Service = {
 };
 
 const SERVICES: Service[] = [
-  { name: "GitHub", desc: "Repositories & pull requests", url: "https://github.com/", slug: "github", color: "ffffff" },
-  { name: "Vercel", desc: "Frontend deployments", url: "https://vercel.com/dashboard", slug: "vercel", color: "ffffff" },
-  { name: "Netlify", desc: "Sites & builds", url: "https://app.netlify.com/", slug: "netlify", color: "00C7B7" },
-  { name: "Railway", desc: "Services & databases", url: "https://railway.app/dashboard", slug: "railway", color: "ffffff" },
-  { name: "Render", desc: "Web services & cron", url: "https://dashboard.render.com/", slug: "render", color: "46E3B7" },
-  { name: "Supabase", desc: "Postgres, auth & storage", url: "https://supabase.com/dashboard", slug: "supabase", color: "3FCF8E" },
-  { name: "Cloudinary", desc: "Media library & transforms", url: "https://console.cloudinary.com/", slug: "cloudinary", color: "3448C5" },
-  { name: "Docker Hub", desc: "Container images", url: "https://hub.docker.com/", slug: "docker", color: "2496ED" },
-  { name: "MongoDB Atlas", desc: "Clusters & collections", url: "https://cloud.mongodb.com/", slug: "mongodb", color: "47A248" },
-  { name: "Firebase", desc: "Realtime DB, hosting & auth", url: "https://console.firebase.google.com/", slug: "firebase", color: "DD2C00" },
+  {
+    name: "GitHub",
+    desc: "Repositories & pull requests",
+    url: "https://github.com/",
+    slug: "github",
+    color: "ffffff",
+  },
+  {
+    name: "Vercel",
+    desc: "Frontend deployments",
+    url: "https://vercel.com/dashboard",
+    slug: "vercel",
+    color: "ffffff",
+  },
+  {
+    name: "Netlify",
+    desc: "Sites & builds",
+    url: "https://app.netlify.com/",
+    slug: "netlify",
+    color: "00C7B7",
+  },
+  {
+    name: "Railway",
+    desc: "Services & databases",
+    url: "https://railway.app/dashboard",
+    slug: "railway",
+    color: "ffffff",
+  },
+  {
+    name: "Render",
+    desc: "Web services & cron",
+    url: "https://dashboard.render.com/",
+    slug: "render",
+    color: "46E3B7",
+  },
+  {
+    name: "Supabase",
+    desc: "Postgres, auth & storage",
+    url: "https://supabase.com/dashboard",
+    slug: "supabase",
+    color: "3FCF8E",
+  },
+  {
+    name: "Cloudinary",
+    desc: "Media library & transforms",
+    url: "https://console.cloudinary.com/",
+    slug: "cloudinary",
+    color: "3448C5",
+  },
+  {
+    name: "Docker Hub",
+    desc: "Container images",
+    url: "https://hub.docker.com/",
+    slug: "docker",
+    color: "2496ED",
+  },
+  {
+    name: "MongoDB Atlas",
+    desc: "Clusters & collections",
+    url: "https://cloud.mongodb.com/",
+    slug: "mongodb",
+    color: "47A248",
+  },
+  {
+    name: "Firebase",
+    desc: "Realtime DB, hosting & auth",
+    url: "https://console.firebase.google.com/",
+    slug: "firebase",
+    color: "DD2C00",
+  },
 ];
 
 type Editor = {
@@ -131,7 +191,9 @@ export function DevServices() {
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-medium">{service.name}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{service.desc}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {service.desc}
+                </span>
               </span>
               <ExternalLink className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
             </a>
@@ -186,8 +248,8 @@ export function DevServices() {
           <h2 className="text-sm font-semibold">Open current project</h2>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Paste the absolute path of your local project folder — it is saved on this device and opens
-          straight in VS Code.
+          Paste the absolute path of your local project folder — it is saved on this device and
+          opens straight in VS Code.
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <div className="min-w-[240px] flex-1 space-y-1">

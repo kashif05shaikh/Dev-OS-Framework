@@ -9,10 +9,7 @@ async function keyFor(): Promise<CryptoKey> {
   const secret = process.env["CONNECTOR_ENCRYPTION_KEY"];
   if (!secret) throw new Error("Connector encryption key is not configured.");
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode(secret));
-  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
-    "encrypt",
-    "decrypt",
-  ]);
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
 function toBase64(bytes: Uint8Array): string {

@@ -136,7 +136,6 @@ async function openStoredFile(path: string) {
   window.open(data.signedUrl, "_blank", "noopener,noreferrer");
 }
 
-
 function LearningPage() {
   const qc = useQueryClient();
   const subjects = useQuery(subjectsQuery());
@@ -277,7 +276,11 @@ function LearningPage() {
 
   const patchResource = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<LearningResource> }) => {
-      await updateRow("learning_resources", findCachedRow("learning_resources", id) ?? { id }, patch);
+      await updateRow(
+        "learning_resources",
+        findCachedRow("learning_resources", id) ?? { id },
+        patch,
+      );
     },
     // Optimistic so favourites / progress react instantly, rolled back on failure.
     onMutate: async ({ id, patch }) => {
@@ -362,7 +365,9 @@ function LearningPage() {
             }}
             className={cn(
               "mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium transition-colors",
-              isAll ? "bg-accent" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              isAll
+                ? "bg-accent"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
             )}
           >
             <BookOpen className="size-3.5 shrink-0" />
@@ -373,7 +378,10 @@ function LearningPage() {
           </button>
 
           {(subjects.data?.length ?? 0) === 0 ? (
-            <EmptyState title="No subjects" description="Create a subject to start collecting resources." />
+            <EmptyState
+              title="No subjects"
+              description="Create a subject to start collecting resources."
+            />
           ) : (
             subjects.data!.map((subject) => (
               <div key={subject.id} className="mb-1">
@@ -414,7 +422,11 @@ function LearningPage() {
                             title: "Rename subject",
                             initialValue: subject.name,
                             onSubmit: async (name) => {
-                              await renameRow.mutateAsync({ table: "subjects", id: subject.id, name });
+                              await renameRow.mutateAsync({
+                                table: "subjects",
+                                id: subject.id,
+                                name,
+                              });
                               setNameDialog(null);
                             },
                           })
@@ -606,8 +618,8 @@ function LearningPage() {
                     isAll
                       ? "Pick a subject on the left and add your first resource."
                       : subjectId
-                      ? "Add a YouTube video, doc, PDF, course or GitHub repo to this subject."
-                      : "Create a subject on the left to start."
+                        ? "Add a YouTube video, doc, PDF, course or GitHub repo to this subject."
+                        : "Create a subject on the left to start."
                   }
                 />
               </div>
@@ -661,10 +673,7 @@ function LearningPage() {
                         className="rounded p-1 text-muted-foreground"
                       >
                         <Star
-                          className={cn(
-                            "size-4",
-                            resource.favorite && "fill-primary text-primary",
-                          )}
+                          className={cn("size-4", resource.favorite && "fill-primary text-primary")}
                         />
                       </button>
                       <DropdownMenu>
@@ -750,7 +759,10 @@ function LearningPage() {
                         onValueCommit={([value]) =>
                           patchResource.mutate({
                             id: resource.id,
-                            patch: { progress_percent: value ?? 0, completed: (value ?? 0) === 100 },
+                            patch: {
+                              progress_percent: value ?? 0,
+                              completed: (value ?? 0) === 100,
+                            },
                           })
                         }
                       />
@@ -872,7 +884,6 @@ function ResourceDialog({
     setValue((v) => (v ? { ...v, file_path: null, file_name: null, file_size: null } : v));
   }
 
-
   return (
     <Dialog open={draft !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -920,7 +931,9 @@ function ResourceDialog({
                 <Select
                   value={value?.folder_id ?? "none"}
                   onValueChange={(folder) =>
-                    setValue((v) => (v ? { ...v, folder_id: folder === "none" ? null : folder } : v))
+                    setValue((v) =>
+                      v ? { ...v, folder_id: folder === "none" ? null : folder } : v,
+                    )
                   }
                 >
                   <SelectTrigger>

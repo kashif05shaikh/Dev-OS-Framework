@@ -20,7 +20,10 @@ describe("Privacy & Data Exposure Audits", () => {
   it("REAL BEHAVIOR: Signing out must clear TanStack Query cache to prevent cross-user data leakage", async () => {
     const testQueryClient = new QueryClient();
     testQueryClient.setQueryData(["goals"], [{ id: "userA-private-goal", title: "Secret Goal" }]);
-    testQueryClient.setQueryData(["notes"], [{ id: "userA-private-note", content: "Confidential Note" }]);
+    testQueryClient.setQueryData(
+      ["notes"],
+      [{ id: "userA-private-note", content: "Confidential Note" }],
+    );
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={testQueryClient}>
@@ -45,7 +48,9 @@ describe("Privacy & Data Exposure Audits", () => {
   });
 
   it("Error formatting must sanitize sensitive database internals from user toasts", () => {
-    const sensitiveErr = new Error("Connection failed at postgresql://postgres:sb_secret_12345@db.supabase.co:5432");
+    const sensitiveErr = new Error(
+      "Connection failed at postgresql://postgres:sb_secret_12345@db.supabase.co:5432",
+    );
     const message = describeError(sensitiveErr);
 
     expect(message).not.toContain("sb_secret");

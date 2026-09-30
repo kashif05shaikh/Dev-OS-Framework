@@ -113,8 +113,8 @@ function AiWorkspacePage() {
               <Info className="size-5 shrink-0 text-amber-400" />
               <p className="mr-auto max-w-2xl text-xs leading-relaxed text-amber-100/90">
                 External AI websites cannot be opened inside an embedded preview because those
-                websites block embedding. Open the published app or use the “Open in New Tab”
-                action below.
+                websites block embedding. Open the published app or use the “Open in New Tab” action
+                below.
               </p>
               <Button size="sm" variant="outline" asChild>
                 <a href={standaloneAppUrl("/ai")} target="_blank" rel="noopener noreferrer">
@@ -141,7 +141,10 @@ function AiWorkspacePage() {
                   title={`Open ${p.label}`}
                   className="group flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3.5 py-2 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:shadow-md"
                 >
-                  <AiLogo platform={p} className="size-4 transition-transform group-hover:scale-110" />
+                  <AiLogo
+                    platform={p}
+                    className="size-4 transition-transform group-hover:scale-110"
+                  />
                   <span>{p.label}</span>
                 </a>
               ))}
@@ -182,7 +185,10 @@ function AiWorkspacePage() {
                               <h3 className="truncate text-sm font-semibold tracking-tight text-foreground">
                                 {p.label}
                               </h3>
-                              <Badge variant="outline" className="mt-0.5 px-2 py-0 text-[10px] text-muted-foreground font-normal">
+                              <Badge
+                                variant="outline"
+                                className="mt-0.5 px-2 py-0 text-[10px] text-muted-foreground font-normal"
+                              >
                                 {p.vendor}
                               </Badge>
                             </div>
@@ -193,7 +199,9 @@ function AiWorkspacePage() {
                             onClick={() => toggleFavorite(p.id)}
                             className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-amber-400"
                           >
-                            <Star className={cn("size-4", fav && "fill-amber-400 text-amber-400")} />
+                            <Star
+                              className={cn("size-4", fav && "fill-amber-400 text-amber-400")}
+                            />
                           </button>
                         </div>
 
@@ -232,9 +240,15 @@ function AiWorkspacePage() {
                               title="Favorite"
                               onClick={() => toggleFavorite(p.id)}
                             >
-                              <Star className={cn("size-3.5", fav && "fill-amber-400 text-amber-400")} />
+                              <Star
+                                className={cn("size-3.5", fav && "fill-amber-400 text-amber-400")}
+                              />
                             </Button>
-                            <Button size="sm" className="h-8 gap-1.5 rounded-lg px-3 text-xs" asChild>
+                            <Button
+                              size="sm"
+                              className="h-8 gap-1.5 rounded-lg px-3 text-xs"
+                              asChild
+                            >
                               <a
                                 href={p.url}
                                 target="_blank"
@@ -264,7 +278,10 @@ function AiWorkspacePage() {
               </h2>
               <ul className="divide-y divide-border/60 rounded-2xl border border-border/80 bg-card p-2">
                 {recent.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-xs transition-colors hover:bg-accent/40 rounded-xl">
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 text-xs transition-colors hover:bg-accent/40 rounded-xl"
+                  >
                     <div className="flex items-center gap-3">
                       <AiLogo platform={p} className="size-4" />
                       <span className="font-medium text-foreground">{p.label}</span>

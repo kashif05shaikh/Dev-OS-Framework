@@ -16,7 +16,6 @@ export function standaloneAppUrl(path?: string): string {
   return `${protocol}//${hostname}${p}${path ?? pathname}`;
 }
 
-
 /** Copies text, resolving to whether it worked. */
 export async function copyText(text: string): Promise<boolean> {
   try {
