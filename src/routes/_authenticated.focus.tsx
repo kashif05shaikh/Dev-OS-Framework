@@ -104,6 +104,91 @@ function playAlarm(times = 3) {
   }
 }
 
+export const FOCUS_STORAGE_KEY = "devos.focus-timer-session";
+
+export interface PersistedFocusSession {
+  targetEndTime: number;
+  mode: string;
+  label: string;
+  startedAt: string;
+  totalDuration: number;
+  isPaused?: boolean;
+  pausedRemaining?: number;
+}
+
+export function saveActiveSession(session: PersistedFocusSession): void {
+  try {
+    localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function clearActiveSession(): void {
+  try {
+    localStorage.removeItem(FOCUS_STORAGE_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function loadActiveSession(): {
+  remaining: number;
+  elapsed: number;
+  session: PersistedFocusSession;
+} | null {
+  try {
+    const raw = localStorage.getItem(FOCUS_STORAGE_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw) as PersistedFocusSession;
+    if (!session || typeof session.targetEndTime !== "number") return null;
+
+    if (session.isPaused && typeof session.pausedRemaining === "number") {
+      const remaining = Math.max(0, session.pausedRemaining);
+      const elapsed = Math.max(0, session.totalDuration - remaining);
+      return { remaining, elapsed, session };
+    }
+
+    const now = Date.now();
+    const remaining = Math.max(0, Math.round((session.targetEndTime - now) / 1000));
+    const elapsed = Math.max(0, session.totalDuration - remaining);
+    return { remaining, elapsed, session };
+  } catch {
+    return null;
+  }
+}
+
+export function handleClosedTabCompletion(
+  onLogCompletedSession: (payload: {
+    mode: string;
+    label: string | null;
+    planned_minutes: number;
+    actual_seconds: number;
+    completed: boolean;
+    started_at: string;
+  }) => void,
+): boolean {
+  try {
+    const active = loadActiveSession();
+    if (!active) return false;
+    if (active.remaining <= 0) {
+      clearActiveSession();
+      onLogCompletedSession({
+        mode: active.session.mode,
+        label: active.session.label || null,
+        planned_minutes: Math.max(1, Math.round(active.session.totalDuration / 60)),
+        actual_seconds: active.session.totalDuration,
+        completed: true,
+        started_at: active.session.startedAt,
+      });
+      return true;
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return false;
+}
+
 function FocusPage() {
   const qc = useQueryClient();
   const sessions = useQuery(focusSessionsQuery());
@@ -156,8 +241,32 @@ function FocusPage() {
     onError: (e: unknown) => toast.error(describeError(e)),
   });
 
+  // Restore or complete session upon mount
+  useEffect(() => {
+    const finishedWhileClosed = handleClosedTabCompletion((payload) => {
+      logSession.mutate(payload);
+      toast.success("Focus session completed while away and recorded.");
+    });
+    if (finishedWhileClosed) return;
+
+    const restored = loadActiveSession();
+    if (restored) {
+      setMode(restored.session.mode);
+      setLabel(restored.session.label || "");
+      setRemaining(restored.remaining);
+      setElapsed(restored.elapsed);
+      elapsedRef.current = restored.elapsed;
+      startedAtRef.current = restored.session.startedAt;
+      if (!restored.session.isPaused && restored.remaining > 0) {
+        setRunning(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const save = useCallback(
     (completed: boolean) => {
+      clearActiveSession();
       const elapsed = elapsedRef.current;
       if (elapsed < 10) return;
       logSession.mutate({
@@ -174,13 +283,20 @@ function FocusPage() {
     [durations, label, logSession, mode],
   );
 
-  // Countdown tick.
+  // Countdown tick with drift prevention via targetEndTime
   useEffect(() => {
     if (!running) return;
     const id = window.setInterval(() => {
-      elapsedRef.current += 1;
-      setElapsed(elapsedRef.current);
-      setRemaining((r) => r - 1);
+      const active = loadActiveSession();
+      if (active && !active.session.isPaused) {
+        setRemaining(active.remaining);
+        setElapsed(active.elapsed);
+        elapsedRef.current = active.elapsed;
+      } else {
+        elapsedRef.current += 1;
+        setElapsed(elapsedRef.current);
+        setRemaining((r) => Math.max(0, r - 1));
+      }
     }, 1000);
     return () => window.clearInterval(id);
   }, [running]);
@@ -190,6 +306,7 @@ function FocusPage() {
     if (remaining > 0 || !running) return;
     setRunning(false);
     setRemaining(0);
+    clearActiveSession();
     save(true);
     playAlarm();
     toast.success(`${FOCUS_MODE_LABEL[mode]} session complete`);
@@ -203,6 +320,7 @@ function FocusPage() {
 
   const switchMode = (next: string) => {
     if (running && elapsedRef.current >= 10) save(false);
+    clearActiveSession();
     setRunning(false);
     elapsedRef.current = 0;
     setElapsed(0);
@@ -212,15 +330,39 @@ function FocusPage() {
   };
 
   const start = () => {
-    if (!startedAtRef.current) startedAtRef.current = new Date().toISOString();
+    const started = startedAtRef.current ?? new Date().toISOString();
+    startedAtRef.current = started;
+    const targetEndTime = Date.now() + remaining * 1000;
+    saveActiveSession({
+      targetEndTime,
+      mode,
+      label,
+      startedAt: started,
+      totalDuration: total,
+      isPaused: false,
+    });
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       void Notification.requestPermission();
     }
     setRunning(true);
   };
 
+  const pause = () => {
+    setRunning(false);
+    saveActiveSession({
+      targetEndTime: Date.now() + remaining * 1000,
+      mode,
+      label,
+      startedAt: startedAtRef.current ?? new Date().toISOString(),
+      totalDuration: total,
+      isPaused: true,
+      pausedRemaining: remaining,
+    });
+  };
+
   const reset = () => {
     if (elapsedRef.current >= 10) save(false);
+    clearActiveSession();
     setRunning(false);
     elapsedRef.current = 0;
     setElapsed(0);
@@ -337,7 +479,7 @@ function FocusPage() {
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {running ? (
-                <Button onClick={() => setRunning(false)}>
+                <Button onClick={pause}>
                   <Pause className="size-4" />
                   Pause
                 </Button>

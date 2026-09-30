@@ -58,8 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           queryClient.clear();
           if (typeof window !== "undefined") {
             try {
-              localStorage.clear();
-              sessionStorage.clear();
+              const clearDevos = (s: Storage) => {
+                const keys: string[] = [];
+                for (let i = 0; i < s.length; i++) {
+                  const k = s.key(i);
+                  if (k && k.startsWith("devos.")) keys.push(k);
+                }
+                keys.forEach((k) => s.removeItem(k));
+              };
+              clearDevos(localStorage);
+              clearDevos(sessionStorage);
             } catch {
               /* storage unavailable - ignore */
             }

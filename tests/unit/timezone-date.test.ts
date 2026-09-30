@@ -1,5 +1,5 @@
-﻿import { describe, it, expect, vi, afterEach } from "vitest";
-import { calculateCodingStreaks, activityMapOf } from "../../src/lib/coding-activity";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { calculateCodingStreaks, activityMapOf, dayKey, getUserTimeZone } from "../../src/lib/coding-activity";
 import { formatLastUsed } from "../../src/lib/ai-usage";
 
 describe("Timezone and Date Edge Cases", () => {
@@ -52,7 +52,7 @@ describe("Timezone and Date Edge Cases", () => {
         ]
       };
 
-      const map = activityMapOf(userActivityRow);
+      const map = activityMapOf(userActivityRow, "Asia/Tokyo");
 
       // In local time, 2026-10-01 is today and MUST be included in the user's activity map.
       // Currently, dayKey(Date.now()) returns '2026-09-30' (UTC yesterday).
@@ -60,7 +60,48 @@ describe("Timezone and Date Edge Cases", () => {
       // and today's activity is completely dropped!
       expect(map["2026-10-01"], "Today's local submission must not be dropped by UTC dayKey").toBe(3);
     });
+
+    it("Correctly computes local dayKey and activity for India at 11:30 PM and 12:30 AM local", () => {
+      // India is UTC+05:30
+      // 11:30 PM IST on 2026-09-30 corresponds to 18:00:00 UTC on 2026-09-30
+      const india1130PM = Date.parse("2026-09-30T18:00:00.000Z");
+      // 12:30 AM IST on 2026-10-01 corresponds to 19:00:00 UTC on 2026-09-30
+      const india1230AM = Date.parse("2026-09-30T19:00:00.000Z");
+
+      expect(dayKey(india1130PM, "Asia/Kolkata")).toBe("2026-09-30");
+      expect(dayKey(india1230AM, "Asia/Kolkata")).toBe("2026-10-01");
+      expect(getUserTimeZone()).toBeDefined();
+
+      // Verify activityMapOf with India timezone
+      vi.spyOn(Date, "now").mockReturnValue(india1230AM);
+      const row = {
+        activity: [
+          { date: "2026-09-30", submissions: 4 },
+          { date: "2026-10-01", submissions: 2 },
+        ],
+      };
+      const map = activityMapOf(row, "Asia/Kolkata");
+      expect(map["2026-09-30"]).toBe(4);
+      expect(map["2026-10-01"]).toBe(2);
+    });
   });
+
+    it("Strictly enforces user's local date and rejects future submissions (tomorrow locally)", () => {
+      // Local time in Asia/Kolkata at 12:00 UTC is Sept 30th 17:30 IST
+      const fixedTime = Date.parse("2026-09-30T12:00:00.000Z");
+      vi.spyOn(Date, "now").mockReturnValue(fixedTime);
+
+      const userActivityRow = {
+        activity: [
+          { date: "2026-09-30", submissions: 5 },
+          { date: "2026-10-01", submissions: 2 }, // future relative to user local day!
+        ],
+      };
+
+      const map = activityMapOf(userActivityRow, "Asia/Kolkata");
+      expect(map["2026-09-30"]).toBe(5);
+      expect(map["2026-10-01"], "Future dates relative to user local timezone must be dropped").toBeUndefined();
+    });
 
   describe("formatLastUsed Date Formatting", () => {
     it("Returns 'Never opened' for null or undefined timestamps", () => {

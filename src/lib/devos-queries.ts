@@ -26,6 +26,10 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
 
 /** Turn low-level fetch/PostgREST failures into messages a human can act on. */
 export function describeError(error: unknown): string {
+  if (error) {
+    console.error("[DevOS Error Details]:", error);
+  }
+
   const raw =
     typeof error === "string"
       ? error
@@ -34,6 +38,23 @@ export function describeError(error: unknown): string {
         : ((error as { message?: string } | null)?.message ?? "");
 
   const lower = raw.toLowerCase();
+
+  if (
+    lower.includes("postgresql://") ||
+    lower.includes("postgres://") ||
+    lower.includes("sb_secret") ||
+    lower.includes("supabase.co") ||
+    lower.includes("password") ||
+    lower.includes("secret") ||
+    lower.includes("relation \"") ||
+    lower.includes("foreign key") ||
+    lower.includes("syntax error at") ||
+    lower.includes("violates") ||
+    lower.includes("connection failed") ||
+    lower.includes("pg_")
+  ) {
+    return "A database error occurred. Please try again later.";
+  }
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return "You appear to be offline. Reconnect and try again — your changes are kept until the save succeeds.";
@@ -55,7 +76,7 @@ export function describeError(error: unknown): string {
   if (lower.includes("timeout") || lower.includes("aborted")) {
     return "The request timed out. Please try again.";
   }
-  return raw || "Something went wrong. Please try again.";
+  return "Something went wrong. Please try again.";
 }
 
 function isRetryable(error: unknown): boolean {

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertUserRateLimit } from "@/lib/rate-limit.server";
 
 export const fetchCodingStats = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -11,7 +12,8 @@ export const fetchCodingStats = createServerFn({ method: "POST" })
     if (username.length > 100) throw new Error("Username looks invalid.");
     return { platform, username };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    assertUserRateLimit(context.userId, { maxRequests: 20, windowMs: 60_000 });
     const { fetchPlatformStats } = await import("./coding-profiles.server");
     return fetchPlatformStats(data.platform, data.username);
   });

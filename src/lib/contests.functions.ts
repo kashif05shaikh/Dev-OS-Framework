@@ -86,13 +86,32 @@ async function codechef(): Promise<UpcomingContest[]> {
   }));
 }
 
-/** Public: upcoming programming contests across Codeforces, LeetCode and CodeChef. */
+export const CONTESTS_CACHE_TTL_MS = 15 * 60 * 1000;
+
+let contestsCache: { data: UpcomingContest[]; timestamp: number } | null = null;
+
+export function clearContestsCache(): void {
+  contestsCache = null;
+}
+
+export function getContestsCache(): { data: UpcomingContest[]; timestamp: number } | null {
+  return contestsCache;
+}
+
+/** Public: upcoming programming contests across Codeforces, LeetCode and CodeChef. Cached for 15 minutes. */
 export const getUpcomingContests = createServerFn({ method: "GET" }).handler(async () => {
+  const now = Date.now();
+  if (contestsCache && now - contestsCache.timestamp < CONTESTS_CACHE_TTL_MS) {
+    return contestsCache.data.filter((c) => new Date(c.startsAt).getTime() > now);
+  }
+
   const results = await Promise.allSettled([codeforces(), leetcode(), codechef()]);
   const contests = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  const now = Date.now();
-  return contests
+  const filtered = contests
     .filter((c) => new Date(c.startsAt).getTime() > now)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
     .slice(0, 25);
+
+  contestsCache = { data: filtered, timestamp: now };
+  return filtered;
 });

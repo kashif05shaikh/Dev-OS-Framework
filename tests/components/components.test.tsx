@@ -70,6 +70,67 @@ describe("Component Business Logic & UX Edge Cases", () => {
       clearActiveSession();
       expect(localStorage.getItem(FOCUS_STORAGE_KEY)).toBeNull();
     });
+
+    it("REAL BEHAVIOR: Pausing and reloading preserves paused remaining time without background progression", async () => {
+      const { saveActiveSession, loadActiveSession, clearActiveSession } = await import(
+        "@/routes/_authenticated.focus"
+      );
+      localStorage.clear();
+      const startTime = 1_700_000_000_000;
+      saveActiveSession({
+        targetEndTime: startTime + 1000 * 1000,
+        mode: "focus",
+        label: "Paused test",
+        startedAt: new Date(startTime).toISOString(),
+        totalDuration: 1500,
+        isPaused: true,
+        pausedRemaining: 1000,
+      });
+
+      // Advance time by 500s while paused
+      const dateSpy = vi.spyOn(Date, "now").mockReturnValue(startTime + 500 * 1000);
+      const loaded = loadActiveSession();
+      expect(loaded?.remaining).toBe(1000); // Does NOT drop because it was paused
+      expect(loaded?.elapsed).toBe(500);
+
+      dateSpy.mockRestore();
+      clearActiveSession();
+    });
+
+    it("REAL BEHAVIOR: Timer that finishes while tab is closed is recorded exactly once", async () => {
+      const { saveActiveSession, handleClosedTabCompletion, loadActiveSession, clearActiveSession } = await import(
+        "@/routes/_authenticated.focus"
+      );
+      localStorage.clear();
+      const startTime = 1_700_000_000_000;
+      // Timer planned for 1500s, ended at startTime + 1500s
+      saveActiveSession({
+        targetEndTime: startTime + 1500 * 1000,
+        mode: "focus",
+        label: "Closed tab completion",
+        startedAt: new Date(startTime).toISOString(),
+        totalDuration: 1500,
+      });
+
+      // User reopens tab 2000s after start (timer completed 500s ago)
+      const dateSpy = vi.spyOn(Date, "now").mockReturnValue(startTime + 2000 * 1000);
+      const loggedSessions: any[] = [];
+      const handledFirst = handleClosedTabCompletion((payload) => loggedSessions.push(payload));
+
+      expect(handledFirst).toBe(true);
+      expect(loggedSessions).toHaveLength(1);
+      expect(loggedSessions[0].completed).toBe(true);
+      expect(loggedSessions[0].actual_seconds).toBe(1500);
+
+      // Second check (e.g. re-render or another tab): must NOT log again
+      const handledSecond = handleClosedTabCompletion((payload) => loggedSessions.push(payload));
+      expect(handledSecond).toBe(false);
+      expect(loggedSessions).toHaveLength(1);
+      expect(loadActiveSession()).toBeNull();
+
+      dateSpy.mockRestore();
+      clearActiveSession();
+    });
   });
 
   describe("Resume Dialog Unsaved Data Loss Prevention", () => {

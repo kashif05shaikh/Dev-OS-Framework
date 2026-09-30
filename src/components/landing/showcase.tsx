@@ -69,7 +69,7 @@ function CodingProfilesHeatmap() {
           {Array.from({ length: weeks }).map((_, wIndex) => (
             <div key={wIndex} className="grid grid-rows-7 gap-1.5">
               {Array.from({ length: daysPerWeek }).map((_, dIndex) => {
-                const lvl = levels[(wIndex * 7 + dIndex) % levels.length];
+                const lvl = levels[(wIndex * 7 + dIndex) % levels.length] ?? 0;
                 return (
                   <div
                     key={dIndex}

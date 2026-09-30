@@ -27,4 +27,28 @@ describe("Server Functions Security & Secret Leak Audit", () => {
     expect(learningHasAdmin, "src/routes/_authenticated.learning.tsx leaks supabaseAdmin to client").toBe(false);
     expect(resumeHasAdmin, "src/routes/_authenticated.resume.tsx leaks supabaseAdmin to client").toBe(false);
   });
+
+  it("Rate Limiter: Limits requests per authenticated user and rejects when threshold exceeded", async () => {
+    const { checkUserRateLimit, assertUserRateLimit, resetRateLimits } = await import(
+      "../../src/lib/rate-limit.server"
+    );
+    resetRateLimits();
+
+    const user1 = "test-user-1";
+    const user2 = "test-user-2";
+
+    // 2 allowed requests for user1
+    expect(checkUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 }).success).toBe(true);
+    expect(checkUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 }).success).toBe(true);
+    // 3rd should fail
+    expect(checkUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 }).success).toBe(false);
+
+    // user2 should not be affected (per-user rate limit, not global or IP)
+    expect(checkUserRateLimit(user2, { maxRequests: 2, windowMs: 10_000 }).success).toBe(true);
+
+    // assertUserRateLimit should throw for user1
+    expect(() => assertUserRateLimit(user1, { maxRequests: 2, windowMs: 10_000 })).toThrow(/Rate limit exceeded/);
+
+    resetRateLimits();
+  });
 });

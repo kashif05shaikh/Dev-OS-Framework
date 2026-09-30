@@ -14,11 +14,18 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
     it("Exports getUpcomingContests as a GET createServerFn without auth middleware", () => {
       expect(getUpcomingContests).toBeDefined();
       const fnAny = getUpcomingContests as any;
-      // In TanStack Start:
       const middlewares = fnAny.middlewares ?? fnAny.__middlewares ?? [];
-      // Confirms getUpcomingContests is public (lacks auth middleware)
       expect(Array.isArray(middlewares)).toBe(true);
       expect(middlewares.length).toBe(0);
+    });
+
+    it("Maintains a 15-minute in-memory cache to avoid hammering contest APIs", async () => {
+      const { CONTESTS_CACHE_TTL_MS, clearContestsCache, getContestsCache } = await import(
+        "../../src/lib/contests.functions"
+      );
+      expect(CONTESTS_CACHE_TTL_MS).toBe(15 * 60 * 1000);
+      clearContestsCache();
+      expect(getContestsCache()).toBeNull();
     });
   });
 

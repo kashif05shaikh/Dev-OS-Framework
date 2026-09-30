@@ -24,8 +24,32 @@ export function storedActivity(value: unknown): unknown {
   return Array.isArray(days) ? days : value;
 }
 
-function dayKey(ms: number): string {
-  return new Date(ms).toISOString().slice(0, 10);
+export function getUserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+export function dayKey(ms: number = Date.now(), timeZone?: string): string {
+  const tz = timeZone || getUserTimeZone();
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(new Date(ms));
+  } catch {
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+}
+
+export function maxEarthDayKey(ms: number = Date.now()): string {
+  // Up to UTC+14 (Line Islands, Kiribati) is the furthest ahead timezone on Earth
+  return dayKey(ms + 14 * 3600 * 1000, "UTC");
 }
 
 function normaliseDate(raw: string): string | null {
@@ -35,9 +59,12 @@ function normaliseDate(raw: string): string | null {
 }
 
 /** Reads the JSONB activity map stored on a coding_profiles row. */
-export function activityMapOf(row: { activity?: unknown }): Record<string, number> {
+export function activityMapOf(
+  row: { activity?: unknown },
+  userTimeZone?: string,
+): Record<string, number> {
   const raw = row.activity;
-  const today = dayKey(Date.now());
+  const today = dayKey(Date.now(), userTimeZone);
   if (Array.isArray(raw)) {
     const out: Record<string, number> = {};
     for (const item of raw) {
@@ -64,10 +91,13 @@ export function activityMapOf(row: { activity?: unknown }): Record<string, numbe
   return out;
 }
 
-function solvedMapOf(row: { activity?: unknown }): Record<string, number> {
+function solvedMapOf(
+  row: { activity?: unknown },
+  userTimeZone?: string,
+): Record<string, number> {
   if (!Array.isArray(row.activity)) return {};
   const out: Record<string, number> = {};
-  const today = dayKey(Date.now());
+  const today = dayKey(Date.now(), userTimeZone);
   for (const item of row.activity) {
     if (!item || typeof item !== "object") continue;
     const value = item as Record<string, unknown>;
@@ -83,11 +113,12 @@ function solvedMapOf(row: { activity?: unknown }): Record<string, number> {
 /** Merges every platform's activity map into one deduplicated day map. */
 export function aggregateCodingActivity(
   profiles: { platform: string; activity?: unknown }[],
+  userTimeZone?: string,
 ): Map<string, CombinedDay> {
   const map = new Map<string, CombinedDay>();
   for (const profile of profiles) {
-    const solvedByDate = solvedMapOf(profile);
-    for (const [date, count] of Object.entries(activityMapOf(profile))) {
+    const solvedByDate = solvedMapOf(profile, userTimeZone);
+    for (const [date, count] of Object.entries(activityMapOf(profile, userTimeZone))) {
       const day = map.get(date) ?? { date, count: 0, solved: 0, byPlatform: [] };
       const existing = day.byPlatform.find((b) => b.platform === profile.platform);
       if (existing) {
@@ -107,7 +138,10 @@ export function aggregateCodingActivity(
 }
 
 /** Current / max streak and active days from a set of active calendar dates. */
-export function calculateCodingStreaks(dates: Iterable<string>): CodingStreaks {
+export function calculateCodingStreaks(
+  dates: Iterable<string>,
+  userTimeZone?: string,
+): CodingStreaks {
   const unique = Array.from(
     new Set(
       Array.from(dates)
@@ -127,8 +161,8 @@ export function calculateCodingStreaks(dates: Iterable<string>): CodingStreaks {
     if (run > maxStreak) maxStreak = run;
   }
 
-  const today = dayKey(Date.now());
-  const yesterday = dayKey(Date.now() - DAY);
+  const today = dayKey(Date.now(), userTimeZone);
+  const yesterday = dayKey(Date.now() - DAY, userTimeZone);
   const last = unique.at(-1)!;
   let currentStreak = 0;
   if (last === today || last === yesterday) {
@@ -153,11 +187,15 @@ export type CodingProfileRow = {
 };
 
 /** The single source of truth used by both Coding Profiles and the Dashboard. */
-export function summariseCodingProfiles(rows: CodingProfileRow[]) {
+export function summariseCodingProfiles(
+  rows: CodingProfileRow[],
+  userTimeZone?: string,
+) {
   const days = aggregateCodingActivity(
     rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })),
+    userTimeZone,
   );
-  const streaks = calculateCodingStreaks(days.keys());
+  const streaks = calculateCodingStreaks(days.keys(), userTimeZone);
   return {
     days,
     ...streaks,
