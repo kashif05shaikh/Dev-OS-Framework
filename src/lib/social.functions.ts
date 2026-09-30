@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const fetchSocialProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { platform: string; handle: string }) => {
     const platform = String(input?.platform ?? "").trim();
     const handle = String(input?.handle ?? "").trim();

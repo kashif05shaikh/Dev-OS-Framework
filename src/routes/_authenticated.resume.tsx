@@ -27,7 +27,6 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseAdmin } from "@/integrations/supabase/admin";
 import {
   assertOk,
   describeError,
@@ -70,12 +69,7 @@ function formatSize(bytes: number | null): string {
 }
 
 async function signedUrl(path: string): Promise<string> {
-  let { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
-  if (error || !data?.signedUrl) {
-    const adminRes = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
-    data = adminRes.data;
-    error = adminRes.error;
-  }
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
   if (error || !data?.signedUrl) throw new Error(error?.message ?? "Could not open the file");
   return data.signedUrl;
 }
@@ -91,16 +85,9 @@ async function uploadResumeFile(file: File): Promise<{
   const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
   const contentType = file.type || "application/octet-stream";
 
-  let { error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, file, { upsert: false, contentType });
-
-  if (error) {
-    const adminRes = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, file, { upsert: false, contentType });
-    error = adminRes.error;
-  }
 
   if (error) throw error;
   return {
@@ -194,9 +181,7 @@ function ResumePage() {
     mutationFn: async (row: ResumeFile) =>
       runWithRetry(async () => {
         const { error: err1 } = await supabase.storage.from(BUCKET).remove([row.file_path]);
-        if (err1) {
-          await supabaseAdmin.storage.from(BUCKET).remove([row.file_path]);
-        }
+        assertOk(err1);
         const { error } = await supabase.from("resume_files").delete().eq("id", row.id);
         assertOk(error);
       }),
@@ -230,12 +215,7 @@ function ResumePage() {
 
   async function download(row: ResumeFile) {
     try {
-      let { data, error } = await supabase.storage.from(BUCKET).download(row.file_path);
-      if (error || !data) {
-        const adminRes = await supabaseAdmin.storage.from(BUCKET).download(row.file_path);
-        data = adminRes.data;
-        error = adminRes.error;
-      }
+      const { data, error } = await supabase.storage.from(BUCKET).download(row.file_path);
       if (error || !data) throw error ?? new Error("Download failed");
       const url = URL.createObjectURL(data);
       const a = document.createElement("a");
@@ -464,9 +444,30 @@ function EditResumeDialog({
     setNotes(row?.notes ?? "");
   }, [row]);
 
+  const hasUnsavedChanges =
+    row !== null && (title !== (row.title ?? "") || notes !== (row.notes ?? ""));
+
+  const handleRequestClose = () => {
+    if (hasUnsavedChanges) {
+      if (typeof window !== "undefined" && window.confirm("You have unsaved changes. Discard them?")) {
+        onClose();
+      }
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={row !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={row !== null} onOpenChange={(open) => !open && handleRequestClose()}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+            handleRequestClose();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit resume</DialogTitle>
         </DialogHeader>
@@ -520,7 +521,7 @@ function EditResumeDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={handleRequestClose}>
             Cancel
           </Button>
           <Button

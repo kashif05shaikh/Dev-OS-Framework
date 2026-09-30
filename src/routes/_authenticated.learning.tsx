@@ -55,7 +55,6 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseAdmin } from "@/integrations/supabase/admin";
 import {
   assertOk,
   describeError,
@@ -127,16 +126,9 @@ function formatBytes(bytes: number | null | undefined) {
 
 /** Opens a private learning file in a new tab via a short-lived signed URL. */
 async function openStoredFile(path: string) {
-  let { data, error } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from("learning-files")
     .createSignedUrl(path, 60 * 10);
-  if (error || !data?.signedUrl) {
-    const adminRes = await supabaseAdmin.storage
-      .from("learning-files")
-      .createSignedUrl(path, 60 * 10);
-    data = adminRes.data;
-    error = adminRes.error;
-  }
   if (error || !data?.signedUrl) {
     toast.error(error?.message ?? "Could not open the file");
     return;
@@ -848,15 +840,9 @@ function ResourceDialog({
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
       const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
       const contentType = file.type || "application/octet-stream";
-      let { error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("learning-files")
         .upload(path, file, { upsert: false, contentType });
-      if (error) {
-        const adminRes = await supabaseAdmin.storage
-          .from("learning-files")
-          .upload(path, file, { upsert: false, contentType });
-        error = adminRes.error;
-      }
       if (error) throw error;
       setValue((v) =>
         v
@@ -882,9 +868,7 @@ function ResourceDialog({
     const path = value?.file_path;
     if (!path) return;
     const { error } = await supabase.storage.from("learning-files").remove([path]);
-    if (error) {
-      await supabaseAdmin.storage.from("learning-files").remove([path]);
-    }
+    assertOk(error);
     setValue((v) => (v ? { ...v, file_path: null, file_name: null, file_size: null } : v));
   }
 

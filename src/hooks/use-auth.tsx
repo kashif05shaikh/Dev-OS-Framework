@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthState>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,10 +52,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       signOut: async () => {
-        await supabase.auth.signOut();
+        try {
+          await supabase.auth.signOut();
+        } finally {
+          queryClient.clear();
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.clear();
+              sessionStorage.clear();
+            } catch {
+              /* storage unavailable - ignore */
+            }
+          }
+        }
       },
     }),
-    [session, loading],
+    [session, loading, queryClient],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -893,8 +893,10 @@ function DashboardPage() {
               ) : (
                 <ul className="mt-4 space-y-4">
                   {activeGoals.map((goal) => {
-                    const pct = goal.target_value
-                      ? Math.min(100, Math.round((Number(goal.current_value) / Number(goal.target_value)) * 100))
+                    const target = Number(goal.target_value) || 0;
+                    const current = Number(goal.current_value) || 0;
+                    const pct = target > 0
+                      ? Math.max(0, Math.min(100, Math.round((current / target) * 100)))
                       : 0;
                     return (
                       <li key={goal.id}>

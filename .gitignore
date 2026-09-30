@@ -32,3 +32,11 @@ dist-ssr
 *.sw?
 
 .vercel
+.env*.local
+.env
+.env.*
+!.env.example
+coverage/
+coverage_output.txt
+import_backup.js
+import_backup.cjs
