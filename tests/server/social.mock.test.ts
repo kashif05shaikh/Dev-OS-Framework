@@ -13,7 +13,10 @@ describe("Social & Contests Functions (Mocks & Behavior)", () => {
   describe("getUpcomingContests server function coverage", () => {
     it("Exports getUpcomingContests as a GET createServerFn without auth middleware", () => {
       expect(getUpcomingContests).toBeDefined();
-      const fnAny = getUpcomingContests as any;
+      const fnAny = getUpcomingContests as unknown as {
+        middlewares?: unknown[];
+        __middlewares?: unknown[];
+      };
       const middlewares = fnAny.middlewares ?? fnAny.__middlewares ?? [];
       expect(Array.isArray(middlewares)).toBe(true);
       expect(middlewares.length).toBe(0);

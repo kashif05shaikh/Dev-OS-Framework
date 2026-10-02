@@ -12,7 +12,10 @@ if (fs.existsSync(envTestPath)) {
     if (!trimmed || trimmed.startsWith("#")) continue;
     const [key, ...rest] = trimmed.split("=");
     if (key && rest.length > 0 && !process.env[key.trim()]) {
-      process.env[key.trim()] = rest.join("=").trim().replace(/^["']|["']$/g, "");
+      process.env[key.trim()] = rest
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
     }
   }
 }
@@ -120,11 +123,13 @@ describe("Row Level Security (RLS) & Multi-Tenant Isolation Suite", () => {
       it.skipIf(!hasTestProject)(
         `Logged-out user cannot list or download files from bucket "${bucket}"`,
         async () => {
-          const { data: listData, error: listError } = await anonClient!.storage.from(bucket).list();
+          const { data: listData, error: listError } = await anonClient!.storage
+            .from(bucket)
+            .list();
           expect(listData === null || listData.length === 0 || listError !== null).toBe(true);
 
-          const { data: fileData, error: fileError } = await anonClient!
-            .storage.from(bucket)
+          const { data: fileData, error: fileError } = await anonClient!.storage
+            .from(bucket)
             .download("unauthorized_file.pdf");
           expect(fileData === null || fileError !== null).toBe(true);
         },
@@ -138,10 +143,7 @@ describe("Row Level Security (RLS) & Multi-Tenant Isolation Suite", () => {
         `User A cannot read User B's rows in public.${table}`,
         async () => {
           const idCol = table === "profiles" ? "id" : "user_id";
-          const { data, error } = await clientA!
-            .from(table)
-            .select("*")
-            .eq(idCol, userBId);
+          const { data, error } = await clientA!.from(table).select("*").eq(idCol, userBId);
 
           if (!error) {
             expect(data).toHaveLength(0);
@@ -181,19 +183,19 @@ describe("Row Level Security (RLS) & Multi-Tenant Isolation Suite", () => {
         async () => {
           const userBFilePath = `${userBId}/private_doc.pdf`;
 
-          const { data: downloadData, error: downloadError } = await clientA!
-            .storage.from(bucket)
+          const { data: downloadData, error: downloadError } = await clientA!.storage
+            .from(bucket)
             .download(userBFilePath);
           expect(downloadData === null || downloadError !== null).toBe(true);
 
           const fakeBlob = new Blob(["fake-content"], { type: "application/pdf" });
-          const { error: uploadError } = await clientA!
-            .storage.from(bucket)
+          const { error: uploadError } = await clientA!.storage
+            .from(bucket)
             .upload(userBFilePath, fakeBlob, { upsert: true });
           expect(uploadError).toBeDefined();
 
-          const { data: removeData, error: removeError } = await clientA!
-            .storage.from(bucket)
+          const { data: removeData, error: removeError } = await clientA!.storage
+            .from(bucket)
             .remove([userBFilePath]);
           expect(removeData === null || removeData.length === 0 || removeError !== null).toBe(true);
         },

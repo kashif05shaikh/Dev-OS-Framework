@@ -11,10 +11,16 @@ if (fs.existsSync(envPath)) {
   for (const l of lines) {
     const trimmed = l.trim();
     if (trimmed.startsWith("SUPABASE_TEST_URL=")) {
-      testUrl = trimmed.split("=")[1].replace(/["'\r]/g, "").trim();
+      testUrl = trimmed
+        .split("=")[1]
+        .replace(/["'\r]/g, "")
+        .trim();
     }
     if (trimmed.startsWith("SUPABASE_TEST_ANON_KEY=")) {
-      testKey = trimmed.split("=")[1].replace(/["'\r]/g, "").trim();
+      testKey = trimmed
+        .split("=")[1]
+        .replace(/["'\r]/g, "")
+        .trim();
     }
   }
 }
@@ -146,7 +152,9 @@ test.describe("DevOS End-to-End User Journeys", () => {
     await expect(page).toHaveURL(/.*dashboard/);
 
     const signOutBtn = page
-      .locator("button:has-text('Sign out'), button:has-text('Log out'), [aria-label*='Sign out' i]")
+      .locator(
+        "button:has-text('Sign out'), button:has-text('Log out'), [aria-label*='Sign out' i]",
+      )
       .first();
     if (await signOutBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await signOutBtn.click();
@@ -175,7 +183,9 @@ test.describe("DevOS End-to-End User Journeys", () => {
 
     const goalTitle = `E2E Goal ${runId}`;
     const titleInput = page
-      .locator("input#goal-title, input[placeholder*='Master' i], input[placeholder*='goal' i], form input[type='text']")
+      .locator(
+        "input#goal-title, input[placeholder*='Master' i], input[placeholder*='goal' i], form input[type='text']",
+      )
       .first();
     await expect(titleInput).toBeVisible({ timeout: 5000 });
     await titleInput.fill(goalTitle);

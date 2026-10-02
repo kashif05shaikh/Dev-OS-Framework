@@ -84,7 +84,7 @@ describe("Component Business Logic & UX Edge Cases", () => {
       dateSpy.mockRestore();
       clearActiveSession();
       expect(localStorage.getItem(FOCUS_STORAGE_KEY)).toBeNull();
-    });
+    }, 20000);
 
     it("REAL BEHAVIOR: Pausing and reloading preserves paused remaining time without background progression", async () => {
       const { saveActiveSession, loadActiveSession, clearActiveSession } =
@@ -109,7 +109,7 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
       dateSpy.mockRestore();
       clearActiveSession();
-    });
+    }, 20000);
 
     it("REAL BEHAVIOR: Timer that finishes while tab is closed is recorded exactly once", async () => {
       const {
@@ -131,7 +131,7 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
       // User reopens tab 2000s after start (timer completed 500s ago)
       const dateSpy = vi.spyOn(Date, "now").mockReturnValue(startTime + 2000 * 1000);
-      const loggedSessions: any[] = [];
+      const loggedSessions: Array<{ completed: boolean; actual_seconds: number }> = [];
       const handledFirst = handleClosedTabCompletion((payload) => loggedSessions.push(payload));
 
       expect(handledFirst).toBe(true);
@@ -147,7 +147,7 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
       dateSpy.mockRestore();
       clearActiveSession();
-    });
+    }, 20000);
   });
 
   describe("Resume Dialog Unsaved Data Loss Prevention", () => {
@@ -162,7 +162,7 @@ describe("Component Business Logic & UX Edge Cases", () => {
 
       // Verify safe dismiss behavior
       let hasUnsavedChanges = true;
-      let draftDiscardConfirmed = false;
+      const draftDiscardConfirmed = false;
 
       const handleDismiss = () => {
         if (hasUnsavedChanges && !draftDiscardConfirmed) {

@@ -5,7 +5,8 @@ import { fetchSocialProfile } from "../../src/lib/social.functions";
 
 describe("Server Functions Security & Secret Leak Audit", () => {
   it("fetchSocialProfile should enforce authentication middleware", async () => {
-    const fnAny = fetchSocialProfile as any;
+    const fnAny = fetchSocialProfile as unknown;
+    void fnAny;
     // Check options.middleware, middleware property, or the file declaration
     const content = fs.readFileSync(
       path.resolve(process.cwd(), "src/lib/social.functions.ts"),

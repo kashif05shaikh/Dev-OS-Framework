@@ -10,10 +10,16 @@ if (fs.existsSync(envTestPath)) {
   for (const line of content.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (trimmed.startsWith("SUPABASE_TEST_URL=")) {
-      testUrl = trimmed.split("=")[1].replace(/["'\r]/g, "").trim();
+      testUrl = trimmed
+        .split("=")[1]
+        .replace(/["'\r]/g, "")
+        .trim();
     }
     if (trimmed.startsWith("SUPABASE_TEST_ANON_KEY=")) {
-      testKey = trimmed.split("=")[1].replace(/["'\r]/g, "").trim();
+      testKey = trimmed
+        .split("=")[1]
+        .replace(/["'\r]/g, "")
+        .trim();
     }
   }
 }
