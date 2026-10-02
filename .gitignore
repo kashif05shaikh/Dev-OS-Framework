@@ -35,8 +35,11 @@ dist-ssr
 .env*.local
 .env
 .env.*
+.env.test
 !.env.example
 coverage/
 coverage_output.txt
 import_backup.js
 import_backup.cjs
+playwright-report/
+test-results/

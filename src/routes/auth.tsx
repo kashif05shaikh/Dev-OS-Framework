@@ -41,6 +41,11 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [sentConfirmation, setSentConfirmation] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const redirectTo =
     search.redirect && search.redirect.startsWith("/") && search.redirect !== "/"
@@ -205,7 +210,7 @@ function AuthPage() {
                 type="button"
                 variant="outline"
                 className="mb-4 w-full"
-                disabled={googleBusy || busy}
+                disabled={googleBusy || busy || !hydrated}
                 onClick={handleGoogle}
               >
                 {googleBusy ? (
@@ -271,7 +276,7 @@ function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={busy}>
+                  <Button type="submit" className="w-full" disabled={busy || !hydrated}>
                     {busy ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
                   </Button>
                 </form>
@@ -311,7 +316,7 @@ function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={busy}>
+                  <Button type="submit" className="w-full" disabled={busy || !hydrated}>
                     {busy ? <Loader2 className="size-4 animate-spin" /> : "Create account"}
                   </Button>
                 </form>

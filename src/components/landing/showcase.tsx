@@ -82,10 +82,10 @@ function CodingProfilesHeatmap() {
   );
 }
 
+type ShowcaseTab = "dashboard" | "notes" | "learning" | "projects" | "jobs" | "profiles";
+
 export function LandingProductShowcase() {
-  const [activeTab, setActiveTab] = useState<
-    "dashboard" | "notes" | "learning" | "projects" | "jobs" | "profiles"
-  >("dashboard");
+  const [activeTab, setActiveTab] = useState<ShowcaseTab>("dashboard");
 
   return (
     <section className="py-24 relative overflow-hidden bg-card/20 border-t border-border/40">
@@ -116,7 +116,7 @@ export function LandingProductShowcase() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as ShowcaseTab)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all ${
                 activeTab === tab.id
                   ? "bg-emerald-500 text-black font-bold shadow-md shadow-emerald-500/20"

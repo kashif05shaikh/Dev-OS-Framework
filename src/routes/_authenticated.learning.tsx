@@ -849,7 +849,7 @@ function ResourceDialog({
     setUploading(true);
     try {
       const userId = await requireUserId();
-      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const safeName = file.name.replace(/[^\w.-]+/g, "_");
       const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
       const contentType = file.type || "application/octet-stream";
       const { error } = await supabase.storage
