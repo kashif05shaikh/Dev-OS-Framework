@@ -375,60 +375,82 @@ function CalendarPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-3 border-b border-border px-6 py-4">
-        <div className="mr-auto">
-          <h1 className="text-lg font-semibold tracking-tight">Calendar</h1>
-          <p className="text-xs text-muted-foreground">
-            {events.data?.length ?? 0} event{(events.data?.length ?? 0) === 1 ? "" : "s"} tracked
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Previous month"
-            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="w-40 text-center text-sm font-medium">{monthLabel}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Next month"
-            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          >
-            <ChevronRight className="size-4" />
+      <header className="flex flex-col gap-3 border-b border-border p-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center justify-between md:block">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">Calendar</h1>
+            <p className="text-xs text-muted-foreground">
+              {events.data?.length ?? 0} event{(events.data?.length ?? 0) === 1 ? "" : "s"} tracked
+            </p>
+          </div>
+          <Button size="sm" className="md:hidden" onClick={() => setDraft(emptyDraft(selected))}>
+            <Plus className="size-4" />
+            New
           </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const now = new Date();
-            setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
-            setSelected(toIso(now));
-          }}
-        >
-          Today
-        </Button>
-        <Button
-          variant={remindersOn ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => void enableReminders()}
-        >
-          <Bell className={cn("size-4", remindersOn && "text-primary")} />
-          {remindersOn ? "Reminders on" : "Reminders"}
-        </Button>
-        <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
-          <Plus className="size-4" />
-          New event
-        </Button>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8"
+              aria-label="Previous month"
+              onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="w-32 text-center text-xs font-semibold sm:w-40 sm:text-sm">
+              {monthLabel}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8"
+              aria-label="Next month"
+              onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => {
+                const now = new Date();
+                setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+                setSelected(toIso(now));
+              }}
+            >
+              Today
+            </Button>
+            <Button
+              variant={remindersOn ? "secondary" : "outline"}
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => void enableReminders()}
+            >
+              <Bell className={cn("size-3.5", remindersOn && "text-primary")} />
+              <span>{remindersOn ? "Reminders on" : "Reminders"}</span>
+            </Button>
+            <Button
+              size="sm"
+              className="hidden h-8 md:inline-flex"
+              onClick={() => setDraft(emptyDraft(selected))}
+            >
+              <Plus className="size-4" />
+              New event
+            </Button>
+          </div>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="p-4 max-lg:overflow-x-auto">
-          <div className="min-w-[760px] lg:min-w-0">
+        <div className="w-full max-w-full overflow-x-auto p-2 sm:p-4">
+          <div className="min-w-[600px] md:min-w-[760px] lg:min-w-0">
             <div className="grid grid-cols-7 gap-px text-xs uppercase tracking-wide text-muted-foreground">
               {WEEKDAYS.map((d) => (
                 <div key={d} className="px-2 py-2 text-center">
@@ -450,7 +472,7 @@ function CalendarPage() {
                   <div
                     key={iso}
                     className={cn(
-                      "calendar-day-slot relative min-h-32 overflow-visible sm:min-h-36",
+                      "calendar-day-slot relative min-h-24 overflow-visible sm:min-h-32 lg:min-h-36",
                       expanded && hasItems ? "is-expanded z-50" : "z-0",
                     )}
                   >
@@ -521,9 +543,9 @@ function CalendarPage() {
           </div>
         </div>
 
-        <section className="border-t border-border p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-medium">
+        <section className="border-t border-border p-3 sm:p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="min-w-0 truncate text-sm font-medium">
               {new Date(`${selected}T00:00:00`).toLocaleDateString(undefined, {
                 weekday: "long",
                 day: "numeric",
@@ -531,22 +553,23 @@ function CalendarPage() {
                 year: "numeric",
               })}
             </h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto"
-              aria-label="Sync contests and jump to today"
-              disabled={syncing}
-              onClick={() => void handleSync()}
-            >
-              <RefreshCw
-                className={cn("size-4", (syncing || contests.isFetching) && "animate-spin")}
-              />
-            </Button>
-            <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
-              <Plus className="size-4" />
-              Add event
-            </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Sync contests and jump to today"
+                disabled={syncing}
+                onClick={() => void handleSync()}
+              >
+                <RefreshCw
+                  className={cn("size-4", (syncing || contests.isFetching) && "animate-spin")}
+                />
+              </Button>
+              <Button size="sm" onClick={() => setDraft(emptyDraft(selected))}>
+                <Plus className="size-4" />
+                Add event
+              </Button>
+            </div>
           </div>
 
           <form

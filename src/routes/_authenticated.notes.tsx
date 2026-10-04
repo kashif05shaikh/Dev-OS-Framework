@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Copy,
   Eye,
@@ -295,9 +296,14 @@ function NotesPage() {
   const searching = search.trim().length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-0px)] min-h-screen md:h-screen md:min-h-0">
+    <div className="flex h-[calc(100vh-0px)] min-h-screen w-full max-w-full overflow-x-hidden md:h-screen md:min-h-0">
       {/* Tree */}
-      <div className="flex w-72 shrink-0 flex-col border-r border-border">
+      <div
+        className={cn(
+          "flex flex-col border-border md:w-72 md:shrink-0 md:border-r",
+          selectedNote ? "hidden md:flex" : "flex w-full flex-1",
+        )}
+      >
         <div className="space-y-3 border-b border-border p-3">
           <div className="flex items-center justify-between">
             <h1 className="text-sm font-semibold">Notes</h1>
@@ -594,13 +600,16 @@ function NotesPage() {
       </div>
 
       {/* Editor */}
-      <div className="min-w-0 flex-1">
+      <div
+        className={cn("min-w-0 flex-1 flex-col", selectedNote ? "flex w-full" : "hidden md:flex")}
+      >
         {selectedNote ? (
           <NoteEditor
             key={selectedNote.id}
             note={selectedNote}
             subjects={subjects.data ?? []}
             folders={folders.data ?? []}
+            onBack={() => selectNote(undefined)}
             onPatch={(patch) => updateNote.mutateAsync({ id: selectedNote.id, patch })}
             onDuplicate={() => duplicateNote.mutate(selectedNote)}
             onDelete={() =>
@@ -762,6 +771,7 @@ function NoteEditor({
   note,
   subjects,
   folders,
+  onBack,
   onPatch,
   onDuplicate,
   onDelete,
@@ -769,6 +779,7 @@ function NoteEditor({
   note: Note;
   subjects: { id: string; name: string }[];
   folders: { id: string; name: string; subject_id: string }[];
+  onBack?: () => void;
   onPatch: (patch: Partial<Note>) => Promise<unknown>;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -841,94 +852,108 @@ function NoteEditor({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-        <Select
-          value={moveValue}
-          onValueChange={(value) => {
-            const [kind, id] = value.split(":") as ["folder" | "subject", string];
-            if (kind === "folder") {
-              const folder = folders.find((f) => f.id === id);
-              if (!folder) return;
-              void onPatch({ folder_id: folder.id, subject_id: folder.subject_id });
-            } else {
-              void onPatch({ folder_id: null, subject_id: id });
-            }
-            toast.success("Note moved");
-          }}
-        >
-          <SelectTrigger className="h-8 w-auto min-w-52 text-xs">
-            <SelectValue placeholder="Move to…" />
-          </SelectTrigger>
-          <SelectContent>
-            {subjects.map((subject) => [
-              <SelectItem key={subject.id} value={`subject:${subject.id}`}>
-                {subject.name} · top level
-              </SelectItem>,
-              ...folders
-                .filter((f) => f.subject_id === subject.id)
-                .map((folder) => (
-                  <SelectItem key={folder.id} value={`folder:${folder.id}`}>
-                    {subject.name} / {folder.name}
-                  </SelectItem>
-                )),
-            ])}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3 sm:px-5">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {onBack ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="h-8 gap-1 px-2 text-xs md:hidden"
+            >
+              <ChevronLeft className="size-4" />
+              <span>Notes</span>
+            </Button>
+          ) : null}
+          <Select
+            value={moveValue}
+            onValueChange={(value) => {
+              const [kind, id] = value.split(":") as ["folder" | "subject", string];
+              if (kind === "folder") {
+                const folder = folders.find((f) => f.id === id);
+                if (!folder) return;
+                void onPatch({ folder_id: folder.id, subject_id: folder.subject_id });
+              } else {
+                void onPatch({ folder_id: null, subject_id: id });
+              }
+              toast.success("Note moved");
+            }}
+          >
+            <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-auto sm:min-w-52 sm:flex-initial">
+              <SelectValue placeholder="Move to…" />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map((subject) => [
+                <SelectItem key={subject.id} value={`subject:${subject.id}`}>
+                  {subject.name} · top level
+                </SelectItem>,
+                ...folders
+                  .filter((f) => f.subject_id === subject.id)
+                  .map((folder) => (
+                    <SelectItem key={folder.id} value={`folder:${folder.id}`}>
+                      {subject.name} / {folder.name}
+                    </SelectItem>
+                  )),
+              ])}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <span
-          className={cn(
-            "text-xs",
-            status === "error" ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {status === "saving"
-            ? "Saving…"
-            : status === "saved"
-              ? "Saved"
-              : status === "unsaved"
-                ? "Unsaved changes…"
-                : status === "error"
-                  ? "Not saved — retry"
-                  : "Autosave on"}
-        </span>
-        <Button
-          variant={status === "error" ? "destructive" : "ghost"}
-          size="sm"
-          disabled={status === "saving"}
-          onClick={() => void save()}
-        >
-          {status === "saving" ? "Saving…" : "Save"}
-        </Button>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <span
+            className={cn(
+              "text-xs",
+              status === "error" ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {status === "saving"
+              ? "Saving…"
+              : status === "saved"
+                ? "Saved"
+                : status === "unsaved"
+                  ? "Unsaved…"
+                  : status === "error"
+                    ? "Retry"
+                    : "Autosave on"}
+          </span>
+          <Button
+            variant={status === "error" ? "destructive" : "ghost"}
+            size="sm"
+            disabled={status === "saving"}
+            onClick={() => void save()}
+          >
+            {status === "saving" ? "Saving…" : "Save"}
+          </Button>
 
-        <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void onPatch({ pinned: !note.pinned })}
             aria-pressed={note.pinned}
+            className="px-2"
           >
             <Star className={cn("size-4", note.pinned && "fill-primary text-primary")} />
-            {note.pinned ? "Pinned" : "Pin"}
+            <span className="hidden sm:inline">{note.pinned ? "Pinned" : "Pin"}</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setPreview((p) => !p)}>
+          <Button variant="ghost" size="sm" onClick={() => setPreview((p) => !p)} className="px-2">
             {preview ? <Pencil className="size-4" /> : <Eye className="size-4" />}
-            {preview ? "Edit" : "Preview"}
+            <span className="hidden sm:inline">{preview ? "Edit" : "Preview"}</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={onDuplicate}>
+          <Button variant="ghost" size="sm" onClick={onDuplicate} className="px-2">
             <Copy className="size-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete}>
+          <Button variant="ghost" size="sm" onClick={onDelete} className="px-2">
             <Trash2 className="size-4 text-destructive" />
           </Button>
         </div>
       </div>
 
-      <div className="space-y-3 border-b border-border px-5 py-4">
+      <div className="space-y-3 border-b border-border p-3 sm:px-5 sm:py-4">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Note title"
-          className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50"
+          className="w-full bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50 sm:text-2xl"
         />
         <Input
           value={tagInput}
@@ -938,7 +963,7 @@ function NoteEditor({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-auto p-3 sm:px-5 sm:py-4">
         {preview ? (
           content.trim() ? (
             <div className="md-body max-w-3xl">

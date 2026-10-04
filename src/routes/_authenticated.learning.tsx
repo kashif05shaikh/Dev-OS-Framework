@@ -149,9 +149,12 @@ function LearningPage() {
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
   const [draft, setDraft] = useState<ResourceDraft | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const subjectId = activeSubject ?? subjects.data?.[0]?.id ?? null;
   const isAll = subjectId === ALL_SUBJECTS;
+  const currentSubject = subjects.data?.find((s) => s.id === subjectId);
+  const currentFolder = folders.data?.find((f) => f.id === activeFolder);
 
   /** Full row from the query cache — needed for the POST-upsert save fallback. */
   const findCachedRow = (key: string, id: string): { id: string } | undefined =>
@@ -333,9 +336,63 @@ function LearningPage() {
   if (error) return <ErrorState error={error} onRetry={() => invalidate()} />;
 
   return (
-    <div className="flex min-h-screen md:h-screen">
-      <div className="flex w-64 shrink-0 flex-col border-r border-border">
-        <div className="flex items-center justify-between border-b border-border p-3">
+    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden md:h-screen md:flex-row">
+      {/* Mobile subject & folder header */}
+      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2.5 md:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          {currentSubject?.color ? (
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: currentSubject.color }}
+            />
+          ) : (
+            <BookOpen className="size-4 shrink-0 text-muted-foreground" />
+          )}
+          <span className="truncate text-xs font-semibold">
+            {isAll ? "All resources" : (currentSubject?.name ?? "Subjects")}
+          </span>
+          {currentFolder ? (
+            <span className="truncate text-xs text-muted-foreground">/ {currentFolder.name}</span>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => setMobileSidebarOpen((o) => !o)}
+          >
+            <Folder className="size-3.5" />
+            <span>{mobileSidebarOpen ? "Close" : "Folders"}</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 px-2"
+            onClick={() =>
+              setNameDialog({
+                title: "New subject",
+                label: "Subject name",
+                submitLabel: "Create",
+                onSubmit: async (name) => {
+                  await createSubject.mutateAsync(name);
+                  setNameDialog(null);
+                },
+              })
+            }
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "flex flex-col border-border md:w-64 md:shrink-0 md:border-r",
+          mobileSidebarOpen ? "max-h-[50vh] w-full border-b bg-card/95" : "hidden md:flex",
+        )}
+      >
+        <div className="hidden items-center justify-between border-b border-border p-3 md:flex">
           <h1 className="text-sm font-semibold">Learning Hub</h1>
           <Button
             size="sm"
@@ -362,6 +419,7 @@ function LearningPage() {
             onClick={() => {
               setActiveSubject(ALL_SUBJECTS);
               setActiveFolder(null);
+              setMobileSidebarOpen(false);
             }}
             className={cn(
               "mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium transition-colors",
@@ -397,6 +455,7 @@ function LearningPage() {
                     onClick={() => {
                       setActiveSubject(subject.id);
                       setActiveFolder(null);
+                      setMobileSidebarOpen(false);
                     }}
                   >
                     <span
@@ -460,7 +519,10 @@ function LearningPage() {
                   <div className="mt-1 space-y-0.5 pl-4">
                     <button
                       type="button"
-                      onClick={() => setActiveFolder(null)}
+                      onClick={() => {
+                        setActiveFolder(null);
+                        setMobileSidebarOpen(false);
+                      }}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs",
                         activeFolder === null
@@ -474,7 +536,10 @@ function LearningPage() {
                       <div key={folder.id} className="group flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => setActiveFolder(folder.id)}
+                          onClick={() => {
+                            setActiveFolder(folder.id);
+                            setMobileSidebarOpen(false);
+                          }}
                           className={cn(
                             "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs",
                             activeFolder === folder.id
@@ -565,8 +630,8 @@ function LearningPage() {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-          <div className="relative min-w-48 flex-1">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3 sm:px-5">
+          <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -575,40 +640,43 @@ function LearningPage() {
               className="h-8 pl-8 text-sm"
             />
           </div>
-          <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-            <SelectTrigger className="h-8 w-40 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="favorite">Favourites</SelectItem>
-              <SelectItem value="in-progress">In progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            disabled={!subjectId || isAll}
-            title={isAll ? "Pick a subject to add a resource" : undefined}
-            onClick={() =>
-              setDraft({
-                title: "",
-                type: "youtube",
-                url: "",
-                description: "",
-                folder_id: activeFolder,
-                file_path: null,
-                file_name: null,
-                file_size: null,
-              })
-            }
-          >
-            <Plus className="size-4" /> Resource
-          </Button>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+              <SelectTrigger className="h-8 flex-1 text-xs sm:w-40 sm:flex-initial">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="favorite">Favourites</SelectItem>
+                <SelectItem value="in-progress">In progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              disabled={!subjectId || isAll}
+              title={isAll ? "Pick a subject to add a resource" : undefined}
+              className="shrink-0"
+              onClick={() =>
+                setDraft({
+                  title: "",
+                  type: "youtube",
+                  url: "",
+                  description: "",
+                  folder_id: activeFolder,
+                  file_path: null,
+                  file_name: null,
+                  file_size: null,
+                })
+              }
+            >
+              <Plus className="size-4" /> Resource
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-3 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
             {visible.length === 0 ? (
               <div className="col-span-full">
                 <EmptyState
