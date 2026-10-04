@@ -206,4 +206,43 @@ describe("Component Business Logic & UX Edge Cases", () => {
       expect(getActive(list, activeId)).toBeNull();
     });
   });
+
+  describe("Developer Tools Icons Resolution", () => {
+    it("every Developer tools entry resolves to an icon (no undefined icon)", async () => {
+      const { SERVICES, EDITORS, resolveToolIcon } = await import("@/components/dev-services");
+
+      expect(SERVICES.length).toBeGreaterThan(0);
+      for (const service of SERVICES) {
+        expect(service.name).toBeTruthy();
+        const icon = resolveToolIcon(service);
+        expect(icon).toBeDefined();
+        expect(icon.value).toBeDefined();
+        if (icon.type === "url") {
+          expect(typeof icon.value).toBe("string");
+          expect(icon.value as string).toMatch(/^https?:\/\//);
+        } else {
+          expect(icon.value).toBeTruthy();
+        }
+      }
+
+      expect(EDITORS.length).toBeGreaterThan(0);
+      for (const editor of EDITORS) {
+        expect(editor.name).toBeTruthy();
+        const icon = resolveToolIcon(editor);
+        expect(icon).toBeDefined();
+        expect(icon.value).toBeDefined();
+        if (icon.type === "url") {
+          expect(typeof icon.value).toBe("string");
+          expect(icon.value as string).toMatch(/^https?:\/\//);
+        } else {
+          expect(icon.value).toBeTruthy();
+        }
+      }
+
+      const codex = EDITORS.find((e) => e.name === "Codex");
+      expect(codex).toBeDefined();
+      expect(codex?.logo).toBe("https://www.google.com/s2/favicons?domain=openai.com&sz=64");
+      expect(codex?.icon).toBeDefined();
+    });
+  });
 });

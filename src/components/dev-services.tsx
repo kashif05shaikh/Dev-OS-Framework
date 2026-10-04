@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, FolderOpen, MonitorPlay, Rocket } from "lucide-react";
+import {
+  Code2,
+  ExternalLink,
+  FolderOpen,
+  MonitorPlay,
+  Rocket,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-type Service = {
+export type Service = {
   name: string;
   desc: string;
   url: string;
@@ -14,7 +22,7 @@ type Service = {
   color: string;
 };
 
-const SERVICES: Service[] = [
+export const SERVICES: Service[] = [
   {
     name: "GitHub",
     desc: "Repositories & pull requests",
@@ -87,21 +95,23 @@ const SERVICES: Service[] = [
   },
 ];
 
-type Editor = {
+export type Editor = {
   name: string;
   desc: string;
   launch: string;
   fallback?: string;
-  logo: string;
+  logo?: string;
+  icon?: LucideIcon;
 };
 
-const EDITORS: Editor[] = [
+export const EDITORS: Editor[] = [
   {
     name: "VS Code",
     desc: "Launch the desktop app",
     launch: "vscode://",
     fallback: "https://vscode.dev/",
     logo: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg",
+    icon: Code2,
   },
   {
     name: "Cursor",
@@ -109,6 +119,7 @@ const EDITORS: Editor[] = [
     launch: "cursor://",
     fallback: "https://cursor.com/",
     logo: "https://www.google.com/s2/favicons?domain=cursor.com&sz=64",
+    icon: Code2,
   },
   {
     name: "Antigravity",
@@ -116,14 +127,80 @@ const EDITORS: Editor[] = [
     launch: "antigravity://",
     fallback: "https://antigravity.google/",
     logo: "https://www.google.com/s2/favicons?domain=antigravity.google&sz=64",
+    icon: Code2,
   },
   {
     name: "Codex",
     desc: "OpenAI Codex workspace",
     launch: "https://chatgpt.com/codex",
-    logo: "https://cdn.simpleicons.org/openai/ffffff",
+    fallback: "https://chatgpt.com/codex",
+    logo: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+    icon: Code2,
   },
 ];
+
+export function resolveToolIcon(tool: Service | Editor): {
+  type: "url" | "icon";
+  value: string | LucideIcon;
+} {
+  if ("logo" in tool && tool.logo) {
+    return { type: "url", value: tool.logo };
+  }
+  if ("icon" in tool && tool.icon) {
+    return { type: "icon", value: tool.icon };
+  }
+  if ("slug" in tool && tool.slug) {
+    return { type: "url", value: iconUrl(tool.slug, tool.color) };
+  }
+  return { type: "icon", value: Code2 };
+}
+
+export function EditorIcon({ editor, className }: { editor: Editor; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  const Fallback = editor.icon ?? Code2;
+
+  if (failed || !editor.logo) {
+    return (
+      <Fallback
+        className={cn("size-5 shrink-0 text-primary", className)}
+        aria-label={`${editor.name} icon`}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={editor.logo}
+      alt={`${editor.name} logo`}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn("size-5 shrink-0 object-contain", className)}
+    />
+  );
+}
+
+export function ServiceIcon({ service, className }: { service: Service; className?: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed || !service.slug) {
+    return (
+      <Code2
+        className={cn("size-6 shrink-0 text-muted-foreground", className)}
+        aria-label={`${service.name} icon`}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={iconUrl(service.slug, service.color)}
+      alt={`${service.name} logo`}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn("size-6 shrink-0", className)}
+    />
+  );
+}
 
 const PATH_KEY = "devos:project-path";
 
@@ -133,6 +210,10 @@ function iconUrl(slug: string, color: string) {
 
 function launchProtocol(url: string, fallback?: string) {
   if (typeof window === "undefined") return;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    window.open(url, "_blank");
+    return;
+  }
   window.location.href = url;
   if (fallback) {
     toast("Opening desktop app…", {
@@ -183,12 +264,7 @@ export function DevServices() {
               rel="noopener noreferrer"
               className="group flex items-center gap-3 rounded-xl border border-border bg-card/50 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/50"
             >
-              <img
-                src={iconUrl(service.slug, service.color)}
-                alt=""
-                loading="lazy"
-                className="size-6 shrink-0"
-              />
+              <ServiceIcon service={service} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-medium">{service.name}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">
@@ -214,7 +290,7 @@ export function DevServices() {
               className="flex flex-col gap-2 rounded-xl border border-border bg-card/50 p-3"
             >
               <div className="flex items-center gap-2">
-                <img src={editor.logo} alt="" loading="lazy" className="size-5 shrink-0" />
+                <EditorIcon editor={editor} />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium">{editor.name}</p>
                   <p className="truncate text-[11px] text-muted-foreground">{editor.desc}</p>
