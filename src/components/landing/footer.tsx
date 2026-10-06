@@ -48,6 +48,9 @@ export function LandingFooter() {
             <Link to="/privacy" className="hover:text-foreground transition-colors">
               Privacy Policy
             </Link>
+            <Link to="/delete-account" className="hover:text-foreground transition-colors">
+              Delete Account
+            </Link>
             <span>Learn. Build. Track. Ship.</span>
           </div>
         </div>

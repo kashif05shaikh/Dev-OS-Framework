@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { ACCENTS, applyAccent, cacheAccent, resolveAccent } from "@/lib/accent";
@@ -438,7 +439,90 @@ function SettingsPage() {
         </div>
       </Section>
 
+      <Section
+        icon={Trash2}
+        title="Danger Zone"
+        description="Permanently delete your DevOS account and all associated data."
+      >
+        <div className="flex flex-col items-start gap-4">
+          <p className="text-sm text-muted-foreground max-w-xl">
+            Once you delete your account, there is no going back. Please be certain. All your data
+            including goals, projects, notes, files, and subscriptions will be permanently erased.
+          </p>
+          <AccountDeletionModal />
+        </div>
+      </Section>
+
       <ConfirmDialog state={confirm} onOpenChange={(open) => !open && setConfirm(null)} />
     </div>
+  );
+}
+
+function AccountDeletionModal() {
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const qc = useQueryClient();
+  const { signOut } = useAuth();
+  const router = useRouter();
+
+  const deleteAccount = useMutation({
+    mutationFn: async () => {
+      const { deleteAccountFn } = await import("@/lib/account.functions");
+      return await deleteAccountFn({ data: { confirm: "DELETE" } });
+    },
+    onSuccess: async () => {
+      setOpen(false);
+      qc.clear();
+      await signOut();
+      toast.success("Account deleted successfully.");
+      router.navigate({ to: "/" });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to delete account");
+    },
+  });
+
+  return (
+    <>
+      <Button
+        variant="destructive"
+        onClick={() => setOpen(true)}
+      >
+        Delete account
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your
+              account and remove your data from our servers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Type "DELETE" to confirm</Label>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={deleteAccount.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={confirmText !== "DELETE" || deleteAccount.isPending}
+              onClick={() => deleteAccount.mutate()}
+            >
+              {deleteAccount.isPending ? "Deleting..." : "Permanently delete account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
