@@ -10,7 +10,7 @@ export function PrivacyPolicyContent() {
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-foreground mb-4">1. Introduction</h2>
         <p>
-          Welcome to DevOS. This Privacy Policy explains how [TODO: Company Legal Name] ("we", "us",
+          Welcome to DevOS. This Privacy Policy explains how DevOS ("we", "us",
           or "our") collects, uses, and protects your personal information when you use the DevOS
           platform at devos-hub.vercel.app. We respect your privacy and are committed to protecting
           your personal data.
@@ -93,7 +93,7 @@ export function PrivacyPolicyContent() {
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-foreground mb-4">7. Your Rights</h2>
-        <p>Depending on your location ([TODO: Jurisdiction]), you may have rights to:</p>
+        <p>Depending on your location and applicable privacy laws, you may have rights to:</p>
         <ul className="list-disc pl-6 space-y-2 mt-2">
           <li>Access the personal data we hold about you.</li>
           <li>Request correction of inaccurate data.</li>
@@ -124,7 +124,11 @@ export function PrivacyPolicyContent() {
         <p>
           If you have any questions about this Privacy Policy or your data, please contact us at:
         </p>
-        <p className="mt-2 font-medium">[TODO: Contact Email Address]</p>
+        <p className="mt-2 font-medium">
+          <a href="mailto:kashcorp149@gmail.com" className="text-primary hover:underline">
+            kashcorp149@gmail.com
+          </a>
+        </p>
       </section>
     </div>
   );
