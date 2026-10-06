@@ -45,6 +45,9 @@ export function LandingFooter() {
         <div className="pt-6 border-t border-border/30 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px]">
           <div>© 2026 DevOS. Built for engineers.</div>
           <div className="flex items-center gap-4 text-muted-foreground">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
             <span>Learn. Build. Track. Ship.</span>
           </div>
         </div>

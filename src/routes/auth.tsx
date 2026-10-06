@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Terminal, Sparkles, Zap, Target } from "lucide-react";
 import { motion } from "motion/react";
@@ -323,6 +323,14 @@ function AuthPage() {
               </TabsContent>
             </Tabs>
           )}
+
+          <p className="mt-6 text-center text-[11px] text-muted-foreground px-4">
+            By continuing, you agree to our{" "}
+            <Link to="/privacy" className="underline hover:text-foreground">
+              Privacy Policy
+            </Link>{" "}
+            and terms of service.
+          </p>
         </motion.div>
       </div>
     </main>
