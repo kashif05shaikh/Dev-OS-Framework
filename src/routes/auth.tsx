@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Loader2, Terminal, Sparkles, Zap, Target } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -12,6 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { AmbientBackground } from "@/components/dashboard/ambient";
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+const GOOGLE_CLIENT_ID =
+  (import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined) ||
+  "624508340716-ipc03l4kinrdv300gsi4m5vjp69qbdmd.apps.googleusercontent.com";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -43,8 +53,28 @@ function AuthPage() {
   const [sentConfirmation, setSentConfirmation] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const [gisReady, setGisReady] = useState(false);
+
   useEffect(() => {
     setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.google?.accounts?.id) {
+      setGisReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      setGisReady(true);
+    };
+    document.head.appendChild(script);
   }, []);
 
   const redirectTo =
@@ -57,6 +87,56 @@ function AuthPage() {
       void navigate({ to: redirectTo });
     }
   }, [loading, user, navigate, redirectTo]);
+
+  useEffect(() => {
+    if (!gisReady || !window.google?.accounts?.id || !googleBtnRef.current) return;
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response: { credential?: string }) => {
+          if (!response.credential) return;
+          setGoogleBusy(true);
+          try {
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token: response.credential,
+            });
+            if (error) {
+              toast.error(error.message ?? "Google sign-in failed");
+              return;
+            }
+            toast.success("Welcome back!");
+            void navigate({ to: redirectTo });
+          } catch (err: any) {
+            toast.error(err.message ?? "Google sign-in failed");
+          } finally {
+            setGoogleBusy(false);
+          }
+        },
+      });
+
+      // Clear previous buttons if re-running
+      googleBtnRef.current.innerHTML = "";
+
+      const buttonWidth = Math.min(340, Math.max(240, window.innerWidth - 64));
+
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        logo_alignment: "left",
+        width: buttonWidth,
+      });
+
+      // Also trigger Google One Tap if appropriate
+      window.google.accounts.id.prompt();
+    } catch (e) {
+      console.error("GIS initialization failed", e);
+    }
+  }, [gisReady, navigate, redirectTo]);
 
   async function handleSignIn(event: React.FormEvent) {
     event.preventDefault();
@@ -206,39 +286,47 @@ function AuthPage() {
             </motion.div>
           ) : (
             <Tabs defaultValue="signin" className="dash-card p-5 sm:p-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="mb-4 w-full"
-                disabled={googleBusy || busy || !hydrated}
-                onClick={handleGoogle}
-              >
-                {googleBusy ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
-                      <path
-                        fill="#4285F4"
-                        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81Z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 24c3.24 0 5.96-1.08 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0 0 12 24Z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.29 14.28a7.2 7.2 0 0 1 0-4.56v-3.1H1.29a12 12 0 0 0 0 10.76l4-3.1Z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 4.77c1.76 0 3.34.6 4.58 1.79l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.29 6.62l4 3.1C6.23 6.88 8.88 4.77 12 4.77Z"
-                      />
-                    </svg>
-                    Continue with Google
-                  </>
+              <div className="mb-4 flex flex-col items-center justify-center min-h-[44px]">
+                <div
+                  ref={googleBtnRef}
+                  className={gisReady ? "flex justify-center w-full" : "hidden"}
+                />
+                {!gisReady && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={googleBusy || busy || !hydrated}
+                    onClick={handleGoogle}
+                  >
+                    {googleBusy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+                          <path
+                            fill="#4285F4"
+                            d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81Z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 24c3.24 0 5.96-1.08 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0 0 12 24Z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.29 14.28a7.2 7.2 0 0 1 0-4.56v-3.1H1.29a12 12 0 0 0 0 10.76l4-3.1Z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 4.77c1.76 0 3.34.6 4.58 1.79l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.29 6.62l4 3.1C6.23 6.88 8.88 4.77 12 4.77Z"
+                          />
+                        </svg>
+                        Continue with Google
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-px flex-1 bg-border" />
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
