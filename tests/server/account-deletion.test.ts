@@ -16,7 +16,7 @@ describe("Account Deletion", () => {
     const content = fs.readFileSync(fnPath, "utf-8");
     
     expect(content).toContain("checkUserRateLimit");
-    expect(content).toContain("delete_account");
+    expect(content).toContain("maxRequests: 3");
   });
 
   it("loops over storage buckets and deletes files for the user", () => {
@@ -41,3 +41,4 @@ describe("Account Deletion", () => {
     expect(content).toContain(".delete().eq(\"user_id\", userId)");
   });
 });
+

@@ -9,7 +9,7 @@ export const deleteAccountFn = createServerFn({ method: "POST" })
   .validator(z.object({ confirm: z.literal("DELETE") }))
   .handler(async ({ context: { userId } }) => {
     // 1. Rate limiting (max 3 attempts per hour to delete account for safety)
-    const { success } = await checkUserRateLimit(userId, "delete_account", 3, 3600);
+    const { success } = await checkUserRateLimit(userId, { maxRequests: 3, windowMs: 3600_000 });
     if (!success) {
       throw new Error("Too many attempts. Please try again later.");
     }

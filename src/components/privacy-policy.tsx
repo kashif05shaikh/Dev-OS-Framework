@@ -12,7 +12,7 @@ export function PrivacyPolicyContent() {
         <p>
           Welcome to DevOS. This Privacy Policy explains how DevOS ("we", "us",
           or "our") collects, uses, and protects your personal information when you use the DevOS
-          platform at devos-hub.vercel.app. We respect your privacy and are committed to protecting
+          platform at www.dev-os.app. We respect your privacy and are committed to protecting
           your personal data.
         </p>
       </section>
