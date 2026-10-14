@@ -7,8 +7,36 @@ import { AmbientBackground } from "@/components/dashboard/ambient";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy | DevOS" },
-      { name: "description", content: "Privacy policy and data handling practices for DevOS." },
+      { title: "Privacy Policy — DevOS Developer Workspace" },
+      {
+        name: "description",
+        content:
+          "Read the DevOS privacy policy. Learn how we protect developer data, coding profile connections, storage, and account information.",
+      },
+      { property: "og:title", content: "Privacy Policy — DevOS Developer Workspace" },
+      {
+        property: "og:description",
+        content:
+          "Read the DevOS privacy policy. Learn how we protect developer data, coding profile connections, storage, and account information.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.dev-os.app/privacy" },
+      { property: "og:site_name", content: "DevOS" },
+      { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Privacy Policy — DevOS Developer Workspace" },
+      {
+        name: "twitter:description",
+        content:
+          "Read the DevOS privacy policy. Learn how we protect developer data, coding profile connections, storage, and account information.",
+      },
+      { name: "twitter:image", content: "https://www.dev-os.app/og-image.svg" },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://www.dev-os.app/privacy",
+      },
     ],
   }),
   component: PrivacyPage,

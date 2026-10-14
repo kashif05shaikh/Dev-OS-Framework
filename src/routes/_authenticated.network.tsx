@@ -617,7 +617,7 @@ function AccountCard({
           {meta ? (
             <img
               src={socialLogo(meta)}
-              alt=""
+              alt={`${meta.label} badge`}
               className="absolute -bottom-1 -right-1 size-4 rounded-full bg-background p-0.5"
             />
           ) : null}
@@ -928,7 +928,7 @@ function ConnectDialog({
                           : "border-border hover:border-primary/40"
                       }`}
                     >
-                      <img src={socialLogo(platform)} alt="" className="size-4" />
+                      <img src={socialLogo(platform)} alt={`${platform.label} logo`} className="size-4" />
                       <span className="truncate">{platform.label}</span>
                     </button>
                   );

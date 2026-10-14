@@ -10,7 +10,7 @@ export function AiLogo({ platform, className }: { platform: AiPlatform; classNam
   return (
     <img
       src={src}
-      alt=""
+      alt={`${platform} logo`}
       loading="lazy"
       onError={() => setSrc(aiPlatformFavicon(platform))}
       className={cn("size-5 shrink-0 object-contain", className)}

@@ -77,26 +77,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DevOS — Developer Operating System" },
+      { title: "DevOS (dev-os.app) — All-in-One Developer Workspace" },
       {
         name: "description",
         content:
-          "DevOS is a productivity workspace for developers: notes, learning, projects, jobs and focus in one dark dashboard.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
-      { property: "og:title", content: "DevOS — Developer Operating System" },
+      { property: "og:title", content: "DevOS (dev-os.app) — All-in-One Developer Workspace" },
       {
         property: "og:description",
         content:
-          "DevOS is a productivity workspace for developers: notes, learning, projects, jobs and focus in one dark dashboard.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "DevOS" },
+      { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "DevOS — Developer Operating System" },
+      { name: "twitter:title", content: "DevOS (dev-os.app) — All-in-One Developer Workspace" },
       {
         name: "twitter:description",
         content:
-          "DevOS is a productivity workspace for developers: notes, learning, projects, jobs and focus in one dark dashboard.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
+      { name: "twitter:image", content: "https://www.dev-os.app/og-image.svg" },
     ],
     links: [
       {

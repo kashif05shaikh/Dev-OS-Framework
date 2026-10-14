@@ -6,8 +6,36 @@ import { AmbientBackground } from "@/components/dashboard/ambient";
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
     meta: [
-      { title: "Delete Account | DevOS" },
-      { name: "description", content: "Instructions to delete your DevOS account." },
+      { title: "Delete Account — DevOS Developer Workspace" },
+      {
+        name: "description",
+        content:
+          "How to permanently delete your DevOS account and erase all database records, coding profiles, notes, resumes, and personal data.",
+      },
+      { property: "og:title", content: "Delete Account — DevOS Developer Workspace" },
+      {
+        property: "og:description",
+        content:
+          "How to permanently delete your DevOS account and erase all database records, coding profiles, notes, resumes, and personal data.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.dev-os.app/delete-account" },
+      { property: "og:site_name", content: "DevOS" },
+      { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Delete Account — DevOS Developer Workspace" },
+      {
+        name: "twitter:description",
+        content:
+          "How to permanently delete your DevOS account and erase all database records, coding profiles, notes, resumes, and personal data.",
+      },
+      { name: "twitter:image", content: "https://www.dev-os.app/og-image.svg" },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://www.dev-os.app/delete-account",
+      },
     ],
   }),
   component: DeleteAccountPage,

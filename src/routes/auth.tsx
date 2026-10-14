@@ -31,10 +31,36 @@ export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Sign in — DevOS" },
-      { name: "description", content: "Sign in to your DevOS developer workspace." },
-      { property: "og:title", content: "Sign in — DevOS" },
-      { property: "og:description", content: "Sign in to your DevOS developer workspace." },
+      { title: "Sign In — DevOS Developer Workspace" },
+      {
+        name: "description",
+        content:
+          "Sign in to DevOS to access your developer notes, track coding profiles, manage projects, and organize your dev workflow in one workspace.",
+      },
+      { property: "og:title", content: "Sign In — DevOS Developer Workspace" },
+      {
+        property: "og:description",
+        content:
+          "Sign in to DevOS to access your developer notes, track coding profiles, manage projects, and organize your dev workflow in one workspace.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.dev-os.app/auth" },
+      { property: "og:site_name", content: "DevOS" },
+      { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Sign In — DevOS Developer Workspace" },
+      {
+        name: "twitter:description",
+        content:
+          "Sign in to DevOS to access your developer notes, track coding profiles, manage projects, and organize your dev workflow in one workspace.",
+      },
+      { name: "twitter:image", content: "https://www.dev-os.app/og-image.svg" },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://www.dev-os.app/auth",
+      },
     ],
   }),
   component: AuthPage,

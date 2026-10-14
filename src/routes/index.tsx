@@ -14,25 +14,35 @@ import { AmbientBackground } from "@/components/dashboard/ambient";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DevOS — Your Developer Operating System" },
+      { title: "DevOS: Developer Workspace for Projects, Learning & Jobs" },
       {
         name: "description",
         content:
-          "DevOS is a developer workspace for managing learning, projects, goals, habits, jobs, notes and your entire developer journey in one place.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
-      { property: "og:title", content: "DevOS — Your Developer Operating System" },
+      { property: "og:title", content: "DevOS: Developer Workspace for Projects, Learning & Jobs" },
       {
         property: "og:description",
         content:
-          "DevOS is a developer workspace for managing learning, projects, goals, habits, jobs, notes and your entire developer journey in one place.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.dev-os.app/" },
+      { property: "og:site_name", content: "DevOS" },
+      { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "DevOS — Your Developer Operating System" },
+      { name: "twitter:title", content: "DevOS: Developer Workspace for Projects, Learning & Jobs" },
       {
         name: "twitter:description",
         content:
-          "DevOS is a developer workspace for managing learning, projects, goals, habits, jobs, notes and your entire developer journey in one place.",
+          "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
+      },
+      { name: "twitter:image", content: "https://www.dev-os.app/og-image.svg" },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://www.dev-os.app/",
       },
     ],
   }),
