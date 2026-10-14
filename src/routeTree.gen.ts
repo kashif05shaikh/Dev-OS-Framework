@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated.ai'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
@@ -57,6 +58,11 @@ const AuthRoute = AuthRouteImport.update({
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
   id: '/delete-account',
   path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/ai': typeof AuthenticatedAiRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/ai': typeof AuthenticatedAiRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/delete-account'
+    | '/faq'
     | '/privacy'
     | '/ai'
     | '/analytics'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/delete-account'
+    | '/faq'
     | '/privacy'
     | '/ai'
     | '/analytics'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/delete-account'
+    | '/faq'
     | '/privacy'
     | '/_authenticated/ai'
     | '/_authenticated/analytics'
@@ -385,6 +397,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
+  FaqRoute: typeof FaqRoute
   PrivacyRoute: typeof PrivacyRoute
   CompareDevosVsNotionRoute: typeof CompareDevosVsNotionRoute
   CompareDevosVsTrelloRoute: typeof CompareDevosVsTrelloRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/delete-account'
       fullPath: '/delete-account'
       preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -658,6 +678,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   DeleteAccountRoute: DeleteAccountRoute,
+  FaqRoute: FaqRoute,
   PrivacyRoute: PrivacyRoute,
   CompareDevosVsNotionRoute: CompareDevosVsNotionRoute,
   CompareDevosVsTrelloRoute: CompareDevosVsTrelloRoute,

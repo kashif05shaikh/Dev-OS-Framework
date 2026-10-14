@@ -15,7 +15,6 @@ Disallow: /resume
 Disallow: /profiles
 Disallow: /analytics
 Disallow: /network
-Disallow: /tools
 Disallow: /ai
 Disallow: /settings
 

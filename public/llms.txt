@@ -1,0 +1,52 @@
+# DevOS (dev-os.app)
+
+> DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.
+
+DevOS is designed for software engineers, computer science students, competitive programmers, and technical job seekers who want a centralized operational workflow instead of juggling scattered spreadsheets, generic wikis, and disconnected tools.
+
+## Official Canonical URLs
+
+- Homepage: https://www.dev-os.app/
+- Sign In & Authentication: https://www.dev-os.app/auth
+- Frequently Asked Questions (FAQ): https://www.dev-os.app/faq
+- Features Directory: https://www.dev-os.app/features
+- Free Online Developer Tools: https://www.dev-os.app/tools
+- Tool Comparisons: https://www.dev-os.app/compare
+- XML Sitemap: https://www.dev-os.app/sitemap.xml
+- Privacy Policy: https://www.dev-os.app/privacy
+- Account Deletion: https://www.dev-os.app/delete-account
+
+## The 14 Integrated Workspaces (Modules)
+
+1. Dashboard (https://www.dev-os.app/features/dashboard): High-level operational overview unifying daily habits, active projects, upcoming interview stages, and live competitive coding activity.
+2. Coding Profiles Tracker (https://www.dev-os.app/features/coding-profiles): Real-time synchronization of problems solved, contest ratings, ranking percentiles, and badges from LeetCode, Codeforces, and CodeChef.
+3. Developer Notes (https://www.dev-os.app/features/notes): Fast, markdown-powered engineering documentation with code syntax highlighting, language filtering, and hierarchical subject/folder organization.
+4. Learning Hub (https://www.dev-os.app/features/learning-hub): Structured roadmap builder, tutorial bookmarks, language-specific notes, and DSA curriculum tracking.
+5. Projects (https://www.dev-os.app/features/projects): Engineering-focused Kanban boards, tech stack tagging, release milestones, and direct GitHub repository links.
+6. Job Application Tracker (https://www.dev-os.app/features/job-tracker): Specialized pipeline tracking tech job applications, interview stages, compensation targets, and technical assessment notes.
+7. Technical Resume Builder (https://www.dev-os.app/features/resume-builder): ATS-friendly, markdown-powered developer resume builder customized for software engineering roles.
+8. AI Workspace (https://www.dev-os.app/features/ai-workspace): Integrated AI coding assistant for code explanations, debugging assistance, algorithmic refactoring, and technical questions.
+9. Calendar (https://www.dev-os.app/features/calendar): Interactive timeline for engineering deadlines, contest schedules, technical interviews, and study sessions.
+10. Goals (https://www.dev-os.app/features/goals): Long-term milestone planning and quarterly engineering objectives with progress tracking.
+11. Focus Timer (https://www.dev-os.app/features/focus-timer): Customizable Pomodoro timer built for deep coding sessions with flexible interval configurations.
+12. Dev Tools Hub (https://www.dev-os.app/features/dev-tools): Quick-launch access to essential developer dashboards, cloud consoles, editors, and external utilities.
+13. Developer Network (https://www.dev-os.app/features/network): Shareable digital developer profile card highlighting live competitive handles, portfolio projects, and technical skills.
+14. Analytics (https://www.dev-os.app/features/analytics): Visual insights into habit consistency, study volume, problem-solving streaks, and productivity trends.
+
+## Free Client-Side Developer Utilities (No Signup Required)
+
+- JSON Formatter & Validator (https://www.dev-os.app/tools/json-formatter): Format, validate, inspect, and minify JSON payloads locally in browser.
+- Regex Tester & Debugger (https://www.dev-os.app/tools/regex-tester): Test JavaScript regular expressions in real time with capture group analysis.
+- Base64 Encoder / Decoder (https://www.dev-os.app/tools/base64): Encode and decode UTF-8 text and URL-safe Base64 strings client-side.
+- UUID v4 Generator (https://www.dev-os.app/tools/uuid-generator): Generate cryptographically secure RFC 4122 version 4 UUIDs instantly.
+
+## Objective Comparisons
+
+- DevOS vs Notion for Developers (https://www.dev-os.app/compare/devos-vs-notion): Objective comparison highlighting purpose-built developer tracking vs generic document wikis.
+- DevOS vs Trello for Developers (https://www.dev-os.app/compare/devos-vs-trello): Comparison between developer ecosystem workflow boards and standalone Kanban cards.
+
+## Privacy & Security Architecture
+
+DevOS is built with security and privacy by design:
+- Client-side utilities run 100% in the user's browser; inputs are never uploaded to any backend.
+- Workspace data is isolated and protected via authenticated database sessions with strict PostgreSQL row-level security (RLS).
