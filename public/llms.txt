@@ -50,3 +50,4 @@ DevOS is designed for software engineers, computer science students, competitive
 DevOS is built with security and privacy by design:
 - Client-side utilities run 100% in the user's browser; inputs are never uploaded to any backend.
 - Workspace data is isolated and protected via authenticated database sessions with strict PostgreSQL row-level security (RLS).
+
