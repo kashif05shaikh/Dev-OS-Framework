@@ -29,6 +29,16 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated.resume'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated.tools'
+import { Route as CompareIndexRouteImport } from './routes/compare.index'
+import { Route as CompareDevosVsNotionRouteImport } from './routes/compare.devos-vs-notion'
+import { Route as CompareDevosVsTrelloRouteImport } from './routes/compare.devos-vs-trello'
+import { Route as FeaturesIndexRouteImport } from './routes/features.index'
+import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
+import { Route as ToolsIndexRouteImport } from './routes/tools.index'
+import { Route as ToolsBase64RouteImport } from './routes/tools.base64'
+import { Route as ToolsJsonFormatterRouteImport } from './routes/tools.json-formatter'
+import { Route as ToolsRegexTesterRouteImport } from './routes/tools.regex-tester'
+import { Route as ToolsUuidGeneratorRouteImport } from './routes/tools.uuid-generator'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -129,6 +139,56 @@ const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const CompareIndexRoute = CompareIndexRouteImport.update({
+  id: '/compare/',
+  path: '/compare/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareDevosVsNotionRoute = CompareDevosVsNotionRouteImport.update({
+  id: '/compare/devos-vs-notion',
+  path: '/compare/devos-vs-notion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareDevosVsTrelloRoute = CompareDevosVsTrelloRouteImport.update({
+  id: '/compare/devos-vs-trello',
+  path: '/compare/devos-vs-trello',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
+  id: '/features/',
+  path: '/features/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
+  id: '/features/$slug',
+  path: '/features/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsIndexRoute = ToolsIndexRouteImport.update({
+  id: '/tools/',
+  path: '/tools/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsBase64Route = ToolsBase64RouteImport.update({
+  id: '/tools/base64',
+  path: '/tools/base64',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsJsonFormatterRoute = ToolsJsonFormatterRouteImport.update({
+  id: '/tools/json-formatter',
+  path: '/tools/json-formatter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRegexTesterRoute = ToolsRegexTesterRouteImport.update({
+  id: '/tools/regex-tester',
+  path: '/tools/regex-tester',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsUuidGeneratorRoute = ToolsUuidGeneratorRouteImport.update({
+  id: '/tools/uuid-generator',
+  path: '/tools/uuid-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +210,16 @@ export interface FileRoutesByFullPath {
   '/resume': typeof AuthenticatedResumeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
+  '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
+  '/features/$slug': typeof FeaturesSlugRoute
+  '/tools/base64': typeof ToolsBase64Route
+  '/tools/json-formatter': typeof ToolsJsonFormatterRoute
+  '/tools/regex-tester': typeof ToolsRegexTesterRoute
+  '/tools/uuid-generator': typeof ToolsUuidGeneratorRoute
+  '/compare/': typeof CompareIndexRoute
+  '/features/': typeof FeaturesIndexRoute
+  '/tools/': typeof ToolsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -170,7 +240,16 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/resume': typeof AuthenticatedResumeRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/tools': typeof AuthenticatedToolsRoute
+  '/tools': typeof ToolsIndexRoute
+  '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
+  '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
+  '/features/$slug': typeof FeaturesSlugRoute
+  '/tools/base64': typeof ToolsBase64Route
+  '/tools/json-formatter': typeof ToolsJsonFormatterRoute
+  '/tools/regex-tester': typeof ToolsRegexTesterRoute
+  '/tools/uuid-generator': typeof ToolsUuidGeneratorRoute
+  '/compare': typeof CompareIndexRoute
+  '/features': typeof FeaturesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,6 +273,16 @@ export interface FileRoutesById {
   '/_authenticated/resume': typeof AuthenticatedResumeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
+  '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
+  '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
+  '/features/$slug': typeof FeaturesSlugRoute
+  '/tools/base64': typeof ToolsBase64Route
+  '/tools/json-formatter': typeof ToolsJsonFormatterRoute
+  '/tools/regex-tester': typeof ToolsRegexTesterRoute
+  '/tools/uuid-generator': typeof ToolsUuidGeneratorRoute
+  '/compare/': typeof CompareIndexRoute
+  '/features/': typeof FeaturesIndexRoute
+  '/tools/': typeof ToolsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,6 +306,16 @@ export interface FileRouteTypes {
     | '/resume'
     | '/settings'
     | '/tools'
+    | '/compare/devos-vs-notion'
+    | '/compare/devos-vs-trello'
+    | '/features/$slug'
+    | '/tools/base64'
+    | '/tools/json-formatter'
+    | '/tools/regex-tester'
+    | '/tools/uuid-generator'
+    | '/compare/'
+    | '/features/'
+    | '/tools/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -238,6 +337,15 @@ export interface FileRouteTypes {
     | '/resume'
     | '/settings'
     | '/tools'
+    | '/compare/devos-vs-notion'
+    | '/compare/devos-vs-trello'
+    | '/features/$slug'
+    | '/tools/base64'
+    | '/tools/json-formatter'
+    | '/tools/regex-tester'
+    | '/tools/uuid-generator'
+    | '/compare'
+    | '/features'
   id:
     | '__root__'
     | '/'
@@ -260,6 +368,16 @@ export interface FileRouteTypes {
     | '/_authenticated/resume'
     | '/_authenticated/settings'
     | '/_authenticated/tools'
+    | '/compare/devos-vs-notion'
+    | '/compare/devos-vs-trello'
+    | '/features/$slug'
+    | '/tools/base64'
+    | '/tools/json-formatter'
+    | '/tools/regex-tester'
+    | '/tools/uuid-generator'
+    | '/compare/'
+    | '/features/'
+    | '/tools/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -268,6 +386,16 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   PrivacyRoute: typeof PrivacyRoute
+  CompareDevosVsNotionRoute: typeof CompareDevosVsNotionRoute
+  CompareDevosVsTrelloRoute: typeof CompareDevosVsTrelloRoute
+  FeaturesSlugRoute: typeof FeaturesSlugRoute
+  ToolsBase64Route: typeof ToolsBase64Route
+  ToolsJsonFormatterRoute: typeof ToolsJsonFormatterRoute
+  ToolsRegexTesterRoute: typeof ToolsRegexTesterRoute
+  ToolsUuidGeneratorRoute: typeof ToolsUuidGeneratorRoute
+  CompareIndexRoute: typeof CompareIndexRoute
+  FeaturesIndexRoute: typeof FeaturesIndexRoute
+  ToolsIndexRoute: typeof ToolsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -412,6 +540,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedToolsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/compare/': {
+      id: '/compare/'
+      path: '/compare'
+      fullPath: '/compare/'
+      preLoaderRoute: typeof CompareIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare/devos-vs-notion': {
+      id: '/compare/devos-vs-notion'
+      path: '/compare/devos-vs-notion'
+      fullPath: '/compare/devos-vs-notion'
+      preLoaderRoute: typeof CompareDevosVsNotionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare/devos-vs-trello': {
+      id: '/compare/devos-vs-trello'
+      path: '/compare/devos-vs-trello'
+      fullPath: '/compare/devos-vs-trello'
+      preLoaderRoute: typeof CompareDevosVsTrelloRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/': {
+      id: '/features/'
+      path: '/features'
+      fullPath: '/features/'
+      preLoaderRoute: typeof FeaturesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/$slug': {
+      id: '/features/$slug'
+      path: '/features/$slug'
+      fullPath: '/features/$slug'
+      preLoaderRoute: typeof FeaturesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/': {
+      id: '/tools/'
+      path: '/tools'
+      fullPath: '/tools/'
+      preLoaderRoute: typeof ToolsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/base64': {
+      id: '/tools/base64'
+      path: '/tools/base64'
+      fullPath: '/tools/base64'
+      preLoaderRoute: typeof ToolsBase64RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/json-formatter': {
+      id: '/tools/json-formatter'
+      path: '/tools/json-formatter'
+      fullPath: '/tools/json-formatter'
+      preLoaderRoute: typeof ToolsJsonFormatterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/regex-tester': {
+      id: '/tools/regex-tester'
+      path: '/tools/regex-tester'
+      fullPath: '/tools/regex-tester'
+      preLoaderRoute: typeof ToolsRegexTesterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/uuid-generator': {
+      id: '/tools/uuid-generator'
+      path: '/tools/uuid-generator'
+      fullPath: '/tools/uuid-generator'
+      preLoaderRoute: typeof ToolsUuidGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -461,6 +659,16 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   PrivacyRoute: PrivacyRoute,
+  CompareDevosVsNotionRoute: CompareDevosVsNotionRoute,
+  CompareDevosVsTrelloRoute: CompareDevosVsTrelloRoute,
+  FeaturesSlugRoute: FeaturesSlugRoute,
+  ToolsBase64Route: ToolsBase64Route,
+  ToolsJsonFormatterRoute: ToolsJsonFormatterRoute,
+  ToolsRegexTesterRoute: ToolsRegexTesterRoute,
+  ToolsUuidGeneratorRoute: ToolsUuidGeneratorRoute,
+  CompareIndexRoute: CompareIndexRoute,
+  FeaturesIndexRoute: FeaturesIndexRoute,
+  ToolsIndexRoute: ToolsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
