@@ -90,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "DevOS is a developer workspace that manages learning, projects, goals, habits, jobs, notes and coding profiles in one place.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "DevOS" },
+      { property: "og:site_name", content: "DevOS (dev-os.app)" },
       { property: "og:image", content: "https://www.dev-os.app/og-image.svg" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "DevOS (dev-os.app) — All-in-One Developer Workspace" },
