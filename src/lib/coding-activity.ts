@@ -185,20 +185,32 @@ export type CodingProfileRow = {
   problems_solved?: number | null;
   contests_attended?: number | null;
   submissions_count?: number | null;
+  verified_at?: string | null;
 };
 
 /** The single source of truth used by both Coding Profiles and the Dashboard. */
 export function summariseCodingProfiles(rows: CodingProfileRow[], userTimeZone?: string) {
+  // Exclude unverified profiles (verified_at === null) and enforce 1 profile per platform
+  const verifiedMap = new Map<string, CodingProfileRow>();
+  for (const row of rows) {
+    if (row.verified_at === null) continue;
+    const existing = verifiedMap.get(row.platform);
+    if (!existing || (row.problems_solved ?? 0) > (existing.problems_solved ?? 0)) {
+      verifiedMap.set(row.platform, row);
+    }
+  }
+
+  const activeRows = Array.from(verifiedMap.values());
   const days = aggregateCodingActivity(
-    rows.map((row) => ({ ...row, activity: storedActivity(row.activity) })),
+    activeRows.map((row) => ({ ...row, activity: storedActivity(row.activity) })),
     userTimeZone,
   );
   const streaks = calculateCodingStreaks(days.keys(), userTimeZone);
   return {
     days,
     ...streaks,
-    solved: rows.reduce((sum, r) => sum + (r.problems_solved ?? 0), 0),
-    contests: rows.reduce((sum, r) => sum + (r.contests_attended ?? 0), 0),
-    submissions: rows.reduce((sum, r) => sum + (r.submissions_count ?? 0), 0),
+    solved: activeRows.reduce((sum, r) => sum + (r.problems_solved ?? 0), 0),
+    contests: activeRows.reduce((sum, r) => sum + (r.contests_attended ?? 0), 0),
+    submissions: activeRows.reduce((sum, r) => sum + (r.submissions_count ?? 0), 0),
   };
 }

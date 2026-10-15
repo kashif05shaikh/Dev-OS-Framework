@@ -133,6 +133,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
           username: string;
+          verified_at: string | null;
         };
         Insert: {
           activity?: Json;
@@ -156,6 +157,7 @@ export type Database = {
           updated_at?: string;
           user_id: string;
           username: string;
+          verified_at?: string | null;
         };
         Update: {
           activity?: Json;
@@ -179,6 +181,7 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
           username?: string;
+          verified_at?: string | null;
         };
         Relationships: [];
       };
@@ -1182,6 +1185,39 @@ export type Database = {
           name?: string;
           position?: number;
           updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      verification_challenges: {
+        Row: {
+          attempts: number;
+          challenge_code: string;
+          created_at: string;
+          expires_at: string;
+          handle: string;
+          id: string;
+          platform: string;
+          user_id: string;
+        };
+        Insert: {
+          attempts?: number;
+          challenge_code: string;
+          created_at?: string;
+          expires_at: string;
+          handle: string;
+          id?: string;
+          platform: string;
+          user_id: string;
+        };
+        Update: {
+          attempts?: number;
+          challenge_code?: string;
+          created_at?: string;
+          expires_at?: string;
+          handle?: string;
+          id?: string;
+          platform?: string;
           user_id?: string;
         };
         Relationships: [];

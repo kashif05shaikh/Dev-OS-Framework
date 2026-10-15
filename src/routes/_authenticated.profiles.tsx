@@ -3,13 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
   Braces,
+  Check,
+  CheckCircle2,
+  Copy,
   ExternalLink,
   MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   Trash2,
   Trophy,
 } from "lucide-react";
@@ -50,10 +58,15 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
+  startVerificationChallenge,
+  checkVerificationChallenge,
+  cancelVerificationChallenge,
+} from "@/lib/coding-verification.functions";
+import type { VerificationChallengeData } from "@/lib/verification/types";
+import {
   assertOk,
   codingProfilesQuery,
   describeError,
-  requireUserId,
   runWithRetry,
   updateRow,
 } from "@/lib/devos-queries";
@@ -61,7 +74,6 @@ import {
   CODING_PLATFORMS,
   CODING_PLATFORM_LABEL,
   PROFILE_URL_TEMPLATE,
-  SOLVED_FIELD_LABEL,
   SOLVED_LABEL,
   SYNCABLE_PLATFORMS,
   type CodingProfile,
@@ -95,29 +107,8 @@ type ProfileDraft = {
   platform: string;
   username: string;
   profile_url: string;
-  rating: string;
-  rank_label: string;
-  problems_solved: string;
-  contests_attended: string;
-  current_streak: string;
-  max_streak: string;
   notes: string;
 };
-
-function emptyDraft(): ProfileDraft {
-  return {
-    platform: "leetcode",
-    username: "",
-    profile_url: "",
-    rating: "",
-    rank_label: "",
-    problems_solved: "0",
-    contests_attended: "0",
-    current_streak: "0",
-    max_streak: "0",
-    notes: "",
-  };
-}
 
 function toDraft(p: CodingProfile): ProfileDraft {
   return {
@@ -125,19 +116,8 @@ function toDraft(p: CodingProfile): ProfileDraft {
     platform: p.platform,
     username: p.username,
     profile_url: p.profile_url ?? "",
-    rating: p.rating === null ? "" : String(p.rating),
-    rank_label: p.rank_label ?? "",
-    problems_solved: String(p.problems_solved),
-    contests_attended: String(p.contests_attended),
-    current_streak: String(p.current_streak),
-    max_streak: String(p.max_streak),
     notes: p.notes ?? "",
   };
-}
-
-function toInt(value: string, fallback = 0): number {
-  const n = Number.parseInt(value, 10);
-  return Number.isFinite(n) ? n : fallback;
 }
 
 function resolveUrl(draft: ProfileDraft): string | null {
@@ -169,6 +149,9 @@ function ProfilesPage() {
   const profiles = useQuery(codingProfilesQuery());
   useCodingAutoSync(profiles.data);
   const fetchStats = useServerFn(fetchCodingStats);
+  const startChallenge = useServerFn(startVerificationChallenge);
+  const checkChallenge = useServerFn(checkVerificationChallenge);
+  const cancelChallenge = useServerFn(cancelVerificationChallenge);
 
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -176,37 +159,108 @@ function ProfilesPage() {
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
+  // Verification & Add Profile dialog state
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [addPlatform, setAddPlatform] = useState<string>("leetcode");
+  const [addHandle, setAddHandle] = useState<string>("");
+  const [activeChallenge, setActiveChallenge] = useState<VerificationChallengeData | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+
   const findCachedRow = (id: string): { id: string } | undefined =>
     (qc.getQueryData<CodingProfile[]>(["coding_profiles"]) ?? []).find((row) => row.id === id);
 
-  const fillFromPlatform = useMutation({
-    mutationFn: async (value: ProfileDraft) =>
-      fetchStats({ data: { platform: value.platform, username: value.username.trim() } }),
-    onSuccess: (stats) => {
-      setDraft((current) =>
-        current
-          ? {
-              ...current,
-              profile_url: current.profile_url.trim() || (stats.profile_url ?? ""),
-              rating: stats.rating === null ? "" : String(stats.rating),
-              rank_label: stats.rank_label ?? current.rank_label,
-              problems_solved:
-                stats.problems_solved === null
-                  ? current.problems_solved
-                  : String(stats.problems_solved),
-              contests_attended:
-                stats.contests_attended === null
-                  ? current.contests_attended
-                  : String(stats.contests_attended),
-              current_streak: String(stats.current_streak),
-              max_streak: String(Math.max(stats.max_streak, Number(current.max_streak) || 0)),
-            }
-          : current,
-      );
-      toast.success("Stats fetched");
+  const linkedPlatforms = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of profiles.data ?? []) {
+      set.add(p.platform);
+    }
+    return set;
+  }, [profiles.data]);
+
+  const verifiedProfiles = useMemo(
+    () => (profiles.data ?? []).filter((p) => p.verified_at !== null),
+    [profiles.data],
+  );
+
+  const unverifiedCount = (profiles.data ?? []).length - verifiedProfiles.length;
+
+  const startVerificationMutation = useMutation({
+    mutationFn: async ({ platform, handle }: { platform: string; handle: string }) => {
+      setVerifyError(null);
+      return startChallenge({ data: { platform, handle } });
     },
-    onError: (e: unknown) => toast.error(describeError(e)),
+    onSuccess: (data) => {
+      setActiveChallenge(data);
+      setVerifyError(null);
+    },
+    onError: (e: unknown) => {
+      const msg = describeError(e);
+      setVerifyError(msg);
+      toast.error(msg);
+    },
   });
+
+  const checkVerificationMutation = useMutation({
+    mutationFn: async ({ platform, handle }: { platform: string; handle: string }) => {
+      setVerifyError(null);
+      return checkChallenge({ data: { platform, handle } });
+    },
+    onSuccess: (result) => {
+      if (result.verified) {
+        toast.success("Profile ownership verified! Added to your dashboard.");
+        setActiveChallenge(null);
+        setIsAddOpen(false);
+        setAddHandle("");
+        void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+      } else {
+        setVerifyError(
+          result.error ?? "Verification code not found. Make sure you saved your profile changes.",
+        );
+      }
+    },
+    onError: (e: unknown) => {
+      setVerifyError(describeError(e));
+    },
+  });
+
+  const openAddDialog = () => {
+    const available = CODING_PLATFORMS.find((p) => !linkedPlatforms.has(p));
+    setAddPlatform(available ?? "leetcode");
+    setAddHandle("");
+    setActiveChallenge(null);
+    setVerifyError(null);
+    setIsAddOpen(true);
+  };
+
+  const startVerifyExisting = (p: CodingProfile) => {
+    setAddPlatform(p.platform);
+    setAddHandle(p.username);
+    setVerifyError(null);
+    setIsAddOpen(true);
+    startVerificationMutation.mutate({ platform: p.platform, handle: p.username });
+  };
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(true);
+      toast.success("Code copied to clipboard");
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      toast.error("Failed to copy code");
+    }
+  };
+
+  const closeAddDialog = () => {
+    if (activeChallenge) {
+      cancelChallenge({ data: { platform: activeChallenge.platform } }).catch(() => {});
+    }
+    setIsAddOpen(false);
+    setActiveChallenge(null);
+    setVerifyError(null);
+    setCopiedCode(false);
+  };
 
   const syncProfile = useMutation({
     mutationFn: async (profile: CodingProfile) => {
@@ -247,73 +301,18 @@ function ProfilesPage() {
     onSettled: () => setSyncingId(null),
   });
 
-  const saveProfile = useMutation({
+  const updateProfile = useMutation({
     mutationFn: async (value: ProfileDraft) => {
-      let payload = {
-        platform: value.platform,
-        username: value.username.trim(),
+      if (!value.id) return;
+      await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, {
         profile_url: resolveUrl(value),
-        rating: value.rating.trim() === "" ? null : toInt(value.rating),
-        max_rating: null as number | null,
-        rank_label: value.rank_label.trim() || null,
-        problems_solved: toInt(value.problems_solved),
-        contests_attended: toInt(value.contests_attended),
-        current_streak: toInt(value.current_streak),
-        max_streak: toInt(value.max_streak),
         notes: value.notes.trim() || null,
-        activity: {} as Json,
-        last_synced_at: new Date().toISOString(),
-        submissions_count: 0,
-        sync_status: "idle",
-        sync_error: null as string | null,
-      };
-
-      // New profile on a supported platform: pull the live stats automatically.
-      if (!value.id && canSync(value.platform)) {
-        try {
-          const stats = await fetchStats({
-            data: { platform: value.platform, username: payload.username },
-          });
-          payload = {
-            ...payload,
-            profile_url: payload.profile_url ?? stats.profile_url,
-            rating: stats.rating,
-            max_rating: Math.max(stats.max_rating ?? 0, stats.rating ?? 0) || null,
-            rank_label: stats.rank_label ?? payload.rank_label,
-            problems_solved: stats.problems_solved ?? payload.problems_solved,
-            contests_attended: stats.contests_attended ?? payload.contests_attended,
-            current_streak: stats.current_streak,
-            max_streak: Math.max(stats.max_streak, payload.max_streak),
-            submissions_count: stats.submissions,
-            activity: activityPayload(stats),
-            last_synced_at: stats.lastSyncedAt,
-            sync_status: "success",
-            sync_error: null,
-          };
-        } catch (error) {
-          toast.warning(`Saved, but live stats could not be fetched: ${describeError(error)}`);
-        }
-      }
-
-      if (value.id) {
-        // Manual edits shouldn't wipe the heatmap captured by the last sync.
-        const { activity: _activity, ...rest } = payload;
-        await updateRow("coding_profiles", findCachedRow(value.id) ?? { id: value.id }, rest);
-        return;
-      }
-      await runWithRetry(async () => {
-        const user_id = await requireUserId();
-        const position = (qc.getQueryData<CodingProfile[]>(["coding_profiles"]) ?? []).length;
-        const { error } = await supabase
-          .from("coding_profiles")
-          .insert({ ...payload, user_id, position });
-        assertOk(error);
       });
     },
-    onSuccess: (_d, value) => {
+    onSuccess: () => {
       setDraft(null);
       void qc.invalidateQueries({ queryKey: ["coding_profiles"] });
-      toast.success(value.id ? "Profile updated" : "Profile added");
+      toast.success("Profile updated");
     },
     onError: (e: unknown) => toast.error(describeError(e)),
   });
@@ -344,11 +343,13 @@ function ProfilesPage() {
   }, [profiles.data, search, platformFilter]);
 
   // One normalized activity dataset powers the heatmap, active days and streaks.
+  // summariseCodingProfiles automatically deduplicates platforms and excludes unverified profiles.
   const combined = useMemo(() => summariseCodingProfiles(profiles.data ?? []), [profiles.data]);
 
   const syncAll = useMutation({
     mutationFn: async () => {
-      const rows = (profiles.data ?? []).filter((p) => canSync(p.platform));
+      // Sync only verified platforms that support syncing
+      const rows = (profiles.data ?? []).filter((p) => p.verified_at !== null && canSync(p.platform));
       const results = await Promise.allSettled(
         rows.map(async (profile) => {
           try {
@@ -405,8 +406,9 @@ function ProfilesPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Coding Profiles</h1>
           <p className="text-xs text-muted-foreground">
-            {(profiles.data ?? []).length} platforms · {combined.solved} problems solved ·{" "}
-            {combined.contests} contests · {combined.currentStreak} day streak
+            {verifiedProfiles.length} verified {verifiedProfiles.length === 1 ? "platform" : "platforms"} ·{" "}
+            {combined.solved} problems solved · {combined.contests} contests · {combined.currentStreak} day streak
+            {unverifiedCount > 0 ? ` · ${unverifiedCount} unverified` : ""}
           </p>
         </div>
         <div className="relative">
@@ -431,7 +433,12 @@ function ProfilesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" className="h-8" onClick={() => setDraft(emptyDraft())}>
+        <Button
+          size="sm"
+          className="h-8"
+          disabled={linkedPlatforms.size >= CODING_PLATFORMS.length}
+          onClick={openAddDialog}
+        >
           <Plus className="size-3.5" />
           Add profile
         </Button>
@@ -439,7 +446,7 @@ function ProfilesPage() {
           size="sm"
           variant="outline"
           className="h-8"
-          disabled={syncAll.isPending || (profiles.data ?? []).length === 0}
+          disabled={syncAll.isPending || verifiedProfiles.length === 0}
           onClick={() => syncAll.mutate()}
         >
           <RefreshCw className={cn("size-3.5", syncAll.isPending && "animate-spin")} />
@@ -459,9 +466,13 @@ function ProfilesPage() {
               title={
                 search || platformFilter !== "all" ? "No matching profiles" : "No profiles yet"
               }
-              description="Add your LeetCode, Codeforces, GitHub and other handles to keep every stat in one place."
+              description="Link your verified LeetCode, Codeforces, HackerRank and other handles to track your genuine stats."
               action={
-                <Button size="sm" onClick={() => setDraft(emptyDraft())}>
+                <Button
+                  size="sm"
+                  disabled={linkedPlatforms.size >= CODING_PLATFORMS.length}
+                  onClick={openAddDialog}
+                >
                   <Plus className="size-3.5" />
                   Add profile
                 </Button>
@@ -494,7 +505,7 @@ function ProfilesPage() {
                   <div className="flex flex-wrap items-baseline gap-3">
                     <h2 className="text-xs font-semibold">Coding activity</h2>
                     <span className="text-[11px] text-muted-foreground">
-                      {combined.submissions} submissions across all platforms · last 12 months
+                      {combined.submissions} submissions across verified platforms · last 12 months
                     </span>
                   </div>
                   <CodingActivityHeatmap days={combined.days} className="mt-3" />
@@ -503,12 +514,13 @@ function ProfilesPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {visible.map((p) => {
+                  const isVerified = p.verified_at !== null;
                   return (
                     <article key={p.id} className="rounded-xl border border-border bg-card p-4">
                       <div className="flex items-start gap-3">
                         <PlatformLogo platform={p.platform} className="mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
                             <h2 className="truncate text-sm font-medium">
                               {CODING_PLATFORM_LABEL[p.platform] ?? p.platform}
                             </h2>
@@ -523,6 +535,17 @@ function ProfilesPage() {
                                 <ExternalLink className="size-3.5" />
                               </a>
                             ) : null}
+                            {isVerified ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                                <CheckCircle2 className="size-3" />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                                <AlertCircle className="size-3" />
+                                Unverified
+                              </span>
+                            )}
                           </div>
                           <p className="truncate text-xs text-muted-foreground">@{p.username}</p>
                         </div>
@@ -533,7 +556,7 @@ function ProfilesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {canSync(p.platform) ? (
+                            {canSync(p.platform) && isVerified ? (
                               <DropdownMenuItem
                                 disabled={syncingId === p.id}
                                 onClick={() => syncProfile.mutate(p)}
@@ -544,9 +567,15 @@ function ProfilesPage() {
                                 {syncingId === p.id ? "Syncing…" : "Sync now"}
                               </DropdownMenuItem>
                             ) : null}
+                            {!isVerified ? (
+                              <DropdownMenuItem onClick={() => startVerifyExisting(p)}>
+                                <ShieldCheck className="size-3.5 text-amber-400" />
+                                Verify ownership
+                              </DropdownMenuItem>
+                            ) : null}
                             <DropdownMenuItem onClick={() => setDraft(toDraft(p))}>
                               <Pencil className="size-3.5" />
-                              Edit
+                              Edit notes
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -566,6 +595,30 @@ function ProfilesPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+
+                      {!isVerified ? (
+                        <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/5 p-2.5 text-xs">
+                          <div className="flex items-start gap-2">
+                            <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-amber-300">Ownership not verified</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                Stats from this handle are excluded from your aggregate totals until verified.
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2.5 h-7 w-full border-amber-500/30 text-xs font-medium text-amber-300 hover:bg-amber-500/10"
+                            disabled={startVerificationMutation.isPending}
+                            onClick={() => startVerifyExisting(p)}
+                          >
+                            <ShieldCheck className="mr-1.5 size-3.5" />
+                            Verify ownership now
+                          </Button>
+                        </div>
+                      ) : null}
 
                       <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
                         <div className="rounded-lg bg-muted/40 px-2 py-2">
@@ -629,173 +682,281 @@ function ProfilesPage() {
         </div>
       </ScrollArea>
 
-      <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      {/* Add Profile & Ownership Verification Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={(open) => !open && closeAddDialog()}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{draft?.id ? "Edit profile" : "Add profile"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="size-5 text-primary" />
+              {activeChallenge ? "Verify Profile Ownership" : "Link Coding Profile"}
+            </DialogTitle>
           </DialogHeader>
-          {draft ? (
+
+          {!activeChallenge ? (
             <form
-              className="space-y-3"
+              className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!draft.username.trim()) {
-                  toast.error("Username is required");
+                if (!addHandle.trim()) {
+                  toast.error("Username / handle is required");
                   return;
                 }
-                saveProfile.mutate(draft);
+                startVerificationMutation.mutate({
+                  platform: addPlatform,
+                  handle: addHandle.trim(),
+                });
               }}
             >
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Platform</Label>
-                  <Select
-                    value={draft.platform}
-                    onValueChange={(platform) => setDraft({ ...draft, platform })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CODING_PLATFORMS.map((p) => (
-                        <SelectItem key={p} value={p}>
+              <div className="space-y-1.5">
+                <Label>Platform</Label>
+                <Select value={addPlatform} onValueChange={setAddPlatform}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CODING_PLATFORMS.map((p) => {
+                      const isLinked = linkedPlatforms.has(p);
+                      return (
+                        <SelectItem key={p} value={p} disabled={isLinked}>
                           <span className="flex items-center gap-2">
-                            <PlatformLogo platform={p} className="size-5 rounded-md" />
-                            {CODING_PLATFORM_LABEL[p]}
+                            <PlatformLogo platform={p} className="size-4 rounded-sm" />
+                            <span>{CODING_PLATFORM_LABEL[p]}</span>
+                            {isLinked ? (
+                              <span className="text-[10px] text-muted-foreground">(Already added)</span>
+                            ) : null}
                           </span>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-username">Username / handle</Label>
-                  <Input
-                    id="cp-username"
-                    autoFocus
-                    value={draft.username}
-                    onChange={(e) => setDraft({ ...draft, username: e.target.value })}
-                  />
-                </div>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
-                <p className="mr-auto text-[11px] text-muted-foreground">
-                  {canSync(draft.platform)
-                    ? "Rating, rank, problems solved, contests and streak are fetched automatically."
-                    : "Automatic sync isn't available for this platform — fill the numbers in manually."}
+              <div className="space-y-1.5">
+                <Label htmlFor="add-username">Handle / Username</Label>
+                <Input
+                  id="add-username"
+                  autoFocus
+                  placeholder="e.g. tourist, Kashif05"
+                  value={addHandle}
+                  onChange={(e) => setAddHandle(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  DevOS permits at most one profile per platform. Handle must belong to you.
                 </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">Anti-impersonation guarantee</p>
+                <p className="text-[11px]">
+                  To prevent fake stats, DevOS will generate a temporary 15-minute challenge code to paste into your public {CODING_PLATFORM_LABEL[addPlatform] ?? addPlatform} profile.
+                </p>
+              </div>
+
+              {verifyError ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  {verifyError}
+                </div>
+              ) : null}
+
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={closeAddDialog}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={startVerificationMutation.isPending || !addHandle.trim()}>
+                  {startVerificationMutation.isPending ? (
+                    <>
+                      <RefreshCw className="mr-1.5 size-3.5 animate-spin" />
+                      Starting challenge…
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="ml-1.5 size-3.5" />
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <PlatformLogo platform={activeChallenge.platform} className="size-5 rounded-md" />
+                  <div>
+                    <p className="text-xs font-semibold">
+                      {CODING_PLATFORM_LABEL[activeChallenge.platform] ?? activeChallenge.platform}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">@{activeChallenge.handle}</p>
+                  </div>
+                </div>
                 <Button
-                  type="button"
                   size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  disabled={
-                    !canSync(draft.platform) || !draft.username.trim() || fillFromPlatform.isPending
-                  }
-                  onClick={() => fillFromPlatform.mutate(draft)}
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => {
+                    setActiveChallenge(null);
+                    setVerifyError(null);
+                  }}
                 >
-                  <RefreshCw
-                    className={cn("size-3.5", fillFromPlatform.isPending && "animate-spin")}
-                  />
-                  {fillFromPlatform.isPending ? "Fetching…" : "Fetch stats"}
+                  <ArrowLeft className="mr-1 size-3" />
+                  Change handle
                 </Button>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="cp-url">Profile URL</Label>
-                <Input
-                  id="cp-url"
-                  value={draft.profile_url}
-                  onChange={(e) => setDraft({ ...draft, profile_url: e.target.value })}
-                  placeholder={resolveUrl({ ...draft, profile_url: "" }) ?? "https://…"}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Leave blank to generate it from the platform and handle.
+                <Label className="text-xs font-medium">Temporary Verification Code</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 font-mono text-sm font-semibold tracking-wider text-foreground">
+                    {activeChallenge.challengeCode}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3 text-xs"
+                    onClick={() => handleCopyCode(activeChallenge.challengeCode)}
+                  >
+                    {copiedCode ? (
+                      <>
+                        <Check className="mr-1.5 size-3.5 text-emerald-400" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-1.5 size-3.5" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-3 space-y-2.5 text-xs">
+                <p className="font-semibold text-foreground">Instructions:</p>
+                <ol className="list-decimal pl-4 space-y-1.5 text-muted-foreground">
+                  <li>
+                    <a
+                      href={activeChallenge.settingsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                    >
+                      Open {CODING_PLATFORM_LABEL[activeChallenge.platform] ?? activeChallenge.platform} Settings
+                      <ExternalLink className="size-3" />
+                    </a>
+                  </li>
+                  <li>
+                    Paste the code into your <strong className="text-foreground">{activeChallenge.fieldName}</strong>.
+                  </li>
+                  <li>
+                    Save your changes on {CODING_PLATFORM_LABEL[activeChallenge.platform] ?? activeChallenge.platform}.
+                  </li>
+                  <li>
+                    Click <strong className="text-foreground">Check / Verify now</strong> below.
+                  </li>
+                </ol>
+                <p className="text-[11px] text-muted-foreground/80 italic">
+                  💡 You can remove this code from your profile immediately after verification completes.
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-rating">Rating</Label>
-                  <Input
-                    id="cp-rating"
-                    inputMode="numeric"
-                    value={draft.rating}
-                    onChange={(e) => setDraft({ ...draft, rating: e.target.value })}
-                  />
+              {verifyError ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+                    <p className="leading-relaxed">{verifyError}</p>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-rank">Rank / tier</Label>
-                  <Input
-                    id="cp-rank"
-                    value={draft.rank_label}
-                    onChange={(e) => setDraft({ ...draft, rank_label: e.target.value })}
-                    placeholder="Knight, 4★, Top 5%"
-                  />
-                </div>
-              </div>
+              ) : null}
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-solved">
-                    {SOLVED_FIELD_LABEL[draft.platform] ?? "Problems solved"}
-                  </Label>
-                  <Input
-                    id="cp-solved"
-                    inputMode="numeric"
-                    value={draft.problems_solved}
-                    onChange={(e) => setDraft({ ...draft, problems_solved: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-contests">Contests attended</Label>
-                  <Input
-                    id="cp-contests"
-                    inputMode="numeric"
-                    value={draft.contests_attended}
-                    onChange={(e) => setDraft({ ...draft, contests_attended: e.target.value })}
-                  />
-                </div>
-              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="ghost" onClick={closeAddDialog}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={checkVerificationMutation.isPending}
+                  onClick={() =>
+                    checkVerificationMutation.mutate({
+                      platform: activeChallenge.platform,
+                      handle: activeChallenge.handle,
+                    })
+                  }
+                >
+                  {checkVerificationMutation.isPending ? (
+                    <>
+                      <RefreshCw className="mr-1.5 size-3.5 animate-spin" />
+                      Verifying on {CODING_PLATFORM_LABEL[activeChallenge.platform] ?? activeChallenge.platform}…
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="mr-1.5 size-3.5" />
+                      Check / Verify now
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-streak">Current streak (days)</Label>
-                  <Input
-                    id="cp-streak"
-                    inputMode="numeric"
-                    value={draft.current_streak}
-                    onChange={(e) => setDraft({ ...draft, current_streak: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cp-max">Best streak (days)</Label>
-                  <Input
-                    id="cp-max"
-                    inputMode="numeric"
-                    value={draft.max_streak}
-                    onChange={(e) => setDraft({ ...draft, max_streak: e.target.value })}
-                  />
+      {/* Edit Profile Notes Dialog */}
+      <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile Details</DialogTitle>
+          </DialogHeader>
+          {draft ? (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateProfile.mutate(draft);
+              }}
+            >
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 p-3">
+                <PlatformLogo platform={draft.platform} className="size-6 rounded-md" />
+                <div>
+                  <p className="text-sm font-semibold">
+                    {CODING_PLATFORM_LABEL[draft.platform] ?? draft.platform}
+                  </p>
+                  <p className="text-xs text-muted-foreground">@{draft.username}</p>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="cp-notes">Notes</Label>
+                <Label htmlFor="edit-url">Custom Profile URL (Optional)</Label>
+                <Input
+                  id="edit-url"
+                  value={draft.profile_url}
+                  onChange={(e) => setDraft({ ...draft, profile_url: e.target.value })}
+                  placeholder={resolveUrl({ ...draft, profile_url: "" }) ?? "https://…"}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-notes">Notes</Label>
                 <Textarea
-                  id="cp-notes"
+                  id="edit-notes"
                   rows={3}
                   value={draft.notes}
                   onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+                  placeholder="Add personal notes or contest goals..."
                 />
               </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Platform and handle are locked to your verified account. To change handles, delete this profile and verify the new handle.
+              </p>
 
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setDraft(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saveProfile.isPending}>
-                  {saveProfile.isPending ? "Saving…" : draft.id ? "Save changes" : "Add profile"}
+                <Button type="submit" disabled={updateProfile.isPending}>
+                  {updateProfile.isPending ? "Saving…" : "Save changes"}
                 </Button>
               </DialogFooter>
             </form>

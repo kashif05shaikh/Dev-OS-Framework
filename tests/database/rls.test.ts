@@ -53,6 +53,7 @@ export const ALL_DATABASE_TABLES = [
   "social_accounts",
   "social_profile_cache",
   "platform_connections",
+  "verification_challenges",
 ] as const;
 
 export const STORAGE_BUCKETS = ["learning-files", "resume-files"] as const;

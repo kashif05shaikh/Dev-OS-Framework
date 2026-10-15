@@ -22,6 +22,7 @@ export function staleCodingProfiles(rows: CodingProfile[]): CodingProfile[] {
   const cutoff = Date.now() - CODING_STALE_MS;
   return rows.filter((row) => {
     if (!isSyncable(row.platform)) return false;
+    if (row.verified_at === null) return false;
     const at = row.last_synced_at ? Date.parse(row.last_synced_at) : NaN;
     return !Number.isFinite(at) || at < cutoff;
   });

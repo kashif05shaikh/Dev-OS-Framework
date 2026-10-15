@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -7,6 +7,7 @@ describe("Access Control & IDOR Checks across Server Functions", () => {
     const serverFnFiles = [
       "src/lib/coding-connections.functions.ts",
       "src/lib/coding-profiles.functions.ts",
+      "src/lib/coding-verification.functions.ts",
       "src/lib/social.functions.ts",
       "src/lib/contests.functions.ts",
     ];
@@ -23,6 +24,7 @@ describe("Access Control & IDOR Checks across Server Functions", () => {
 
     expect(results["src/lib/coding-connections.functions.ts"]).toBe(true);
     expect(results["src/lib/coding-profiles.functions.ts"]).toBe(true);
+    expect(results["src/lib/coding-verification.functions.ts"]).toBe(true);
     // Real bug: social.functions has NO auth middleware!
     expect(
       results["src/lib/social.functions.ts"],
