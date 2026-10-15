@@ -188,12 +188,16 @@ export type CodingProfileRow = {
   verified_at?: string | null;
 };
 
+export function isProfileVerified(row: { verified_at?: string | null }): boolean {
+  return typeof row.verified_at === "string" && row.verified_at.trim().length > 0;
+}
+
 /** The single source of truth used by both Coding Profiles and the Dashboard. */
 export function summariseCodingProfiles(rows: CodingProfileRow[], userTimeZone?: string) {
-  // Exclude unverified profiles (verified_at === null) and enforce 1 profile per platform
+  // Exclude unverified profiles and enforce 1 profile per platform
   const verifiedMap = new Map<string, CodingProfileRow>();
   for (const row of rows) {
-    if (row.verified_at === null) continue;
+    if (!isProfileVerified(row)) continue;
     const existing = verifiedMap.get(row.platform);
     if (!existing || (row.problems_solved ?? 0) > (existing.problems_solved ?? 0)) {
       verifiedMap.set(row.platform, row);

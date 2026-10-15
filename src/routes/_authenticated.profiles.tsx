@@ -25,7 +25,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
-import { summariseCodingProfiles } from "@/lib/coding-activity";
+import { isProfileVerified, summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -179,7 +179,7 @@ function ProfilesPage() {
   }, [profiles.data]);
 
   const verifiedProfiles = useMemo(
-    () => (profiles.data ?? []).filter((p) => p.verified_at !== null),
+    () => (profiles.data ?? []).filter(isProfileVerified),
     [profiles.data],
   );
 
@@ -349,7 +349,7 @@ function ProfilesPage() {
   const syncAll = useMutation({
     mutationFn: async () => {
       // Sync only verified platforms that support syncing
-      const rows = (profiles.data ?? []).filter((p) => p.verified_at !== null && canSync(p.platform));
+      const rows = (profiles.data ?? []).filter((p) => isProfileVerified(p) && canSync(p.platform));
       const results = await Promise.allSettled(
         rows.map(async (profile) => {
           try {
@@ -514,7 +514,7 @@ function ProfilesPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {visible.map((p) => {
-                  const isVerified = p.verified_at !== null;
+                  const isVerified = isProfileVerified(p);
                   return (
                     <article key={p.id} className="rounded-xl border border-border bg-card p-4">
                       <div className="flex items-start gap-3">
