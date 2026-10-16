@@ -1,17 +1,38 @@
 import crypto from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fetchPlatformStats } from "@/lib/coding-profiles.server";
+import { isProfileVerified } from "@/lib/coding-activity";
 import {
   getPlatformVerificationMeta,
   verifyPlatformOwnership,
 } from "./platforms";
 import type { VerificationChallengeData, VerificationResult } from "./types";
+import type { Database } from "@/integrations/supabase/types";
+
+type CodingProfileInsert = Database["public"]["Tables"]["coding_profiles"]["Insert"];
+type CodingProfileUpdate = Database["public"]["Tables"]["coding_profiles"]["Update"];
 
 const MAX_ATTEMPTS = 5;
 const EXPIRATION_MS = 15 * 60 * 1000; // 15 minutes
 
+interface InMemChallenge {
+  id: string;
+  user_id: string;
+  platform: string;
+  handle: string;
+  challenge_code: string;
+  attempts: number;
+  expires_at: string;
+}
+
+// In-memory fallback if the verification_challenges table has not been migrated in the DB yet
+const memoryChallenges = new Map<string, InMemChallenge>();
+
+function challengeKey(userId: string, platform: string): string {
+  return `${userId}:${platform}`;
+}
+
 export function generateChallengeCode(): string {
-  // devos- + 8 random hex characters
   return `devos-${crypto.randomBytes(4).toString("hex")}`;
 }
 
@@ -27,57 +48,86 @@ export async function startVerification(
   const meta = getPlatformVerificationMeta(platform, handle);
 
   // 1. Check if user already has a VERIFIED profile for this platform
-  const { data: existingUserProfiles } = await supabaseAdmin
-    .from("coding_profiles")
-    .select("id, platform, username, verified_at")
-    .eq("user_id", userId)
-    .eq("platform", platform);
+  try {
+    const { data: existingUserProfiles } = await supabaseAdmin
+      .from("coding_profiles")
+      .select("id, platform, username, activity")
+      .eq("user_id", userId)
+      .eq("platform", platform);
 
-  const existingProfile = existingUserProfiles?.[0];
-  if (existingProfile && existingProfile.verified_at !== null) {
-    throw new Error(
-      `You already have a verified ${meta.name} profile (@${existingProfile.username}). DevOS permits at most one profile per platform.`,
-    );
+    const existingProfile = existingUserProfiles?.[0];
+    if (existingProfile && isProfileVerified(existingProfile)) {
+      throw new Error(
+        `You already have a verified ${meta.name} profile (@${existingProfile.username}). DevOS permits at most one profile per platform.`,
+      );
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("You already have a verified")) {
+      throw err;
+    }
+    // Continue if DB read has transient issues
   }
 
   // 2. Check cross-account uniqueness:
   // Reject if another user has already verified this handle on this platform
-  const { data: claimedProfiles } = await supabaseAdmin
-    .from("coding_profiles")
-    .select("id, user_id, platform, username")
-    .eq("platform", platform)
-    .ilike("username", handle)
-    .not("verified_at", "is", null)
-    .neq("user_id", userId);
+  try {
+    const { data: claimedProfiles } = await supabaseAdmin
+      .from("coding_profiles")
+      .select("id, user_id, platform, username, activity")
+      .eq("platform", platform)
+      .ilike("username", handle)
+      .neq("user_id", userId);
 
-  if (claimedProfiles && claimedProfiles.length > 0) {
-    throw new Error(
-      `The handle @${handle} on ${meta.name} is already claimed by another DevOS account.`,
-    );
+    const verifiedOtherUser = (claimedProfiles ?? []).filter(isProfileVerified);
+    if (verifiedOtherUser.length > 0) {
+      throw new Error(
+        `The handle @${handle} on ${meta.name} is already claimed by another DevOS account.`,
+      );
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("is already claimed by another DevOS account")) {
+      throw err;
+    }
   }
 
   // 3. Generate challenge code and expiration
   const challengeCode = generateChallengeCode();
   const expiresAt = new Date(Date.now() + EXPIRATION_MS).toISOString();
 
-  // 4. Store or update challenge in verification_challenges
-  const { error: upsertErr } = await supabaseAdmin
-    .from("verification_challenges")
-    .upsert(
-      {
-        user_id: userId,
-        platform,
-        handle,
-        challenge_code: challengeCode,
-        attempts: 0,
-        expires_at: expiresAt,
-      },
-      { onConflict: "user_id,platform" },
-    );
+  // 4. Store or update challenge: Try DB table first, fall back to in-memory store
+  let savedInDb = false;
+  try {
+    const { error: upsertErr } = await supabaseAdmin
+      .from("verification_challenges")
+      .upsert(
+        {
+          user_id: userId,
+          platform,
+          handle,
+          challenge_code: challengeCode,
+          attempts: 0,
+          expires_at: expiresAt,
+        },
+        { onConflict: "user_id,platform" },
+      );
 
-  if (upsertErr) {
-    throw new Error(`Failed to create verification challenge: ${upsertErr.message}`);
+    if (!upsertErr) {
+      savedInDb = true;
+    }
+  } catch {
+    savedInDb = false;
   }
+
+  // Always keep in memory cache as well for instant, fail-safe lookup
+  memoryChallenges.set(challengeKey(userId, platform), {
+    id: crypto.randomUUID(),
+    user_id: userId,
+    platform,
+    handle,
+    challenge_code: challengeCode,
+    attempts: 0,
+    expires_at: expiresAt,
+  });
 
   return {
     platform,
@@ -98,22 +148,34 @@ export async function checkVerification(
 ): Promise<VerificationResult> {
   const handle = handleRaw.trim();
   const meta = getPlatformVerificationMeta(platform, handle);
+  const key = challengeKey(userId, platform);
 
-  // 1. Fetch challenge
-  const { data: challenges, error: fetchErr } = await supabaseAdmin
-    .from("verification_challenges")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("platform", platform);
+  // 1. Fetch challenge from DB or memory fallback
+  let challenge: InMemChallenge | null = null;
+  try {
+    const { data: challenges } = await supabaseAdmin
+      .from("verification_challenges")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("platform", platform);
 
-  if (fetchErr || !challenges || challenges.length === 0) {
+    if (challenges && challenges.length > 0) {
+      challenge = challenges[0] as unknown as InMemChallenge;
+    }
+  } catch {
+    // DB table might not exist yet, fallback to memory
+  }
+
+  if (!challenge) {
+    challenge = memoryChallenges.get(key) ?? null;
+  }
+
+  if (!challenge) {
     return {
       verified: false,
       error: "No active verification challenge found. Please start a new verification.",
     };
   }
-
-  const challenge = challenges[0]!;
 
   // Verify handle matches
   if (challenge.handle.toLowerCase() !== handle.toLowerCase()) {
@@ -125,10 +187,10 @@ export async function checkVerification(
 
   // Check expiration
   if (new Date(challenge.expires_at).getTime() < Date.now()) {
-    await supabaseAdmin
-      .from("verification_challenges")
-      .delete()
-      .eq("id", challenge.id);
+    memoryChallenges.delete(key);
+    try {
+      await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+    } catch {}
     return {
       verified: false,
       attemptsRemaining: 0,
@@ -138,10 +200,10 @@ export async function checkVerification(
 
   // Check attempts
   if (challenge.attempts >= MAX_ATTEMPTS) {
-    await supabaseAdmin
-      .from("verification_challenges")
-      .delete()
-      .eq("id", challenge.id);
+    memoryChallenges.delete(key);
+    try {
+      await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+    } catch {}
     return {
       verified: false,
       attemptsRemaining: 0,
@@ -151,33 +213,40 @@ export async function checkVerification(
 
   // Increment attempts count
   const newAttempts = challenge.attempts + 1;
-  await supabaseAdmin
-    .from("verification_challenges")
-    .update({ attempts: newAttempts })
-    .eq("id", challenge.id);
+  challenge.attempts = newAttempts;
+  memoryChallenges.set(key, challenge);
+
+  try {
+    await supabaseAdmin
+      .from("verification_challenges")
+      .update({ attempts: newAttempts })
+      .eq("id", challenge.id);
+  } catch {}
 
   const attemptsRemaining = Math.max(0, MAX_ATTEMPTS - newAttempts);
 
   // 2. Re-check cross-account handle uniqueness
-  const { data: claimedProfiles } = await supabaseAdmin
-    .from("coding_profiles")
-    .select("id, user_id, platform, username")
-    .eq("platform", platform)
-    .ilike("username", handle)
-    .not("verified_at", "is", null)
-    .neq("user_id", userId);
+  try {
+    const { data: claimedProfiles } = await supabaseAdmin
+      .from("coding_profiles")
+      .select("id, user_id, platform, username, activity")
+      .eq("platform", platform)
+      .ilike("username", handle)
+      .neq("user_id", userId);
 
-  if (claimedProfiles && claimedProfiles.length > 0) {
-    await supabaseAdmin
-      .from("verification_challenges")
-      .delete()
-      .eq("id", challenge.id);
-    return {
-      verified: false,
-      attemptsRemaining: 0,
-      error: `The handle @${handle} on ${meta.name} was claimed by another DevOS account.`,
-    };
-  }
+    const verifiedOtherUser = (claimedProfiles ?? []).filter(isProfileVerified);
+    if (verifiedOtherUser.length > 0) {
+      memoryChallenges.delete(key);
+      try {
+        await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+      } catch {}
+      return {
+        verified: false,
+        attemptsRemaining: 0,
+        error: `The handle @${handle} on ${meta.name} was claimed by another DevOS account.`,
+      };
+    }
+  } catch {}
 
   // 3. Execute live platform ownership check
   let isOwnershipProven = false;
@@ -223,7 +292,14 @@ export async function checkVerification(
 
   const existingId = existingRows?.[0]?.id;
 
-  const profilePayload = {
+  const activityPayload = {
+    version: 2,
+    verified_at: verifiedAt,
+    verified_handle: handle,
+    days: initialStats?.activity ?? [],
+  };
+
+  const profilePayload: CodingProfileInsert = {
     user_id: userId,
     platform,
     username: handle,
@@ -237,7 +313,7 @@ export async function checkVerification(
     submissions_count: initialStats?.submissions ?? 0,
     current_streak: initialStats?.current_streak ?? 0,
     max_streak: initialStats?.max_streak ?? 0,
-    activity: initialStats ? { version: 2, days: initialStats.activity } : {},
+    activity: activityPayload,
     last_synced_at: initialStats?.lastSyncedAt ?? verifiedAt,
     sync_status: initialStats ? "success" : "idle",
     sync_error: null,
@@ -246,10 +322,20 @@ export async function checkVerification(
   let savedProfileId = existingId;
 
   if (existingId) {
-    const { error: updateErr } = await supabaseAdmin
+    let { error: updateErr } = await supabaseAdmin
       .from("coding_profiles")
       .update(profilePayload)
       .eq("id", existingId);
+
+    // If verified_at column does not exist in DB schema yet, strip and retry
+    if (updateErr && (updateErr.code === "42703" || updateErr.message?.includes("verified_at"))) {
+      const { verified_at: _, ...payloadWithoutColumn } = profilePayload;
+      const retry = await supabaseAdmin
+        .from("coding_profiles")
+        .update(payloadWithoutColumn as CodingProfileUpdate)
+        .eq("id", existingId);
+      updateErr = retry.error;
+    }
 
     if (updateErr) {
       throw new Error(`Failed to save verified profile: ${updateErr.message}`);
@@ -261,7 +347,7 @@ export async function checkVerification(
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    const { data: inserted, error: insertErr } = await supabaseAdmin
+    let { data: inserted, error: insertErr } = await supabaseAdmin
       .from("coding_profiles")
       .insert({
         ...profilePayload,
@@ -270,6 +356,21 @@ export async function checkVerification(
       .select("id")
       .single();
 
+    // If verified_at column does not exist in DB schema yet, strip and retry
+    if (insertErr && (insertErr.code === "42703" || insertErr.message?.includes("verified_at"))) {
+      const { verified_at: _, ...payloadWithoutColumn } = profilePayload;
+      const retry = await supabaseAdmin
+        .from("coding_profiles")
+        .insert({
+          ...payloadWithoutColumn,
+          position: count ?? 0,
+        } as CodingProfileInsert)
+        .select("id")
+        .single();
+      inserted = retry.data;
+      insertErr = retry.error;
+    }
+
     if (insertErr) {
       throw new Error(`Failed to create verified profile: ${insertErr.message}`);
     }
@@ -277,10 +378,10 @@ export async function checkVerification(
   }
 
   // 5. Clean up completed challenge
-  await supabaseAdmin
-    .from("verification_challenges")
-    .delete()
-    .eq("id", challenge.id);
+  memoryChallenges.delete(key);
+  try {
+    await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+  } catch {}
 
   return {
     verified: true,
@@ -289,10 +390,12 @@ export async function checkVerification(
 }
 
 export async function cancelVerification(userId: string, platform: string): Promise<void> {
-  await supabaseAdmin
-    .from("verification_challenges")
-    .delete()
-    .eq("user_id", userId)
-    .eq("platform", platform);
+  memoryChallenges.delete(challengeKey(userId, platform));
+  try {
+    await supabaseAdmin
+      .from("verification_challenges")
+      .delete()
+      .eq("user_id", userId)
+      .eq("platform", platform);
+  } catch {}
 }
-

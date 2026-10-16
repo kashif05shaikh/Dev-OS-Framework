@@ -188,8 +188,17 @@ export type CodingProfileRow = {
   verified_at?: string | null;
 };
 
-export function isProfileVerified(row: { verified_at?: string | null }): boolean {
-  return typeof row.verified_at === "string" && row.verified_at.trim().length > 0;
+export function isProfileVerified(row: { verified_at?: string | null; activity?: unknown }): boolean {
+  if (typeof row.verified_at === "string" && row.verified_at.trim().length > 0) {
+    return true;
+  }
+  if (row.activity && typeof row.activity === "object") {
+    const act = row.activity as Record<string, unknown>;
+    if (typeof act["verified_at"] === "string" && act["verified_at"].trim().length > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** The single source of truth used by both Coding Profiles and the Dashboard. */
