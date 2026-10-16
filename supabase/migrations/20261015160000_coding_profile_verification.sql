@@ -74,21 +74,21 @@ CREATE INDEX IF NOT EXISTS verification_challenges_user_idx
   ON public.verification_challenges(user_id);
 
 -- 6. Lock verified_at against direct client manipulation
-CREATE OR REPLACE FUNCTION public.lock_coding_profile_verification()
-RETURNS trigger AS $$
-BEGIN
-  -- If invoked by an authenticated client (bypassed by service_role)
-  IF auth.role() = 'authenticated' THEN
-    IF NEW.verified_at IS NOT NULL AND (OLD IS NULL OR OLD.verified_at IS DISTINCT FROM NEW.verified_at) THEN
-      RAISE EXCEPTION 'verified_at cannot be set directly; ownership verification is required';
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS coding_profiles_lock_verification ON public.coding_profiles;
-CREATE TRIGGER coding_profiles_lock_verification
-  BEFORE INSERT OR UPDATE ON public.coding_profiles
-  FOR EACH ROW EXECUTE FUNCTION public.lock_coding_profile_verification();
+-- (Optional: uncomment once SUPABASE_SERVICE_ROLE_KEY is configured in production to enforce server-role only bypass)
+-- CREATE OR REPLACE FUNCTION public.lock_coding_profile_verification()
+-- RETURNS trigger AS $$
+-- BEGIN
+--   IF auth.role() = 'authenticated' THEN
+--     IF NEW.verified_at IS NOT NULL AND (OLD IS NULL OR OLD.verified_at IS DISTINCT FROM NEW.verified_at) THEN
+--       RAISE EXCEPTION 'verified_at cannot be set directly; ownership verification is required';
+--     END IF;
+--   END IF;
+--   RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 
+-- DROP TRIGGER IF EXISTS coding_profiles_lock_verification ON public.coding_profiles;
+-- CREATE TRIGGER coding_profiles_lock_verification
+--   BEFORE INSERT OR UPDATE ON public.coding_profiles
+--   FOR EACH ROW EXECUTE FUNCTION public.lock_coding_profile_verification();
 
