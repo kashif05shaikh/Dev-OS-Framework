@@ -64,12 +64,14 @@ import {
   runWithRetry,
   updateRow,
   subjectsQuery,
+  ensureSubjectsSeparated,
 } from "@/lib/devos-queries";
 import {
   RESOURCE_TYPES,
   RESOURCE_TYPE_LABEL,
   SUBJECT_COLORS,
   type LearningResource,
+  type LearningFolder,
 } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
 
@@ -106,15 +108,16 @@ const TYPE_ICON: Record<string, typeof BookOpen> = {
 const ALL_SUBJECTS = "__all__";
 
 type ResourceDraft = {
-  id?: string;
+  id?: string | undefined;
   title: string;
   type: string;
   url: string;
   description: string;
+  subject_id?: string | null | undefined;
   folder_id: string | null;
-  file_path?: string | null;
-  file_name?: string | null;
-  file_size?: number | null;
+  file_path?: string | null | undefined;
+  file_name?: string | null | undefined;
+  file_size?: number | null | undefined;
 };
 
 function formatBytes(bytes: number | null | undefined) {
@@ -151,9 +154,28 @@ function LearningPage() {
   const [draft, setDraft] = useState<ResourceDraft | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const subjectId = activeSubject ?? subjects.data?.[0]?.id ?? null;
+  // Automatically ensure legacy shared subjects are decoupled in background
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user?.id) {
+        await ensureSubjectsSeparated(data.user.id);
+      }
+    })();
+  }, []);
+
+  const learningSubjects = useMemo(() => {
+    return (subjects.data ?? []).filter((s) => {
+      if (s.icon === "learning") return true;
+      if (s.icon === "notes") return false;
+      // Legacy unmigrated subject: keep in learning unless explicitly marked notes
+      return true;
+    });
+  }, [subjects.data]);
+
+  const subjectId = activeSubject ?? learningSubjects[0]?.id ?? null;
   const isAll = subjectId === ALL_SUBJECTS;
-  const currentSubject = subjects.data?.find((s) => s.id === subjectId);
+  const currentSubject = learningSubjects.find((s) => s.id === subjectId);
   const currentFolder = folders.data?.find((f) => f.id === activeFolder);
 
   /** Full row from the query cache — needed for the POST-upsert save fallback. */
@@ -169,11 +191,11 @@ function LearningPage() {
   const createSubject = useMutation({
     mutationFn: async (name: string) => {
       const user_id = await requireUserId();
-      const position = subjects.data?.length ?? 0;
+      const position = learningSubjects.length;
       const color = SUBJECT_COLORS[position % SUBJECT_COLORS.length]!;
       const { data, error } = await supabase
         .from("subjects")
-        .insert({ user_id, name, position, color })
+        .insert({ user_id, name, position, color, icon: "learning" })
         .select()
         .single();
       assertOk(error);
@@ -189,7 +211,7 @@ function LearningPage() {
 
   const createFolder = useMutation({
     mutationFn: async (name: string) => {
-      if (!subjectId) throw new Error("Create a subject first.");
+      if (!subjectId || isAll) throw new Error("Select a specific subject first.");
       const user_id = await requireUserId();
       const position = folders.data?.filter((f) => f.subject_id === subjectId).length ?? 0;
       const { error } = await supabase
@@ -243,7 +265,10 @@ function LearningPage() {
 
   const saveResource = useMutation({
     mutationFn: async (value: ResourceDraft) => {
-      if (!subjectId) throw new Error("Create a subject first.");
+      const targetSubjectId = value.subject_id ?? (isAll ? learningSubjects[0]?.id : subjectId);
+      if (!targetSubjectId || targetSubjectId === ALL_SUBJECTS) {
+        throw new Error("Select a subject for this resource.");
+      }
       if (!value.title.trim()) throw new Error("Give the resource a title.");
       const payload = {
         title: value.title.trim(),
@@ -251,7 +276,7 @@ function LearningPage() {
         url: value.url.trim() || null,
         description: value.description.trim() || null,
         folder_id: value.folder_id,
-        subject_id: subjectId,
+        subject_id: targetSubjectId,
         file_path: value.file_path ?? null,
         file_name: value.file_name ?? null,
         file_size: value.file_size ?? null,
@@ -308,9 +333,9 @@ function LearningPage() {
 
   const subjectName = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
-    for (const s of subjects.data ?? []) map.set(s.id, { name: s.name, color: s.color });
+    for (const s of learningSubjects) map.set(s.id, { name: s.name, color: s.color });
     return map;
-  }, [subjects.data]);
+  }, [learningSubjects]);
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -435,13 +460,13 @@ function LearningPage() {
             </span>
           </button>
 
-          {(subjects.data?.length ?? 0) === 0 ? (
+          {learningSubjects.length === 0 ? (
             <EmptyState
               title="No subjects"
               description="Create a subject to start collecting resources."
             />
           ) : (
-            subjects.data!.map((subject) => (
+            learningSubjects.map((subject) => (
               <div key={subject.id} className="mb-1">
                 <div
                   className={cn(
@@ -654,21 +679,45 @@ function LearningPage() {
             </Select>
             <Button
               size="sm"
-              disabled={!subjectId || isAll}
-              title={isAll ? "Pick a subject to add a resource" : undefined}
+              disabled={learningSubjects.length === 0}
+              title={learningSubjects.length === 0 ? "Create a subject first" : undefined}
               className="shrink-0"
-              onClick={() =>
+              onClick={() => {
+                if (learningSubjects.length === 0) {
+                  setNameDialog({
+                    title: "New subject",
+                    label: "Subject name",
+                    submitLabel: "Create",
+                    onSubmit: async (name) => {
+                      const newSubj = await createSubject.mutateAsync(name);
+                      setNameDialog(null);
+                      setDraft({
+                        title: "",
+                        type: "youtube",
+                        url: "",
+                        description: "",
+                        subject_id: newSubj.id,
+                        folder_id: null,
+                        file_path: null,
+                        file_name: null,
+                        file_size: null,
+                      });
+                    },
+                  });
+                  return;
+                }
                 setDraft({
                   title: "",
                   type: "youtube",
                   url: "",
                   description: "",
-                  folder_id: activeFolder,
+                  subject_id: isAll ? (learningSubjects[0]?.id ?? null) : subjectId,
+                  folder_id: isAll ? null : activeFolder,
                   file_path: null,
                   file_name: null,
                   file_size: null,
-                })
-              }
+                });
+              }}
             >
               <Plus className="size-4" /> Resource
             </Button>
@@ -763,6 +812,7 @@ function LearningPage() {
                                 type: resource.type,
                                 url: resource.url ?? "",
                                 description: resource.description ?? "",
+                                subject_id: resource.subject_id,
                                 folder_id: resource.folder_id,
                                 file_path: resource.file_path,
                                 file_name: resource.file_name,
@@ -874,7 +924,8 @@ function LearningPage() {
 
       <ResourceDialog
         draft={draft}
-        folders={subjectFolders}
+        subjects={learningSubjects}
+        allFolders={folders.data ?? []}
         onClose={() => setDraft(null)}
         onSave={(value) => saveResource.mutate(value)}
         saving={saveResource.isPending}
@@ -887,13 +938,15 @@ function LearningPage() {
 
 function ResourceDialog({
   draft,
-  folders,
+  subjects,
+  allFolders,
   onClose,
   onSave,
   saving,
 }: {
   draft: ResourceDraft | null;
-  folders: { id: string; name: string }[];
+  subjects: { id: string; name: string; color: string }[];
+  allFolders: LearningFolder[];
   onClose: () => void;
   onSave: (value: ResourceDraft) => void;
   saving: boolean;
@@ -907,6 +960,9 @@ function ResourceDialog({
   useEffect(() => {
     setValue(draft);
   }, [draft]);
+
+  const selectedSubjectId = value?.subject_id || subjects[0]?.id || "";
+  const availableFolders = allFolders.filter((f) => f.subject_id === selectedSubjectId);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -958,7 +1014,9 @@ function ResourceDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            if (value && value.title.trim()) onSave(value);
+            if (value && value.title.trim()) {
+              onSave({ ...value, subject_id: selectedSubjectId });
+            }
           }}
         >
           <DialogHeader>
@@ -995,28 +1053,55 @@ function ResourceDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Folder</Label>
+                <Label>Subject</Label>
                 <Select
-                  value={value?.folder_id ?? "none"}
-                  onValueChange={(folder) =>
-                    setValue((v) =>
-                      v ? { ...v, folder_id: folder === "none" ? null : folder } : v,
-                    )
+                  value={selectedSubjectId}
+                  onValueChange={(subjId) =>
+                    setValue((v) => (v ? { ...v, subject_id: subjId, folder_id: null } : v))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No folder</SelectItem>
-                    {folders.map((folder) => (
-                      <SelectItem key={folder.id} value={folder.id}>
-                        {folder.name}
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: s.color }}
+                          />
+                          <span className="truncate">{s.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Folder</Label>
+              <Select
+                value={value?.folder_id ?? "none"}
+                onValueChange={(folder) =>
+                  setValue((v) =>
+                    v ? { ...v, folder_id: folder === "none" ? null : folder } : v,
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No folder</SelectItem>
+                  {availableFolders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="res-url">URL</Label>

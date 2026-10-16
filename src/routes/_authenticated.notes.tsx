@@ -54,6 +54,7 @@ import {
   runWithRetry,
   updateRow,
   subjectsQuery,
+  ensureSubjectsSeparated,
 } from "@/lib/devos-queries";
 import { SUBJECT_COLORS, type Note } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
@@ -120,17 +121,40 @@ function NotesPage() {
     }
   }, [selectedNote]);
 
+  // Automatically ensure legacy shared subjects are decoupled in background
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user?.id) {
+        await ensureSubjectsSeparated(data.user.id);
+      }
+    })();
+  }, []);
+
+  const notesSubjects = useMemo(() => {
+    const noteSubjIds = new Set([
+      ...(notes.data ?? []).map((n) => n.subject_id),
+      ...(folders.data ?? []).map((f) => f.subject_id),
+    ]);
+    return (subjects.data ?? []).filter((s) => {
+      if (s.icon === "notes") return true;
+      if (s.icon === "learning") return false;
+      // Legacy unmigrated subject: only display in Notes if it actually has notes
+      return noteSubjIds.has(s.id);
+    });
+  }, [subjects.data, notes.data, folders.data]);
+
   /* ---------------------------- mutations ---------------------------- */
 
   const createSubject = useMutation({
     mutationFn: async (name: string) => {
       await runWithRetry(async () => {
         const user_id = await requireUserId();
-        const position = subjects.data?.length ?? 0;
+        const position = notesSubjects.length;
         const color = SUBJECT_COLORS[position % SUBJECT_COLORS.length]!;
         const { error } = await supabase
           .from("subjects")
-          .insert({ user_id, name, position, color });
+          .insert({ user_id, name, position, color, icon: "notes" });
         assertOk(error);
       });
     },
@@ -343,14 +367,14 @@ function NotesPage() {
               <LoadingState label="Loading notes…" />
             ) : error ? (
               <ErrorState error={error} onRetry={() => invalidate()} />
-            ) : (subjects.data?.length ?? 0) === 0 ? (
+            ) : notesSubjects.length === 0 ? (
               <EmptyState
                 icon={<Folder className="size-6" />}
                 title="No subjects yet"
                 description="Subjects are the top level: Subject → Folder → Note."
               />
             ) : (
-              subjects.data!.map((subject) => {
+              notesSubjects.map((subject) => {
                 const subjectFolders = (folders.data ?? []).filter(
                   (f) => f.subject_id === subject.id,
                 );
@@ -607,7 +631,7 @@ function NotesPage() {
           <NoteEditor
             key={selectedNote.id}
             note={selectedNote}
-            subjects={subjects.data ?? []}
+            subjects={notesSubjects}
             folders={folders.data ?? []}
             onBack={() => selectNote(undefined)}
             onPatch={(patch) => updateNote.mutateAsync({ id: selectedNote.id, patch })}

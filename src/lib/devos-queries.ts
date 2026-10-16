@@ -195,6 +195,87 @@ export const subjectsQuery = () =>
       ),
   });
 
+let separationRan = false;
+
+/**
+ * Ensures legacy subjects (icon='book') are automatically decoupled into
+ * 'notes' or 'learning' subjects so Notes and Learning Hub operate independently.
+ */
+export async function ensureSubjectsSeparated(userId: string): Promise<void> {
+  if (separationRan || !userId) return;
+  separationRan = true;
+
+  try {
+    const { data: allSubjects, error: subErr } = await supabase
+      .from("subjects")
+      .select("id, icon, name, color, position")
+      .eq("user_id", userId);
+
+    if (subErr || !allSubjects) return;
+
+    const unmigrated = allSubjects.filter(
+      (s) => s.icon !== "notes" && s.icon !== "learning",
+    );
+    if (unmigrated.length === 0) return;
+
+    const [{ data: lrData }, { data: lfData }, { data: nData }, { data: nfData }] =
+      await Promise.all([
+        supabase.from("learning_resources").select("id, subject_id").eq("user_id", userId),
+        supabase.from("learning_folders").select("id, subject_id").eq("user_id", userId),
+        supabase.from("notes").select("id, subject_id").eq("user_id", userId),
+        supabase.from("note_folders").select("id, subject_id").eq("user_id", userId),
+      ]);
+
+    const learningSubjIds = new Set([
+      ...(lrData ?? []).map((r) => r.subject_id),
+      ...(lfData ?? []).map((f) => f.subject_id),
+    ]);
+    const notesSubjIds = new Set([
+      ...(nData ?? []).map((n) => n.subject_id),
+      ...(nfData ?? []).map((f) => f.subject_id),
+    ]);
+
+    for (const subj of unmigrated) {
+      const hasLearning = learningSubjIds.has(subj.id);
+      const hasNotes = notesSubjIds.has(subj.id);
+
+      if (hasLearning && !hasNotes) {
+        await supabase.from("subjects").update({ icon: "learning" }).eq("id", subj.id);
+      } else if (hasNotes && !hasLearning) {
+        await supabase.from("subjects").update({ icon: "notes" }).eq("id", subj.id);
+      } else if (hasLearning && hasNotes) {
+        const { data: cloned } = await supabase
+          .from("subjects")
+          .insert({
+            user_id: userId,
+            name: subj.name,
+            color: subj.color,
+            position: subj.position,
+            icon: "learning",
+          })
+          .select("id")
+          .single();
+
+        if (cloned?.id) {
+          await supabase
+            .from("learning_resources")
+            .update({ subject_id: cloned.id })
+            .eq("subject_id", subj.id);
+          await supabase
+            .from("learning_folders")
+            .update({ subject_id: cloned.id })
+            .eq("subject_id", subj.id);
+        }
+        await supabase.from("subjects").update({ icon: "notes" }).eq("id", subj.id);
+      } else {
+        await supabase.from("subjects").update({ icon: "learning" }).eq("id", subj.id);
+      }
+    }
+  } catch (err) {
+    console.error("Subject separation failed gracefully:", err);
+  }
+}
+
 export const profileQuery = () =>
   queryOptions({
     queryKey: ["profile"],
