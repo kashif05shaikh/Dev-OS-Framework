@@ -8,6 +8,7 @@ import {
 } from "./platforms";
 import type { VerificationChallengeData, VerificationResult } from "./types";
 import type { Database } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CodingProfileInsert = Database["public"]["Tables"]["coding_profiles"]["Insert"];
 type CodingProfileUpdate = Database["public"]["Tables"]["coding_profiles"]["Update"];
@@ -40,16 +41,18 @@ export async function startVerification(
   userId: string,
   platform: string,
   handleRaw: string,
+  userClient?: SupabaseClient<Database>,
 ): Promise<VerificationChallengeData> {
   const handle = handleRaw.trim();
   if (!handle) throw new Error("Handle / username is required.");
   if (handle.length > 100) throw new Error("Handle is too long.");
 
   const meta = getPlatformVerificationMeta(platform, handle);
+  const db = userClient ?? supabaseAdmin;
 
   // 1. Check if user already has a VERIFIED profile for this platform
   try {
-    const { data: existingUserProfiles } = await supabaseAdmin
+    const { data: existingUserProfiles } = await db
       .from("coding_profiles")
       .select("id, platform, username, activity")
       .eq("user_id", userId)
@@ -145,15 +148,17 @@ export async function checkVerification(
   userId: string,
   platform: string,
   handleRaw: string,
+  userClient?: SupabaseClient<Database>,
 ): Promise<VerificationResult> {
   const handle = handleRaw.trim();
   const meta = getPlatformVerificationMeta(platform, handle);
   const key = challengeKey(userId, platform);
+  const db = userClient ?? supabaseAdmin;
 
   // 1. Fetch challenge from DB or memory fallback
   let challenge: InMemChallenge | null = null;
   try {
-    const { data: challenges } = await supabaseAdmin
+    const { data: challenges } = await (userClient ?? supabaseAdmin)
       .from("verification_challenges")
       .select("*")
       .eq("user_id", userId)
@@ -189,7 +194,7 @@ export async function checkVerification(
   if (new Date(challenge.expires_at).getTime() < Date.now()) {
     memoryChallenges.delete(key);
     try {
-      await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+      await (userClient ?? supabaseAdmin).from("verification_challenges").delete().eq("id", challenge.id);
     } catch {}
     return {
       verified: false,
@@ -202,7 +207,7 @@ export async function checkVerification(
   if (challenge.attempts >= MAX_ATTEMPTS) {
     memoryChallenges.delete(key);
     try {
-      await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+      await (userClient ?? supabaseAdmin).from("verification_challenges").delete().eq("id", challenge.id);
     } catch {}
     return {
       verified: false,
@@ -217,7 +222,7 @@ export async function checkVerification(
   memoryChallenges.set(key, challenge);
 
   try {
-    await supabaseAdmin
+    await (userClient ?? supabaseAdmin)
       .from("verification_challenges")
       .update({ attempts: newAttempts })
       .eq("id", challenge.id);
@@ -238,7 +243,7 @@ export async function checkVerification(
     if (verifiedOtherUser.length > 0) {
       memoryChallenges.delete(key);
       try {
-        await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+        await (userClient ?? supabaseAdmin).from("verification_challenges").delete().eq("id", challenge.id);
       } catch {}
       return {
         verified: false,
@@ -284,7 +289,7 @@ export async function checkVerification(
   const verifiedAt = new Date().toISOString();
 
   // Find if user has an existing row for this platform (e.g. unverified row)
-  const { data: existingRows } = await supabaseAdmin
+  const { data: existingRows } = await db
     .from("coding_profiles")
     .select("id")
     .eq("user_id", userId)
@@ -322,7 +327,7 @@ export async function checkVerification(
   let savedProfileId = existingId;
 
   if (existingId) {
-    let { error: updateErr } = await supabaseAdmin
+    let { error: updateErr } = await db
       .from("coding_profiles")
       .update(profilePayload)
       .eq("id", existingId);
@@ -330,24 +335,37 @@ export async function checkVerification(
     // If verified_at column does not exist in DB schema yet, strip and retry
     if (updateErr && (updateErr.code === "42703" || updateErr.message?.includes("verified_at"))) {
       const { verified_at: _, ...payloadWithoutColumn } = profilePayload;
-      const retry = await supabaseAdmin
+      const retry = await db
         .from("coding_profiles")
         .update(payloadWithoutColumn as CodingProfileUpdate)
         .eq("id", existingId);
       updateErr = retry.error;
     }
 
+    if (updateErr && db !== supabaseAdmin) {
+      const adminTry = await supabaseAdmin
+        .from("coding_profiles")
+        .update(profilePayload)
+        .eq("id", existingId);
+      if (!adminTry.error) updateErr = null;
+    }
+
     if (updateErr) {
-      throw new Error(`Failed to save verified profile: ${updateErr.message}`);
+      console.error("[Verification] update error:", updateErr);
+      return {
+        verified: false,
+        attemptsRemaining,
+        error: `Could not save verified profile: ${updateErr.message}`,
+      };
     }
   } else {
     // Determine position
-    const { count } = await supabaseAdmin
+    const { count } = await db
       .from("coding_profiles")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    let { data: inserted, error: insertErr } = await supabaseAdmin
+    let { data: inserted, error: insertErr } = await db
       .from("coding_profiles")
       .insert({
         ...profilePayload,
@@ -359,7 +377,7 @@ export async function checkVerification(
     // If verified_at column does not exist in DB schema yet, strip and retry
     if (insertErr && (insertErr.code === "42703" || insertErr.message?.includes("verified_at"))) {
       const { verified_at: _, ...payloadWithoutColumn } = profilePayload;
-      const retry = await supabaseAdmin
+      const retry = await db
         .from("coding_profiles")
         .insert({
           ...payloadWithoutColumn,
@@ -371,8 +389,28 @@ export async function checkVerification(
       insertErr = retry.error;
     }
 
+    if (insertErr && db !== supabaseAdmin) {
+      const adminTry = await supabaseAdmin
+        .from("coding_profiles")
+        .insert({
+          ...profilePayload,
+          position: count ?? 0,
+        })
+        .select("id")
+        .single();
+      if (!adminTry.error) {
+        inserted = adminTry.data;
+        insertErr = null;
+      }
+    }
+
     if (insertErr) {
-      throw new Error(`Failed to create verified profile: ${insertErr.message}`);
+      console.error("[Verification] insert error:", insertErr);
+      return {
+        verified: false,
+        attemptsRemaining,
+        error: `Could not save verified profile: ${insertErr.message}`,
+      };
     }
     savedProfileId = inserted?.id;
   }
@@ -380,7 +418,7 @@ export async function checkVerification(
   // 5. Clean up completed challenge
   memoryChallenges.delete(key);
   try {
-    await supabaseAdmin.from("verification_challenges").delete().eq("id", challenge.id);
+    await (userClient ?? supabaseAdmin).from("verification_challenges").delete().eq("id", challenge.id);
   } catch {}
 
   return {
@@ -389,10 +427,14 @@ export async function checkVerification(
   };
 }
 
-export async function cancelVerification(userId: string, platform: string): Promise<void> {
+export async function cancelVerification(
+  userId: string,
+  platform: string,
+  userClient?: SupabaseClient<Database>,
+): Promise<void> {
   memoryChallenges.delete(challengeKey(userId, platform));
   try {
-    await supabaseAdmin
+    await (userClient ?? supabaseAdmin)
       .from("verification_challenges")
       .delete()
       .eq("user_id", userId)

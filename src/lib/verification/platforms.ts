@@ -10,11 +10,11 @@ export const PLATFORM_VERIFICATION_CONFIGS: Record<string, PlatformVerificationM
   leetcode: {
     platform: "leetcode",
     name: "LeetCode",
-    fieldName: "Summary / About Me or Name",
-    settingsUrl: "https://leetcode.com/profile/",
+    fieldName: "Display Name (or Websites)",
+    settingsUrl: "https://leetcode.com/settings/profile/",
     instructions:
-      "Go to your LeetCode Profile Settings, paste this verification code into your Summary / About Me or Name field, and save changes.",
-    tips: "Changes on LeetCode take effect immediately. You can remove the code once verified.",
+      "Go to LeetCode Profile Settings, paste this verification code into Display Name (or Websites), and click Save.",
+    tips: "In LeetCode Settings -> General, paste the code into 'Display Name' and save. You can change your Display Name back after verification.",
   },
   codeforces: {
     platform: "codeforces",
@@ -100,11 +100,15 @@ async function verifyLeetCode(handle: string, code: string): Promise<boolean> {
   const query = `query devosVerify($username: String!) {
     matchedUser(username: $username) {
       username
+      githubUrl
+      twitterUrl
+      linkedinUrl
       profile {
         realName
         aboutMe
         school
         company
+        websites
       }
     }
   }`;
@@ -123,19 +127,37 @@ async function verifyLeetCode(handle: string, code: string): Promise<boolean> {
   const json = (await res.json()) as {
     data?: {
       matchedUser?: {
+        githubUrl?: string | null;
+        twitterUrl?: string | null;
+        linkedinUrl?: string | null;
         profile?: {
           realName?: string | null;
           aboutMe?: string | null;
           school?: string | null;
           company?: string | null;
+          websites?: string[] | null;
         } | null;
       } | null;
     };
   };
 
-  const p = json?.data?.matchedUser?.profile;
-  if (!p) return false;
-  const haystack = `${p.realName ?? ""} ${p.aboutMe ?? ""} ${p.school ?? ""} ${p.company ?? ""}`.toLowerCase();
+  const mu = json?.data?.matchedUser;
+  const p = mu?.profile;
+  if (!mu) return false;
+  const websitesStr = Array.isArray(p?.websites) ? p.websites.join(" ") : "";
+  const haystack = [
+    p?.realName ?? "",
+    p?.aboutMe ?? "",
+    p?.school ?? "",
+    p?.company ?? "",
+    websitesStr,
+    mu.githubUrl ?? "",
+    mu.twitterUrl ?? "",
+    mu.linkedinUrl ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
   return haystack.includes(code.toLowerCase());
 }
 

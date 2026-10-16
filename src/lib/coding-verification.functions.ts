@@ -15,7 +15,7 @@ export const startVerificationChallenge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertUserRateLimit(context.userId, { maxRequests: 20, windowMs: 60_000 });
     const { startVerification } = await import("./verification/server");
-    return startVerification(context.userId, data.platform, data.handle);
+    return startVerification(context.userId, data.platform, data.handle, context.supabase);
   });
 
 export const checkVerificationChallenge = createServerFn({ method: "POST" })
@@ -30,7 +30,7 @@ export const checkVerificationChallenge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertUserRateLimit(context.userId, { maxRequests: 20, windowMs: 60_000 });
     const { checkVerification } = await import("./verification/server");
-    return checkVerification(context.userId, data.platform, data.handle);
+    return checkVerification(context.userId, data.platform, data.handle, context.supabase);
   });
 
 export const cancelVerificationChallenge = createServerFn({ method: "POST" })
@@ -43,6 +43,6 @@ export const cancelVerificationChallenge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertUserRateLimit(context.userId, { maxRequests: 20, windowMs: 60_000 });
     const { cancelVerification } = await import("./verification/server");
-    return cancelVerification(context.userId, data.platform);
+    return cancelVerification(context.userId, data.platform, context.supabase);
   });
 
