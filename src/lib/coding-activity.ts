@@ -188,17 +188,43 @@ export type CodingProfileRow = {
   verified_at?: string | null;
 };
 
-export function isProfileVerified(row: { verified_at?: string | null; activity?: unknown }): boolean {
+export function getProfileVerifiedAt(row: { verified_at?: string | null; activity?: unknown }): string | null {
   if (typeof row.verified_at === "string" && row.verified_at.trim().length > 0) {
-    return true;
+    return row.verified_at.trim();
   }
   if (row.activity && typeof row.activity === "object") {
     const act = row.activity as Record<string, unknown>;
     if (typeof act["verified_at"] === "string" && act["verified_at"].trim().length > 0) {
-      return true;
+      return act["verified_at"].trim();
     }
   }
-  return false;
+  return null;
+}
+
+export function buildActivityPayload(
+  stats: { activity: unknown },
+  existing?: { verified_at?: string | null; activity?: unknown; username?: string },
+) {
+  const verifiedAt = existing ? getProfileVerifiedAt(existing) : null;
+  const existingAct =
+    existing?.activity && typeof existing?.activity === "object"
+      ? (existing.activity as Record<string, unknown>)
+      : null;
+  const verifiedHandle =
+    typeof existingAct?.["verified_handle"] === "string"
+      ? existingAct["verified_handle"]
+      : existing?.username;
+
+  return {
+    version: 2,
+    ...(verifiedAt ? { verified_at: verifiedAt } : {}),
+    ...(verifiedHandle ? { verified_handle: verifiedHandle } : {}),
+    days: stats.activity,
+  };
+}
+
+export function isProfileVerified(row: { verified_at?: string | null; activity?: unknown }): boolean {
+  return getProfileVerifiedAt(row) !== null;
 }
 
 /** The single source of truth used by both Coding Profiles and the Dashboard. */

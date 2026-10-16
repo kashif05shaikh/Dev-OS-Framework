@@ -5,13 +5,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import { describeError, updateRow } from "@/lib/devos-queries";
 import { SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
+import { buildActivityPayload, isProfileVerified } from "@/lib/coding-activity";
 
 /** Coding stats are considered fresh for one hour. */
 export const CODING_STALE_MS = 60 * 60 * 1000;
-
-function activityPayload(stats: { activity: unknown }) {
-  return { version: 2, days: stats.activity } as never;
-}
 
 export function isSyncable(platform: string): boolean {
   return (SYNCABLE_PLATFORMS as readonly string[]).includes(platform);
@@ -22,7 +19,7 @@ export function staleCodingProfiles(rows: CodingProfile[]): CodingProfile[] {
   const cutoff = Date.now() - CODING_STALE_MS;
   return rows.filter((row) => {
     if (!isSyncable(row.platform)) return false;
-    if (typeof row.verified_at !== "string" || !row.verified_at.trim()) return false;
+    if (!isProfileVerified(row)) return false;
     const at = row.last_synced_at ? Date.parse(row.last_synced_at) : NaN;
     return !Number.isFinite(at) || at < cutoff;
   });
@@ -66,7 +63,7 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
                 submissions_count: stats.submissions,
                 current_streak: stats.current_streak,
                 max_streak: Math.max(stats.max_streak, profile.max_streak),
-                activity: activityPayload(stats),
+                activity: buildActivityPayload(stats, profile),
                 last_synced_at: stats.lastSyncedAt,
                 sync_status: "success",
                 sync_error: null,

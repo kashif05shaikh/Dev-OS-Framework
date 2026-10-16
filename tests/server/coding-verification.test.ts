@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
+  buildActivityPayload,
   summariseCodingProfiles,
   type CodingProfileRow,
 } from "../../src/lib/coding-activity";
@@ -98,6 +99,44 @@ describe("Coding Profiles Anti-Fake Data & Ownership Verification", () => {
       const stale = staleCodingProfiles(mockProfiles);
       expect(stale).toHaveLength(1);
       expect(stale[0]!.platform).toBe("codeforces");
+    });
+
+    it("buildActivityPayload preserves verified_at and verified_handle across syncs", () => {
+      const existing = {
+        platform: "leetcode",
+        username: "Kashif05",
+        activity: {
+          version: 2,
+          verified_at: "2026-10-16T12:00:00Z",
+          verified_handle: "Kashif05",
+          days: [],
+        },
+      };
+
+      const freshStats = {
+        activity: [{ date: "2026-10-16", submissions: 5, solved: 2 }],
+      };
+
+      const updated = buildActivityPayload(freshStats, existing);
+      expect(updated.verified_at).toBe("2026-10-16T12:00:00Z");
+      expect(updated.verified_handle).toBe("Kashif05");
+      expect(updated.days).toEqual(freshStats.activity);
+    });
+
+    it("staleCodingProfiles recognizes verified profiles stored in JSONB activity", () => {
+      const profile = {
+        id: "1",
+        user_id: "u1",
+        platform: "leetcode",
+        username: "Kashif05",
+        activity: {
+          version: 2,
+          verified_at: "2026-10-16T12:00:00Z",
+        },
+        last_synced_at: null,
+      } as unknown as CodingProfile;
+
+      expect(staleCodingProfiles([profile])).toHaveLength(1);
     });
   });
 

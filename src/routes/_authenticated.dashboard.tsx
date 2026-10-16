@@ -77,7 +77,7 @@ import {
 } from "@/lib/devos-queries";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { summariseCodingProfiles } from "@/lib/coding-activity";
+import { buildActivityPayload, summariseCodingProfiles } from "@/lib/coding-activity";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
 import { useCodingAutoSync } from "@/lib/use-coding-autosync";
@@ -147,10 +147,6 @@ function relativeTime(iso: string) {
   const days = Math.round(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString();
-}
-
-function activityPayload(stats: { activity: unknown }): Json {
-  return { version: 2, days: stats.activity as Json };
 }
 
 function DashboardSkeleton() {
@@ -238,7 +234,7 @@ function DashboardPage() {
               submissions_count: stats.submissions,
               current_streak: stats.current_streak,
               max_streak: Math.max(stats.max_streak, profile.max_streak),
-              activity: activityPayload(stats),
+              activity: buildActivityPayload(stats, profile) as Json,
               last_synced_at: stats.lastSyncedAt,
               sync_status: "success",
               sync_error: null,

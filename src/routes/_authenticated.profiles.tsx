@@ -25,7 +25,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog, type ConfirmState } from "@/components/confirm-dialog";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
-import { isProfileVerified, summariseCodingProfiles } from "@/lib/coding-activity";
+import { buildActivityPayload, isProfileVerified, summariseCodingProfiles } from "@/lib/coding-activity";
 import { PlatformLogo } from "@/components/platform-logo";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -138,10 +138,6 @@ const SOLVED_UNSUPPORTED = new Set<string>();
 function metric(value: number | null, unsupported = false): string {
   if (unsupported) return "N/A";
   return value === null ? "N/A" : String(value);
-}
-
-function activityPayload(stats: { activity: unknown }): Json {
-  return { version: 2, days: stats.activity as Json };
 }
 
 function ProfilesPage() {
@@ -279,7 +275,7 @@ function ProfilesPage() {
           submissions_count: stats.submissions,
           current_streak: stats.current_streak,
           max_streak: Math.max(stats.max_streak, profile.max_streak),
-          activity: activityPayload(stats),
+          activity: buildActivityPayload(stats, profile) as Json,
           last_synced_at: stats.lastSyncedAt,
           sync_status: "success",
           sync_error: null,
@@ -367,7 +363,7 @@ function ProfilesPage() {
               submissions_count: stats.submissions,
               current_streak: stats.current_streak,
               max_streak: Math.max(stats.max_streak, profile.max_streak),
-              activity: activityPayload(stats),
+              activity: buildActivityPayload(stats, profile) as Json,
               last_synced_at: stats.lastSyncedAt,
               sync_status: "success",
               sync_error: null,
