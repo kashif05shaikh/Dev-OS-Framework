@@ -16,8 +16,10 @@ import {
   Flame,
   FolderKanban,
   GitBranch,
+  Link2,
   Plus,
   RefreshCw,
+  SquarePen,
   Star,
   Trash2,
   Trophy,
@@ -25,6 +27,13 @@ import {
   User,
   Zap,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
@@ -265,26 +274,53 @@ function ProfilePhotoOption({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.25 }}
-      className="flex w-full flex-col items-center justify-center rounded-[20px] border border-border bg-white/[0.03] p-5 sm:p-6 lg:w-72"
+      className="relative flex w-full flex-col items-center justify-center rounded-2xl border border-border/70 bg-white/[0.02] p-6 shadow-sm backdrop-blur-sm sm:w-80 sm:h-72"
     >
-      <div className="flex w-full items-center justify-between pb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Profile Photo
-        </span>
-        {avatarUrl && (
-          <button
-            type="button"
-            onClick={handleRemovePhoto}
-            disabled={isUploading}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
-            title="Remove profile photo"
-          >
-            <Trash2 className="size-3" />
-            <span>Remove</span>
-          </button>
-        )}
+      {/* Top right edit button with dropdown matching Image 2 */}
+      <div className="absolute top-3.5 right-3.5 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition-all duration-200 hover:border-white/25 hover:bg-white/[0.08] hover:text-foreground active:scale-95 focus:outline-none"
+              title="Edit profile photo"
+              aria-label="Edit profile photo"
+            >
+              <SquarePen className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem
+              onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer gap-2"
+            >
+              <Upload className="size-4" />
+              <span>Upload photo</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsEnteringUrl(true)}
+              className="cursor-pointer gap-2"
+            >
+              <Link2 className="size-4" />
+              <span>Paste URL</span>
+            </DropdownMenuItem>
+            {avatarUrl && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleRemovePhoto}
+                  className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                  <span>Remove photo</span>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
+      {/* Prominent Circular Avatar matching Image 2 */}
       <div
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
@@ -300,16 +336,16 @@ function ProfilePhotoOption({
         onDrop={handleDrop}
         role="button"
         tabIndex={0}
-        aria-label="Upload profile photo"
-        title="Click or drop an image to attach profile photo"
+        aria-label="Change profile photo"
+        title="Click to choose a profile photo"
         className={cn(
-          "group relative size-28 sm:size-32 cursor-pointer select-none rounded-full p-1 ring-2 transition-all duration-300 focus:outline-none focus-visible:ring-primary",
+          "group relative size-44 sm:size-48 cursor-pointer select-none rounded-full ring-1 transition-all duration-300 focus:outline-none focus-visible:ring-primary",
           isDragging
-            ? "scale-105 ring-primary ring-offset-2 ring-offset-background"
-            : "ring-primary/20 hover:ring-primary/60",
+            ? "scale-105 ring-primary ring-offset-4 ring-offset-background"
+            : "ring-white/10 hover:ring-white/30 hover:shadow-2xl hover:shadow-primary/10",
         )}
       >
-        <div className="relative size-full overflow-hidden rounded-full border border-border/80 bg-gradient-to-br from-primary/10 via-background to-muted/40 shadow-inner flex items-center justify-center">
+        <div className="relative size-full overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-white/[0.05] via-background to-muted/20 shadow-inner flex items-center justify-center">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -318,39 +354,30 @@ function ProfilePhotoOption({
             />
           ) : (
             <div className="flex flex-col items-center justify-center text-muted-foreground">
-              <span className="text-2xl font-bold tracking-tight text-foreground/80 sm:text-3xl">
+              <span className="text-4xl font-bold tracking-tight text-foreground/80 sm:text-5xl">
                 {initials}
               </span>
-              <span className="mt-0.5 text-[10px] font-medium text-muted-foreground">
-                Attach photo
+              <span className="mt-1 text-xs text-muted-foreground/70">
+                Click to add photo
               </span>
             </div>
           )}
 
-          {/* Hover overlay with camera icon and label */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/65 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100 text-white">
-            <Camera className="size-5" />
-            <span className="mt-1 text-[11px] font-medium tracking-tight">
-              {avatarUrl ? "Change" : "Upload"}
-            </span>
+          {/* Subtle hover overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100 text-white">
+            {isUploading ? (
+              <RefreshCw className="size-6 animate-spin text-white" />
+            ) : (
+              <>
+                <Camera className="size-6 text-white" />
+                <span className="mt-1 text-xs font-medium">Change Photo</span>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Small floating action badge */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}
-          className="absolute -bottom-0.5 -right-0.5 flex size-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-md transition-transform duration-200 hover:scale-110 active:scale-95"
-          title="Upload image"
-          aria-label="Upload image"
-        >
-          <Camera className="size-3.5" />
-        </button>
       </div>
 
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -359,14 +386,15 @@ function ProfilePhotoOption({
         onChange={handleFileChange}
       />
 
-      {isEnteringUrl ? (
-        <div className="mt-3.5 flex w-full items-center gap-1.5">
+      {/* Sleek inline URL prompt (only shown if user clicks "Paste URL") */}
+      {isEnteringUrl && (
+        <div className="absolute inset-x-4 bottom-4 z-20 flex items-center gap-1.5 rounded-xl border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in-50 zoom-in-95">
           <input
             type="url"
             placeholder="https://..."
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
-            className="h-8 flex-1 rounded-lg border border-border bg-background/80 px-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-8 flex-1 bg-transparent px-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") void handleSaveUrl();
@@ -377,41 +405,16 @@ function ProfilePhotoOption({
             type="button"
             onClick={handleSaveUrl}
             disabled={isUploading || !urlInput.trim()}
-            className="h-8 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:opacity-50"
+            className="h-7 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             Save
           </button>
           <button
             type="button"
             onClick={() => setIsEnteringUrl(false)}
-            className="h-8 rounded-lg px-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
-            ✕
-          </button>
-        </div>
-      ) : (
-        <div className="mt-3.5 flex w-full flex-col items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white/[0.04] text-xs font-medium text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
-          >
-            {isUploading ? (
-              <RefreshCw className="size-3.5 animate-spin text-primary" />
-            ) : (
-              <Upload className="size-3.5 text-primary" />
-            )}
-            <span>
-              {isUploading ? "Updating..." : avatarUrl ? "Change Photo" : "Attach Photo"}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsEnteringUrl(true)}
-            className="text-[11px] text-muted-foreground/80 transition-colors hover:text-primary hover:underline underline-offset-2"
-          >
-            Or paste image URL
+            Cancel
           </button>
         </div>
       )}
