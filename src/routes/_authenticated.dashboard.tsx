@@ -713,7 +713,6 @@ function DashboardPage() {
     {
       label: "Active days",
       value: derived.activeDays || derived.streak,
-      suffix: "d",
       icon: Flame,
       to: "/profiles" as const,
       accent: "var(--chart-4)",
@@ -835,25 +834,21 @@ function DashboardPage() {
         >
           {metrics.map((m) => (
             <motion.div key={m.label} variants={riseIn}>
-              <Link to={m.to} className="block">
-                <GlassCard className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {m.label}
-                    </span>
-                    <motion.span
-                      whileHover={{ rotate: 12, scale: 1.15 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 12 }}
-                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary"
-                    >
-                      <m.icon className="size-4" />
-                    </motion.span>
-                  </div>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight">
-                    <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
-                  </p>
-                </GlassCard>
-              </Link>
+              <GlassCard className="flex flex-col items-center justify-center p-5 text-center">
+                <motion.span
+                  whileHover={{ rotate: 12, scale: 1.15 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 12 }}
+                  className="mb-2.5 grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary"
+                >
+                  <m.icon className="size-4" />
+                </motion.span>
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {m.label}
+                </span>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight">
+                  <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
+                </p>
+              </GlassCard>
             </motion.div>
           ))}
 
