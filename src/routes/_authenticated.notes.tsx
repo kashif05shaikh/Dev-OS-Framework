@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -11,9 +12,11 @@ import {
   FileText,
   Folder,
   FolderPlus,
+  Loader2,
   MoreHorizontal,
   Pencil,
   Plus,
+  Save,
   Search,
   Star,
   Trash2,
@@ -832,6 +835,10 @@ function NoteEditor({
           .filter(Boolean),
       });
       setStatus("saved");
+      toast.success("Note saved");
+      setTimeout(() => {
+        setStatus((s) => (s === "saved" ? "idle" : s));
+      }, 2000);
     } catch {
       // The mutation already surfaced a human-readable toast.
       setStatus("error");
@@ -841,15 +848,13 @@ function NoteEditor({
   const saveRef = useRef(save);
   saveRef.current = save;
 
-  // Debounced autosave for title / content / tags.
+  // Track edits so user knows changes are pending save.
   useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
     setStatus("unsaved");
-    const timer = setTimeout(() => void saveRef.current(), 700);
-    return () => clearTimeout(timer);
   }, [title, content, tagInput]);
 
   // Manual save with Cmd/Ctrl+S.
@@ -924,29 +929,29 @@ function NoteEditor({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <span
-            className={cn(
-              "text-xs",
-              status === "error" ? "text-destructive" : "text-muted-foreground",
-            )}
-          >
-            {status === "saving"
-              ? "Saving…"
-              : status === "saved"
-                ? "Saved"
-                : status === "unsaved"
-                  ? "Unsaved…"
-                  : status === "error"
-                    ? "Retry"
-                    : "Autosave on"}
-          </span>
           <Button
-            variant={status === "error" ? "destructive" : "ghost"}
+            variant={status === "unsaved" ? "default" : status === "error" ? "destructive" : "outline"}
             size="sm"
             disabled={status === "saving"}
             onClick={() => void save()}
+            className="h-8 gap-1.5 px-3 text-xs"
           >
-            {status === "saving" ? "Saving…" : "Save"}
+            {status === "saving" ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span>Saving…</span>
+              </>
+            ) : status === "saved" ? (
+              <>
+                <Check className="size-3.5" />
+                <span>Saved</span>
+              </>
+            ) : (
+              <>
+                <Save className="size-3.5" />
+                <span>Save</span>
+              </>
+            )}
           </Button>
 
           <Button
