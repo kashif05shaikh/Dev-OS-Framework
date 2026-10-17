@@ -71,15 +71,14 @@ function normaliseDate(raw: string): string | null {
   return `${match[1]}-${match[2]!.padStart(2, "0")}-${match[3]!.padStart(2, "0")}`;
 }
 
-/** Keeps only the last 366 calendar days so the stored JSON stays small. */
+/** Keeps all activity up to today so the heatmap can display from the very first submission. */
 function trimActivity(activity: Record<string, number>): Record<string, number> {
   const now = new Date();
   const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const cutoff = dayKey(end - 366 * DAY);
   const today = dayKey(end);
   const out: Record<string, number> = {};
   for (const [key, value] of Object.entries(activity)) {
-    if (key >= cutoff && key <= today && value > 0) out[key] = value;
+    if (key <= today && value > 0) out[key] = value;
   }
   return out;
 }
@@ -89,10 +88,9 @@ function activityRows(
 ): PlatformActivity[] {
   const now = new Date();
   const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const cutoff = dayKey(end - 366 * DAY);
   const today = dayKey(end);
   return Object.entries(activity)
-    .filter(([date, value]) => date >= cutoff && date <= today && value.submissions > 0)
+    .filter(([date, value]) => date <= today && value.submissions > 0)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, value]) => ({
       date,
@@ -584,9 +582,8 @@ async function fetchAtCoder(username: string): Promise<FetchedStats> {
   }
 
   try {
-    const from = Math.floor((Date.now() - 366 * DAY) / 1000);
     const subs = (await getJson(
-      `https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${handle}&from_second=${from}`,
+      `https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${handle}&from_second=0`,
     )) as { id?: number; epoch_second?: number; problem_id?: string; result?: string }[];
     const activity: Record<string, { submissions: number; solved: number; ids?: Set<string> }> = {};
     for (const sub of Array.isArray(subs) ? subs : []) {

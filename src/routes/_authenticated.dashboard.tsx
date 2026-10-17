@@ -861,10 +861,16 @@ function DashboardPage() {
                   Coding activity
                 </span>
                 <span className="text-[11px] text-muted-foreground/75">
-                  · {derived.submissions} submissions across verified platforms (last 12 months)
+                  · across verified platforms
                 </span>
               </div>
-              <CodingActivityHeatmap days={derived.codingDays} className="mt-4" />
+              <CodingActivityHeatmap
+                days={derived.codingDays}
+                submissions={derived.submissions}
+                maxStreak={derived.streak}
+                currentStreak={derived.streak}
+                className="mt-4"
+              />
             </GlassCard>
           </motion.div>
 

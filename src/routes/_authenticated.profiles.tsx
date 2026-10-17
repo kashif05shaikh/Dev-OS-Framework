@@ -517,10 +517,16 @@ function ProfilesPage() {
                   <div className="flex flex-wrap items-baseline gap-3">
                     <h2 className="text-xs font-semibold">Coding activity</h2>
                     <span className="text-[11px] text-muted-foreground">
-                      {combined.submissions} submissions {platformFilter === "all" ? "across verified platforms" : `on ${CODING_PLATFORM_LABEL[platformFilter] ?? platformFilter}`} · last 12 months
+                      {platformFilter === "all" ? "across verified platforms" : `on ${CODING_PLATFORM_LABEL[platformFilter] ?? platformFilter}`}
                     </span>
                   </div>
-                  <CodingActivityHeatmap days={combined.days} className="mt-3" />
+                  <CodingActivityHeatmap
+                    days={combined.days}
+                    submissions={combined.submissions}
+                    maxStreak={combined.maxStreak}
+                    currentStreak={combined.currentStreak}
+                    className="mt-3"
+                  />
                 </div>
               </section>
 
