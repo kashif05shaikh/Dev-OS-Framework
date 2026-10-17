@@ -576,31 +576,6 @@ function DashboardPage() {
                     </span>
                   ))}
                 </div>
-
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {[
-                    { label: "Continue learning", to: "/learning" as const, icon: BookOpen },
-                    { label: "Resume", to: "/resume" as const, icon: FileText },
-                    { label: "Projects", to: "/projects" as const, icon: FolderKanban },
-                    { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
-                    { label: "Coding profiles", to: "/profiles" as const, icon: Braces },
-                    { label: "Calendar", to: "/calendar" as const, icon: CalendarDays },
-                  ].map((a) => (
-                    <motion.div key={a.label} whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="h-9 rounded-full border-border bg-card text-xs transition-shadow hover:shadow-[0_0_24px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                      >
-                        <Link to={a.to}>
-                          <a.icon className="size-3.5" />
-                          {a.label}
-                        </Link>
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
               </div>
 
               <motion.div
