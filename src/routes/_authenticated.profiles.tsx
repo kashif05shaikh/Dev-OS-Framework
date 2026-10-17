@@ -339,8 +339,15 @@ function ProfilesPage() {
   }, [profiles.data, search, platformFilter]);
 
   // One normalized activity dataset powers the heatmap, active days and streaks.
-  // summariseCodingProfiles automatically deduplicates platforms and excludes unverified profiles.
-  const combined = useMemo(() => summariseCodingProfiles(profiles.data ?? []), [profiles.data]);
+  // When a platform is selected in the dropdown, filter to that platform so the heatmap
+  // and stats display only that platform's activity. When "all", show all platforms together.
+  const heatmapProfiles = useMemo(() => {
+    const list = profiles.data ?? [];
+    if (platformFilter === "all") return list;
+    return list.filter((p) => p.platform === platformFilter);
+  }, [profiles.data, platformFilter]);
+
+  const combined = useMemo(() => summariseCodingProfiles(heatmapProfiles), [heatmapProfiles]);
 
   const syncAll = useMutation({
     mutationFn: async () => {
@@ -402,9 +409,18 @@ function ProfilesPage() {
         <div className="mr-auto">
           <h1 className="text-sm font-semibold">Coding Profiles</h1>
           <p className="text-xs text-muted-foreground">
-            {verifiedProfiles.length} verified {verifiedProfiles.length === 1 ? "platform" : "platforms"} ·{" "}
-            {combined.solved} problems solved · {combined.contests} contests · {combined.currentStreak} day streak
-            {unverifiedCount > 0 ? ` · ${unverifiedCount} unverified` : ""}
+            {platformFilter === "all" ? (
+              <>
+                {verifiedProfiles.length} verified {verifiedProfiles.length === 1 ? "platform" : "platforms"} ·{" "}
+                {combined.solved} problems solved · {combined.contests} contests · {combined.currentStreak} day streak
+                {unverifiedCount > 0 ? ` · ${unverifiedCount} unverified` : ""}
+              </>
+            ) : (
+              <>
+                {CODING_PLATFORM_LABEL[platformFilter] ?? platformFilter} · {combined.solved} problems solved ·{" "}
+                {combined.contests} contests · {combined.currentStreak} day streak
+              </>
+            )}
           </p>
         </div>
         <div className="relative">
@@ -501,7 +517,7 @@ function ProfilesPage() {
                   <div className="flex flex-wrap items-baseline gap-3">
                     <h2 className="text-xs font-semibold">Coding activity</h2>
                     <span className="text-[11px] text-muted-foreground">
-                      {combined.submissions} submissions across verified platforms · last 12 months
+                      {combined.submissions} submissions {platformFilter === "all" ? "across verified platforms" : `on ${CODING_PLATFORM_LABEL[platformFilter] ?? platformFilter}`} · last 12 months
                     </span>
                   </div>
                   <CodingActivityHeatmap days={combined.days} className="mt-3" />
