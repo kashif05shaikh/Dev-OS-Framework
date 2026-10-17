@@ -4,9 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Activity,
-  ArrowUpRight,
   BookOpen,
-  Braces,
   Briefcase,
   CalendarDays,
   CheckCircle2,
@@ -20,12 +18,10 @@ import {
   Plus,
   Quote,
   RefreshCw,
-  Rocket,
   Star,
   Target,
   Timer,
   Trophy,
-  Users,
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -479,18 +475,6 @@ function DashboardPage() {
       stars: codechefStars(rating),
     };
   });
-
-  const quickActions = [
-    { label: "AI Workspace", to: "/ai" as const, icon: Rocket },
-    { label: "Notes", to: "/notes" as const, icon: FileText },
-    { label: "Projects", to: "/projects" as const, icon: FolderKanban },
-    { label: "Resume", to: "/resume" as const, icon: FileText },
-    { label: "Calendar", to: "/calendar" as const, icon: CalendarDays },
-    { label: "Learning Hub", to: "/learning" as const, icon: BookOpen },
-    { label: "Network", to: "/network" as const, icon: Users },
-    { label: "Coding Profiles", to: "/profiles" as const, icon: Braces },
-    { label: "Job Tracker", to: "/jobs" as const, icon: Briefcase },
-  ];
 
   return (
     <div className="relative min-h-screen">
@@ -1007,30 +991,6 @@ function DashboardPage() {
             </GlassCard>
           </motion.div>
         </div>
-
-        {/* ── Quick actions ────────────────────────────────────── */}
-        <motion.div variants={riseIn} className="mt-6">
-          <h2 className="px-1 text-sm font-semibold">Jump into a module</h2>
-          <div className="mt-3 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {quickActions.map((a) => (
-              <Link key={a.label} to={a.to} className="block">
-                <GlassCard className="p-4">
-                  <motion.span
-                    whileHover={{ scale: 1.18, rotate: -8 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 12 }}
-                    className="grid size-9 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
-                  >
-                    <a.icon className="size-4" />
-                  </motion.span>
-                  <p className="mt-3 truncate text-sm font-medium">{a.label}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    Open <ArrowUpRight className="size-3" />
-                  </p>
-                </GlassCard>
-              </Link>
-            ))}
-          </div>
-        </motion.div>
 
         <div className="h-10" />
       </motion.div>
