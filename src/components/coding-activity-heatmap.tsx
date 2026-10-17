@@ -48,9 +48,12 @@ export type CodingActivityHeatmapProps = {
   className?: string;
 };
 
+const GAP = 3.5;
+const MIN_SQUARE_SIZE = 17; // Generous, crisp square size
+
 /**
- * Interactive coding activity heatmap with perfectly square static day boxes
- * and smooth horizontal scrolling from the user's first submission till date.
+ * Interactive coding activity heatmap with perfectly square day boxes,
+ * zero empty space on the right, and smooth horizontal scrolling from the user's first submission till date.
  */
 export function CodingActivityHeatmap({
   days,
@@ -60,7 +63,38 @@ export function CodingActivityHeatmap({
   className,
 }: CodingActivityHeatmapProps) {
   const [hover, setHover] = useState<CombinedDay | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Measure container width responsively
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const update = () => {
+      if (el.clientWidth > 0) {
+        setContainerWidth(el.clientWidth);
+      }
+    };
+
+    update();
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+
+    ro.observe(el);
+    window.addEventListener("resize", update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   // Compute the full timeline from the earliest recorded submission to today
   const { columns, months, weeks, totalSubmissions, calculatedMaxStreak, calculatedCurrentStreak } =
@@ -139,6 +173,15 @@ export function CodingActivityHeatmap({
       };
     }, [days]);
 
+  // Compute square size dynamically so that it fills the entire width without leaving any empty space on the right,
+  // or uses generous MIN_SQUARE_SIZE if timeline overflows
+  const squareSize = useMemo(() => {
+    if (!containerWidth || weeks <= 0) return MIN_SQUARE_SIZE;
+    const available = containerWidth - 4;
+    const sizeToFill = Math.ceil((available - (weeks - 1) * GAP) / weeks);
+    return Math.max(MIN_SQUARE_SIZE, sizeToFill);
+  }, [containerWidth, weeks]);
+
   const rows = useMemo(() => {
     const r: (typeof columns)[number][] = [];
     for (let d = 0; d < 7; d += 1) {
@@ -150,9 +193,13 @@ export function CodingActivityHeatmap({
   // Automatically scroll to the right edge (most recent activity) on mount
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+      });
     }
-  }, [weeks]);
+  }, [weeks, squareSize]);
 
   const scrollToStart = () => {
     scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
@@ -228,9 +275,9 @@ export function CodingActivityHeatmap({
         <div
           className="grid select-none"
           style={{
-            gridTemplateColumns: `repeat(${weeks}, 12px)`,
-            gridTemplateRows: "repeat(7, 12px) auto",
-            gap: "3px",
+            gridTemplateColumns: `repeat(${weeks}, ${squareSize}px)`,
+            gridTemplateRows: `repeat(7, ${squareSize}px) auto`,
+            gap: `${GAP}px`,
             width: "max-content",
           }}
         >
@@ -242,10 +289,12 @@ export function CodingActivityHeatmap({
                   setHover(cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] })
                 }
                 onMouseLeave={() => setHover(null)}
-                className="size-[12px] rounded-[2px] shrink-0 transition-transform hover:scale-125"
+                className="rounded-[3px] shrink-0 transition-transform hover:scale-125"
                 style={{
                   gridColumn: colIndex + 1,
                   gridRow: rowIndex + 1,
+                  width: `${squareSize}px`,
+                  height: `${squareSize}px`,
                   backgroundColor: cell.future
                     ? "transparent"
                     : LEVEL_BG[level(cell.day?.count ?? 0)],
@@ -258,7 +307,7 @@ export function CodingActivityHeatmap({
           {months.map((m) => (
             <span
               key={`${m.label}-${m.index}`}
-              className="pt-1 text-[10px] leading-none text-muted-foreground whitespace-nowrap"
+              className="pt-1.5 text-[11px] leading-none text-muted-foreground whitespace-nowrap font-medium"
               style={{ gridColumn: m.index + 1, gridRow: 8 }}
             >
               {m.label}
