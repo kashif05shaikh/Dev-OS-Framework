@@ -8,6 +8,21 @@ export type AiPlatform = {
   /** simple-icons slug, when the brand has one. */
   icon?: string;
   color: string;
+  logo?: string;
+};
+
+/** Local official brand logos for AI models. */
+const LOCAL_LOGOS: Record<string, string> = {
+  chatgpt: "/icons/chatgpt.svg",
+  claude: "/icons/claude.svg",
+  gemini: "/icons/gemini.svg",
+  perplexity: "/icons/perplexity.svg",
+  grok: "/icons/grok.svg",
+  deepseek: "/icons/deepseek.svg",
+  copilot: "/icons/copilot.svg",
+  replit: "/icons/replit.svg",
+  bolt: "/icons/bolt.svg",
+  emergent: "/icons/emergent.png",
 };
 
 export const AI_PLATFORMS: AiPlatform[] = [
@@ -19,6 +34,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     url: "https://chatgpt.com",
     icon: "openai",
     color: "#10a37f",
+    logo: "/icons/chatgpt.svg",
   },
   {
     id: "claude",
@@ -26,8 +42,9 @@ export const AI_PLATFORMS: AiPlatform[] = [
     vendor: "Anthropic",
     description: "Long-context reasoning and careful code review.",
     url: "https://claude.ai",
-    icon: "anthropic",
+    icon: "claude",
     color: "#d97757",
+    logo: "/icons/claude.svg",
   },
   {
     id: "gemini",
@@ -37,6 +54,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     url: "https://gemini.google.com",
     icon: "googlegemini",
     color: "#8ab4f8",
+    logo: "/icons/gemini.svg",
   },
   {
     id: "perplexity",
@@ -46,6 +64,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     url: "https://www.perplexity.ai",
     icon: "perplexity",
     color: "#20b8cd",
+    logo: "/icons/perplexity.svg",
   },
   {
     id: "grok",
@@ -54,7 +73,8 @@ export const AI_PLATFORMS: AiPlatform[] = [
     description: "Realtime assistant with an X-native feed of context.",
     url: "https://grok.com",
     icon: "x",
-    color: "#e5e7eb",
+    color: "#ffffff",
+    logo: "/icons/grok.svg",
   },
   {
     id: "deepseek",
@@ -64,6 +84,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     url: "https://chat.deepseek.com",
     icon: "deepseek",
     color: "#4d6bfe",
+    logo: "/icons/deepseek.svg",
   },
   {
     id: "copilot",
@@ -71,8 +92,8 @@ export const AI_PLATFORMS: AiPlatform[] = [
     vendor: "Microsoft",
     description: "Everyday copilot across Windows, Edge and Office.",
     url: "https://copilot.microsoft.com",
-    icon: "githubcopilot",
-    color: "#a78bfa",
+    color: "#0078d4",
+    logo: "/icons/copilot.svg",
   },
   {
     id: "replit",
@@ -82,6 +103,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     url: "https://replit.com",
     icon: "replit",
     color: "#f26207",
+    logo: "/icons/replit.svg",
   },
   {
     id: "bolt",
@@ -90,6 +112,7 @@ export const AI_PLATFORMS: AiPlatform[] = [
     description: "Prompt-to-app builder running fully in the browser.",
     url: "https://bolt.new",
     color: "#3b82f6",
+    logo: "/icons/bolt.svg",
   },
   {
     id: "emergent",
@@ -98,19 +121,23 @@ export const AI_PLATFORMS: AiPlatform[] = [
     description: "Agentic workspace that ships apps end to end.",
     url: "https://app.emergent.sh",
     color: "#22d3ee",
+    logo: "/icons/emergent.png",
   },
 ];
 
-/** Primary logo URL (simple-icons when available). */
+/** Primary logo URL (local official asset first, simple-icons fallback). */
 export function aiPlatformLogo(p: AiPlatform): string {
+  if (p.logo) return p.logo;
+  const local = LOCAL_LOGOS[p.id];
+  if (local) return local;
   return p.icon
     ? `https://cdn.simpleicons.org/${p.icon}/${p.color.replace("#", "")}`
     : aiPlatformFavicon(p);
 }
 
-/** Favicon fallback, used when the brand has no simple-icons entry. */
+/** Favicon fallback, used when the brand has no dedicated asset. */
 export function aiPlatformFavicon(p: AiPlatform): string {
-  const host = new URL(p.url).hostname;
+  const host = p.id === "emergent" ? "emergent.sh" : new URL(p.url).hostname;
   return `https://www.google.com/s2/favicons?domain=${host}&sz=128`;
 }
 

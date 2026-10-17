@@ -6,13 +6,22 @@ import { cn } from "@/lib/utils";
 /** Brand logo with an automatic favicon fallback. */
 export function AiLogo({ platform, className }: { platform: AiPlatform; className?: string }) {
   const [src, setSrc] = useState(aiPlatformLogo(platform));
-  useEffect(() => setSrc(aiPlatformLogo(platform)), [platform]);
+
+  useEffect(() => {
+    setSrc(aiPlatformLogo(platform));
+  }, [platform]);
+
   return (
     <img
       src={src}
-      alt={`${platform} logo`}
+      alt={`${platform.label} logo`}
       loading="lazy"
-      onError={() => setSrc(aiPlatformFavicon(platform))}
+      onError={() => {
+        const fallback = aiPlatformFavicon(platform);
+        if (src !== fallback) {
+          setSrc(fallback);
+        }
+      }}
       className={cn("size-5 shrink-0 object-contain", className)}
     />
   );
