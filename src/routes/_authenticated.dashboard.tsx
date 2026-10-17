@@ -635,21 +635,13 @@ function DashboardPage() {
           {/* Coding Activity Heatmap */}
           <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
             <GlassCard className="p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Coding activity
-                  </span>
-                  <span className="text-[11px] text-muted-foreground/75">
-                    · {derived.submissions} submissions across verified platforms (last 12 months)
-                  </span>
-                </div>
-                <Link
-                  to="/profiles"
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  View profiles →
-                </Link>
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Coding activity
+                </span>
+                <span className="text-[11px] text-muted-foreground/75">
+                  · {derived.submissions} submissions across verified platforms (last 12 months)
+                </span>
               </div>
               <CodingActivityHeatmap days={derived.codingDays} className="mt-4" />
             </GlassCard>
@@ -733,19 +725,11 @@ function DashboardPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <motion.div variants={riseIn} className="lg:col-span-2">
             <GlassCard className="p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold">Focus trend</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Minutes of deep work, last 14 days
-                  </p>
-                </div>
-                <Link
-                  to="/focus"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  Focus timer <ArrowUpRight className="size-3" />
-                </Link>
+              <div>
+                <h2 className="text-sm font-semibold">Focus trend</h2>
+                <p className="text-xs text-muted-foreground">
+                  Minutes of deep work, last 14 days
+                </p>
               </div>
               <div className="mt-5 h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -819,12 +803,7 @@ function DashboardPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Today&apos;s focus</h2>
-                <Link to="/calendar" className="text-xs text-primary hover:underline">
-                  Calendar
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Today&apos;s focus</h2>
               {todayEvents.length === 0 ? (
                 <EmptyLine to="/calendar" label="Schedule something" text="Nothing today." />
               ) : (
@@ -892,12 +871,7 @@ function DashboardPage() {
 
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Pinned goals</h2>
-                <Link to="/goals" className="text-xs text-primary hover:underline">
-                  All goals
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Pinned goals</h2>
               {activeGoals.length === 0 ? (
                 <EmptyLine to="/goals" label="Set a goal" text="No active goals." />
               ) : (
@@ -939,12 +913,7 @@ function DashboardPage() {
 
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Job pipeline</h2>
-                <Link to="/jobs" className="text-xs text-primary hover:underline">
-                  Tracker
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Job pipeline</h2>
               {(jobs.data ?? []).length === 0 ? (
                 <EmptyLine to="/jobs" label="Track an application" text="No applications yet." />
               ) : (
@@ -1062,12 +1031,7 @@ function DashboardPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Quick notes</h2>
-                <Link to="/notes" className="text-xs text-primary hover:underline">
-                  All notes
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Quick notes</h2>
               {pinnedNotes.length === 0 ? (
                 <EmptyLine to="/notes" label="Create a note" text="No notes yet." />
               ) : (
@@ -1095,12 +1059,7 @@ function DashboardPage() {
 
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Active projects</h2>
-                <Link to="/projects" className="text-xs text-primary hover:underline">
-                  All projects
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Active projects</h2>
               {activeProjects.length === 0 ? (
                 <EmptyLine to="/projects" label="Create a project" text="No projects yet." />
               ) : (
@@ -1129,12 +1088,7 @@ function DashboardPage() {
 
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Learning progress</h2>
-                <Link to="/learning" className="text-xs text-primary hover:underline">
-                  Hub
-                </Link>
-              </div>
+              <h2 className="text-sm font-semibold">Learning progress</h2>
               {derived.totalRes === 0 ? (
                 <EmptyLine to="/learning" label="Add a resource" text="No resources yet." />
               ) : (
