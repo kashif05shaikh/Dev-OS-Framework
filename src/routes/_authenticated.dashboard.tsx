@@ -7,6 +7,7 @@ import {
   BookOpen,
   Briefcase,
   CalendarDays,
+  Camera,
   CheckCircle2,
   Circle,
   Clock,
@@ -16,15 +17,15 @@ import {
   FolderKanban,
   GitBranch,
   Plus,
-  Quote,
   RefreshCw,
   Star,
-  Target,
-  Timer,
+  Trash2,
   Trophy,
+  Upload,
+  User,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -74,6 +75,7 @@ import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
 import { useCodingAutoSync } from "@/lib/use-coding-autosync";
+import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -98,15 +100,323 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-const QUOTES = [
-  { text: "Simplicity is the soul of efficiency.", by: "Austin Freeman" },
-  { text: "First, solve the problem. Then, write the code.", by: "John Johnson" },
-  { text: "Programs must be written for people to read.", by: "Harold Abelson" },
-  { text: "Make it work, make it right, make it fast.", by: "Kent Beck" },
-  { text: "The best error message is the one that never shows up.", by: "Thomas Fuchs" },
-  { text: "Talk is cheap. Show me the code.", by: "Linus Torvalds" },
-  { text: "Deleted code is debugged code.", by: "Jeff Sickel" },
-];
+function compressAndCropImage(file: File, maxSize = 360): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read image file"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          const minDim = Math.min(img.width, img.height);
+          const sx = (img.width - minDim) / 2;
+          const sy = (img.height - minDim) / 2;
+          canvas.width = maxSize;
+          canvas.height = maxSize;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(reader.result as string);
+            return;
+          }
+          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, maxSize, maxSize);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        } catch {
+          resolve(reader.result as string);
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function ProfilePhotoOption({
+  userId,
+  userMetadataAvatar,
+  displayName,
+}: {
+  userId?: string | null | undefined;
+  userMetadataAvatar?: string | null | undefined;
+  displayName: string;
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isEnteringUrl, setIsEnteringUrl] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+
+  const storageKey = userId ? `devos.profile_avatar_${userId}` : "devos.profile_avatar_default";
+
+  useEffect(() => {
+    let cached: string | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        cached = localStorage.getItem(storageKey);
+      } catch {
+        /* storage unavailable */
+      }
+    }
+    if (cached) {
+      setAvatarUrl(cached);
+    } else if (userMetadataAvatar) {
+      setAvatarUrl(userMetadataAvatar);
+    }
+  }, [storageKey, userMetadataAvatar]);
+
+  const saveAvatar = async (url: string | null) => {
+    setAvatarUrl(url);
+    if (typeof window !== "undefined") {
+      try {
+        if (url) {
+          localStorage.setItem(storageKey, url);
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch {
+        /* storage unavailable */
+      }
+    }
+    try {
+      await supabase.auth.updateUser({
+        data: { avatar_url: url },
+      });
+    } catch (err) {
+      console.warn("Could not sync avatar to Supabase auth:", err);
+    }
+  };
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const processed = await compressAndCropImage(file);
+      await saveAvatar(processed);
+      toast.success("Profile photo updated");
+    } catch (err) {
+      toast.error(describeError(err));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void handleFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) void handleFile(file);
+  };
+
+  const handleSaveUrl = async () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) {
+      toast.error("Please enter an image URL");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      await saveAvatar(trimmed);
+      setUrlInput("");
+      setIsEnteringUrl(false);
+      toast.success("Profile photo updated");
+    } catch (err) {
+      toast.error(describeError(err));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setIsUploading(true);
+    try {
+      await saveAvatar(null);
+      toast.success("Profile photo removed");
+    } catch (err) {
+      toast.error(describeError(err));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase() ?? "")
+      .join("") ||
+    displayName.slice(0, 2).toUpperCase() ||
+    "ME";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.25 }}
+      className="flex w-full flex-col items-center justify-center rounded-[20px] border border-border bg-white/[0.03] p-5 sm:p-6 lg:w-72"
+    >
+      <div className="flex w-full items-center justify-between pb-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Profile Photo
+        </span>
+        {avatarUrl && (
+          <button
+            type="button"
+            onClick={handleRemovePhoto}
+            disabled={isUploading}
+            className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+            title="Remove profile photo"
+          >
+            <Trash2 className="size-3" />
+            <span>Remove</span>
+          </button>
+        )}
+      </div>
+
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            fileInputRef.current?.click();
+          }
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload profile photo"
+        title="Click or drop an image to attach profile photo"
+        className={cn(
+          "group relative size-28 sm:size-32 cursor-pointer select-none rounded-full p-1 ring-2 transition-all duration-300 focus:outline-none focus-visible:ring-primary",
+          isDragging
+            ? "scale-105 ring-primary ring-offset-2 ring-offset-background"
+            : "ring-primary/20 hover:ring-primary/60",
+        )}
+      >
+        <div className="relative size-full overflow-hidden rounded-full border border-border/80 bg-gradient-to-br from-primary/10 via-background to-muted/40 shadow-inner flex items-center justify-center">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={`${displayName}'s profile photo`}
+              className="size-full object-cover rounded-full transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-muted-foreground">
+              <span className="text-2xl font-bold tracking-tight text-foreground/80 sm:text-3xl">
+                {initials}
+              </span>
+              <span className="mt-0.5 text-[10px] font-medium text-muted-foreground">
+                Attach photo
+              </span>
+            </div>
+          )}
+
+          {/* Hover overlay with camera icon and label */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/65 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100 text-white">
+            <Camera className="size-5" />
+            <span className="mt-1 text-[11px] font-medium tracking-tight">
+              {avatarUrl ? "Change" : "Upload"}
+            </span>
+          </div>
+        </div>
+
+        {/* Small floating action badge */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
+          className="absolute -bottom-0.5 -right-0.5 flex size-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-md transition-transform duration-200 hover:scale-110 active:scale-95"
+          title="Upload image"
+          aria-label="Upload image"
+        >
+          <Camera className="size-3.5" />
+        </button>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {isEnteringUrl ? (
+        <div className="mt-3.5 flex w-full items-center gap-1.5">
+          <input
+            type="url"
+            placeholder="https://..."
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            className="h-8 flex-1 rounded-lg border border-border bg-background/80 px-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleSaveUrl();
+              if (e.key === "Escape") setIsEnteringUrl(false);
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSaveUrl}
+            disabled={isUploading || !urlInput.trim()}
+            className="h-8 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:opacity-50"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEnteringUrl(false)}
+            className="h-8 rounded-lg px-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3.5 flex w-full flex-col items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white/[0.04] text-xs font-medium text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+          >
+            {isUploading ? (
+              <RefreshCw className="size-3.5 animate-spin text-primary" />
+            ) : (
+              <Upload className="size-3.5 text-primary" />
+            )}
+            <span>
+              {isUploading ? "Updating..." : avatarUrl ? "Change Photo" : "Attach Photo"}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEnteringUrl(true)}
+            className="text-[11px] text-muted-foreground/80 transition-colors hover:text-primary hover:underline underline-offset-2"
+          >
+            Or paste image URL
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
 
 function greeting(hour: number) {
   if (hour < 5) return "Good night";
@@ -166,11 +476,9 @@ function DashboardPage() {
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const id = window.setInterval(() => setNow(new Date()), 30000);
     return () => window.clearInterval(id);
   }, []);
-
-  const quote = useMemo(() => QUOTES[new Date().getDate() % QUOTES.length]!, []);
 
   const toggleEvent = useMutation({
     mutationFn: async (event: { id: string; completed: boolean }) =>
@@ -503,46 +811,13 @@ function DashboardPage() {
                     : "Nothing scheduled today — pick a goal and make measurable progress."}
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {[
-                    { icon: Flame, label: `${derived.streak}d streak` },
-                    { icon: Timer, label: `${focusMinutes7}m focus / 7d` },
-                    { icon: Target, label: `${activeGoals.length} active goals` },
-                    { icon: Code2, label: `${derived.problems} solved` },
-                  ].map((chip) => (
-                    <span
-                      key={chip.label}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/[0.03] px-3 py-1 text-xs text-muted-foreground"
-                    >
-                      <chip.icon className="size-3.5 text-primary" />
-                      {chip.label}
-                    </span>
-                  ))}
-                </div>
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.25 }}
-                className="w-full rounded-[18px] border border-border bg-white/[0.03] p-5 lg:w-72"
-              >
-                <Quote className="size-4 text-primary" />
-                <p className="mt-3 text-sm leading-relaxed">{quote.text}</p>
-                <p className="mt-2 text-xs text-muted-foreground">— {quote.by}</p>
-                <div className="mt-5 flex items-baseline gap-2 border-t border-border pt-4">
-                  <span className="text-2xl font-semibold tabular-nums">
-                    {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {now.toLocaleDateString([], {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-              </motion.div>
+              <ProfilePhotoOption
+                userId={user?.id}
+                userMetadataAvatar={user?.user_metadata?.["avatar_url"] as string | undefined}
+                displayName={name}
+              />
             </div>
           </GlassCard>
         </Reveal>
