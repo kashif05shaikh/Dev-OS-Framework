@@ -23,7 +23,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,6 +63,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const sidebarNavRef = useRef<HTMLDivElement>(null);
+
+  // Sync sidebar scroll with page scroll so it moves dynamically down the page
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const navEl = sidebarNavRef.current;
+          if (navEl) {
+            const maxWindowScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const maxNavScroll = navEl.scrollHeight - navEl.clientHeight;
+            if (maxWindowScroll > 0 && maxNavScroll > 0) {
+              const scrollRatio = Math.min(1, Math.max(0, window.scrollY / maxWindowScroll));
+              navEl.scrollTop = scrollRatio * maxNavScroll;
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     try {
@@ -118,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
+          "sticky top-0 z-30 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
           collapsed ? "w-0 overflow-hidden border-r-0" : "w-60",
         )}
         aria-hidden={collapsed}
@@ -141,7 +168,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <ScrollArea className="flex-1 px-3">
+        <div
+          ref={sidebarNavRef}
+          className="flex-1 min-h-0 overflow-y-auto px-3 overscroll-contain"
+        >
           <nav className="space-y-1 pb-4">
             {PRIMARY_NAV.map((item) => {
               const active =
@@ -165,7 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-        </ScrollArea>
+        </div>
 
         <div className="border-t border-sidebar-border p-3">
           <div className="mb-2 truncate px-2 text-xs text-muted-foreground">{user?.email}</div>
