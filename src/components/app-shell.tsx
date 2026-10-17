@@ -140,12 +140,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-background w-full">
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "sticky top-0 z-30 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
-          collapsed ? "w-0 overflow-hidden border-r-0" : "w-60",
+          "fixed inset-y-0 left-0 z-30 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 md:flex",
+          collapsed ? "w-0 -translate-x-full border-r-0" : "w-60 translate-x-0",
         )}
         aria-hidden={collapsed}
       >
@@ -211,24 +211,43 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Container */}
-      <div className="flex min-w-0 flex-1 flex-col w-full max-w-full overflow-x-hidden">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col w-full max-w-full transition-[padding-left] duration-200",
+          collapsed ? "md:pl-0" : "md:pl-60",
+        )}
+      >
         {/* Top bar — desktop only */}
-        <div className="hidden items-center justify-end gap-2 border-b border-border bg-background/80 px-4 py-2 backdrop-blur-sm md:flex">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-          >
-            {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </button>
-          <Link
-            to="/settings"
-            title="Settings"
-            className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-          >
-            <Settings className="size-4" />
-          </Link>
+        <div className="hidden items-center justify-between gap-2 border-b border-border bg-background/80 px-4 py-2 backdrop-blur-sm md:flex">
+          <div>
+            {collapsed && (
+              <button
+                type="button"
+                onClick={toggle}
+                title="Show sidebar"
+                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+              >
+                <PanelLeftOpen className="size-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+            >
+              {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </button>
+            <Link
+              to="/settings"
+              title="Settings"
+              className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+            >
+              <Settings className="size-4" />
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Header Bar */}
