@@ -321,59 +321,28 @@ function ProfilePhotoOption({
       </div>
 
       {/* Prominent Circular Avatar matching Image 2 */}
-      <div
-        onClick={() => fileInputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            fileInputRef.current?.click();
-          }
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        role="button"
-        tabIndex={0}
-        aria-label="Change profile photo"
-        title="Click to choose a profile photo"
-        className={cn(
-          "group relative size-44 sm:size-48 cursor-pointer select-none rounded-full ring-1 transition-all duration-300 focus:outline-none focus-visible:ring-primary",
-          isDragging
-            ? "scale-105 ring-primary ring-offset-4 ring-offset-background"
-            : "ring-white/10 hover:ring-white/30 hover:shadow-2xl hover:shadow-primary/10",
-        )}
-      >
+      <div className="relative size-44 sm:size-48 select-none rounded-full ring-1 ring-white/10 shadow-xl">
         <div className="relative size-full overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-white/[0.05] via-background to-muted/20 shadow-inner flex items-center justify-center">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={`${displayName}'s profile photo`}
-              className="size-full object-cover rounded-full transition-transform duration-300 group-hover:scale-105"
+              className="size-full object-cover rounded-full"
             />
           ) : (
             <div className="flex flex-col items-center justify-center text-muted-foreground">
               <span className="text-4xl font-bold tracking-tight text-foreground/80 sm:text-5xl">
                 {initials}
               </span>
-              <span className="mt-1 text-xs text-muted-foreground/70">
-                Click to add photo
-              </span>
             </div>
           )}
 
-          {/* Subtle hover overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100 text-white">
-            {isUploading ? (
+          {/* Uploading indicator */}
+          {isUploading && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-[2px] text-white">
               <RefreshCw className="size-6 animate-spin text-white" />
-            ) : (
-              <>
-                <Camera className="size-6 text-white" />
-                <span className="mt-1 text-xs font-medium">Change Photo</span>
-              </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
