@@ -78,6 +78,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { buildActivityPayload, summariseCodingProfiles } from "@/lib/coding-activity";
+import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
 import { useCodingAutoSync } from "@/lib/use-coding-autosync";
@@ -365,6 +366,8 @@ function DashboardPage() {
       contests,
       streak,
       activeDays: codingSummary.activeDays,
+      codingDays: codingSummary.days,
+      submissions: codingSummary.submissions,
       pipeline,
       completedRes,
       totalRes: resList.length,
@@ -628,6 +631,29 @@ function DashboardPage() {
               </Link>
             </motion.div>
           ))}
+
+          {/* Coding Activity Heatmap */}
+          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <GlassCard className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Coding activity
+                  </span>
+                  <span className="text-[11px] text-muted-foreground/75">
+                    · {derived.submissions} submissions across verified platforms (last 12 months)
+                  </span>
+                </div>
+                <Link
+                  to="/profiles"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  View profiles →
+                </Link>
+              </div>
+              <CodingActivityHeatmap days={derived.codingDays} className="mt-4" />
+            </GlassCard>
+          </motion.div>
 
           <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
             <Link to="/profiles" className="block">
