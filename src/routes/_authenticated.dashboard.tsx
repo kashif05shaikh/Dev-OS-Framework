@@ -561,7 +561,6 @@ function DashboardPage() {
   });
 
   const queries = [notes, resources, projects, jobs, goals, events, focus, coding, resumes];
-  const isLoading = queries.some((q) => q.isLoading);
   const error = queries.find((q) => q.error)?.error;
 
   const derived = useMemo(() => {
@@ -671,8 +670,23 @@ function DashboardPage() {
     };
   }, [focus.data, coding.data, jobs.data, resources.data, projects.data, notes.data, resumes.data]);
 
-  if (isLoading) return <DashboardSkeleton />;
-  if (error)
+  // Only show the skeleton on initial mount if all core data is completely missing and still pending
+  const isColdStart =
+    !profile.data &&
+    notes.isPending &&
+    coding.isPending &&
+    projects.isPending;
+
+  if (isColdStart) return <DashboardSkeleton />;
+
+  // Only show full page error if all core queries failed completely without any cached data
+  const isFatalError =
+    queries.every((q) => q.isError) &&
+    !notes.data &&
+    !coding.data &&
+    !projects.data;
+
+  if (isFatalError && error)
     return <ErrorState error={error} onRetry={() => queries.forEach((q) => void q.refetch())} />;
 
   const name = profile.data?.display_name?.trim() || user?.email?.split("@")[0] || "developer";
