@@ -364,6 +364,7 @@ function DashboardPage() {
       problems,
       contests,
       streak,
+      activeDays: codingSummary.activeDays,
       pipeline,
       completedRes,
       totalRes: resList.length,
@@ -396,7 +397,17 @@ function DashboardPage() {
   const focus7 = derived.focusSeries.slice(-7);
   const focusMinutes7 = focus7.reduce((s, d) => s + d.minutes, 0);
 
-  const metrics = [
+  type MetricCardItem = {
+    label: string;
+    value: number;
+    icon: typeof Code2;
+    to: "/profiles" | "/projects" | "/jobs" | "/calendar";
+    accent: string;
+    suffix?: string;
+    decimals?: number;
+  };
+
+  const metrics: MetricCardItem[] = [
     {
       label: "Problems solved",
       value: derived.problems,
@@ -405,21 +416,12 @@ function DashboardPage() {
       accent: "var(--chart-1)",
     },
     {
-      label: "Coding streak",
-      value: derived.streak,
+      label: "Active days",
+      value: derived.activeDays || derived.streak,
       suffix: "d",
       icon: Flame,
       to: "/profiles" as const,
       accent: "var(--chart-4)",
-    },
-    {
-      label: "Hours focused",
-      value: Math.round((focusMinutes7 / 60) * 10) / 10,
-      decimals: 1,
-      suffix: "h",
-      icon: Timer,
-      to: "/focus" as const,
-      accent: "var(--chart-2)",
     },
     {
       label: "Projects done",
@@ -441,14 +443,6 @@ function DashboardPage() {
       icon: Activity,
       to: "/calendar" as const,
       accent: "var(--chart-2)",
-    },
-    {
-      label: "Resume score",
-      value: derived.resumeScore,
-      suffix: "%",
-      icon: FileText,
-      to: "/resume" as const,
-      accent: "var(--chart-3)",
     },
   ];
 
