@@ -51,7 +51,6 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Dev Tools", to: "/dev-tools", icon: Wrench },
   { label: "Network", to: "/network", icon: Users },
   { label: "Analytics", to: "/analytics", icon: BarChart3 },
-  { label: "Settings", to: "/settings", icon: Settings },
 ];
 
 const SIDEBAR_KEY = "devos-sidebar-collapsed";
