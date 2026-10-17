@@ -88,7 +88,7 @@ export const Route = createFileRoute("/_authenticated/profiles")({
       {
         name: "description",
         content:
-          "Track your LeetCode, Codeforces, CodeChef, HackerRank and GitHub stats — rating, rank, problems solved, contests and streaks in one place.",
+          "Track your LeetCode, Codeforces, CodeChef, HackerRank, GeeksforGeeks and AtCoder stats — rating, rank, problems solved, contests and streaks in one place.",
       },
       { property: "og:title", content: "Coding Profiles — DevOS" },
       {

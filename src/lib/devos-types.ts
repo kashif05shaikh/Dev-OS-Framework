@@ -76,7 +76,6 @@ export const CODING_PLATFORMS = [
   "codeforces",
   "codechef",
   "hackerrank",
-  "github",
   "gfg",
   "atcoder",
 ] as const;
@@ -119,7 +118,6 @@ export const SYNCABLE_PLATFORMS = [
   "leetcode",
   "codeforces",
   "codechef",
-  "github",
   "hackerrank",
   "gfg",
   "atcoder",
