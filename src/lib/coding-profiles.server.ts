@@ -18,6 +18,7 @@ export interface CodingPlatformData {
   current_streak: number;
   max_streak: number;
   activity: PlatformActivity[];
+  difficulties?: { easy: number; medium: number; hard: number };
   lastSyncedAt: string;
 }
 
@@ -182,9 +183,16 @@ async function fetchLeetCode(username: string): Promise<FetchedStats> {
   if (!user) throw new Error(`No LeetCode user called "${username}".`);
 
   const all = user.submitStatsGlobal?.acSubmissionNum?.find((s) => s.difficulty === "All");
+  const easy =
+    user.submitStatsGlobal?.acSubmissionNum?.find((s) => s.difficulty === "Easy")?.count ?? 0;
+  const medium =
+    user.submitStatsGlobal?.acSubmissionNum?.find((s) => s.difficulty === "Medium")?.count ?? 0;
+  const hard =
+    user.submitStatsGlobal?.acSubmissionNum?.find((s) => s.difficulty === "Hard")?.count ?? 0;
   const contest = payload.data?.userContestRanking;
   const stats = base("leetcode", username, `https://leetcode.com/u/${username}/`);
   stats.problems_solved = all?.count ?? null;
+  stats.difficulties = { easy, medium, hard };
   stats.contests_attended = contest?.attendedContestsCount ?? null;
   stats.rating = contest?.rating ? Math.round(contest.rating) : null;
   const ratingHistory = (payload.data?.userContestRankingHistory ?? [])

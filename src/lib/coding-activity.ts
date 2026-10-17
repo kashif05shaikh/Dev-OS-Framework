@@ -202,7 +202,7 @@ export function getProfileVerifiedAt(row: { verified_at?: string | null; activit
 }
 
 export function buildActivityPayload(
-  stats: { activity: unknown },
+  stats: { activity: unknown; difficulties?: { easy: number; medium: number; hard: number } },
   existing?: { verified_at?: string | null; activity?: unknown; username?: string },
 ) {
   const verifiedAt = existing ? getProfileVerifiedAt(existing) : null;
@@ -219,6 +219,7 @@ export function buildActivityPayload(
     version: 2,
     ...(verifiedAt ? { verified_at: verifiedAt } : {}),
     ...(verifiedHandle ? { verified_handle: verifiedHandle } : {}),
+    ...(stats.difficulties ? { difficulties: stats.difficulties } : {}),
     days: stats.activity,
   };
 }

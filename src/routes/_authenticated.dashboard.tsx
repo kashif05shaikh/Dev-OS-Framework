@@ -72,6 +72,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { buildActivityPayload, summariseCodingProfiles } from "@/lib/coding-activity";
 import { CodingActivityHeatmap } from "@/components/coding-activity-heatmap";
+import { QuestionDistribution } from "@/components/dashboard/question-distribution";
 import { atcoderBand, codechefStars, codeforcesBand, leetcodeBand } from "@/lib/coding-titles";
 import { CODING_PLATFORM_LABEL, SYNCABLE_PLATFORMS, type CodingProfile } from "@/lib/devos-types";
 import { useCodingAutoSync } from "@/lib/use-coding-autosync";
@@ -852,6 +853,11 @@ function DashboardPage() {
               </Link>
             </motion.div>
           ))}
+
+          {/* Question Distribution (DSA & CP) */}
+          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <QuestionDistribution profiles={coding.data ?? []} />
+          </motion.div>
 
           {/* Coding Activity Heatmap */}
           <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
