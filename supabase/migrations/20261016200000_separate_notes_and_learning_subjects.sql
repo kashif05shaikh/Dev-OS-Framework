@@ -65,3 +65,4 @@ WHERE (icon IS NULL OR icon = 'book' OR icon = '')
     UNION
     SELECT subject_id FROM public.note_folders
   );
+

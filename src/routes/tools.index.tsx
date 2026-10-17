@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 import { AmbientBackground } from "@/components/dashboard/ambient";
-import { ArrowRight, Binary, Code2, Fingerprint, FileJson, Sparkles } from "lucide-react";
+import { ArrowRight, Binary, Code2, Fingerprint, FileJson, Sparkles, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/tools/")({
   head: () => ({
@@ -96,6 +98,8 @@ const TOOLS_LIST = [
 ];
 
 function ToolsIndexPage() {
+  const { user } = useAuth();
+
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-emerald-500/20 selection:text-emerald-400 overflow-x-hidden">
       <AmbientBackground />
@@ -105,10 +109,25 @@ function ToolsIndexPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
-              <Sparkles className="size-3.5" />
-              <span>FREE • CLIENT-SIDE • NO SIGNUP</span>
-            </div>
+            {user ? (
+              <div className="flex justify-center">
+                <Link to="/dev-tools">
+                  <Button
+                    variant="outline"
+                    className="border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 gap-2 text-xs"
+                  >
+                    <LayoutDashboard className="size-3.5" />
+                    <span>Open in DevOS Workspace</span>
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-medium text-emerald-400">
+                <Sparkles className="size-3.5" />
+                <span>FREE • CLIENT-SIDE • NO SIGNUP</span>
+              </div>
+            )}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
               Essential Developer Utilities
             </h1>

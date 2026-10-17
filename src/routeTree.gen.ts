@@ -19,6 +19,7 @@ import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated.ai'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedDevToolsRouteImport } from './routes/_authenticated.dev-tools'
 import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated.focus'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated.goals'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
@@ -29,7 +30,6 @@ import { Route as AuthenticatedProfilesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
 import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated.resume'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
-import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated.tools'
 import { Route as CompareIndexRouteImport } from './routes/compare.index'
 import { Route as CompareDevosVsNotionRouteImport } from './routes/compare.devos-vs-notion'
 import { Route as CompareDevosVsTrelloRouteImport } from './routes/compare.devos-vs-trello'
@@ -90,6 +90,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDevToolsRoute = AuthenticatedDevToolsRouteImport.update({
+  id: '/dev-tools',
+  path: '/dev-tools',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
   id: '/focus',
   path: '/focus',
@@ -138,11 +143,6 @@ const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
-  id: '/tools',
-  path: '/tools',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const CompareIndexRoute = CompareIndexRouteImport.update({
@@ -206,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dev-tools': typeof AuthenticatedDevToolsRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/jobs': typeof AuthenticatedJobsRoute
@@ -216,7 +217,6 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/resume': typeof AuthenticatedResumeRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/tools': typeof AuthenticatedToolsRoute
   '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
   '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
   '/features/$slug': typeof FeaturesSlugRoute
@@ -238,6 +238,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dev-tools': typeof AuthenticatedDevToolsRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/jobs': typeof AuthenticatedJobsRoute
@@ -248,7 +249,6 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/resume': typeof AuthenticatedResumeRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/tools': typeof ToolsIndexRoute
   '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
   '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
   '/features/$slug': typeof FeaturesSlugRoute
@@ -258,6 +258,7 @@ export interface FileRoutesByTo {
   '/tools/uuid-generator': typeof ToolsUuidGeneratorRoute
   '/compare': typeof CompareIndexRoute
   '/features': typeof FeaturesIndexRoute
+  '/tools': typeof ToolsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -271,6 +272,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dev-tools': typeof AuthenticatedDevToolsRoute
   '/_authenticated/focus': typeof AuthenticatedFocusRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
@@ -281,7 +283,6 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/resume': typeof AuthenticatedResumeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/compare/devos-vs-notion': typeof CompareDevosVsNotionRoute
   '/compare/devos-vs-trello': typeof CompareDevosVsTrelloRoute
   '/features/$slug': typeof FeaturesSlugRoute
@@ -305,6 +306,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/dashboard'
+    | '/dev-tools'
     | '/focus'
     | '/goals'
     | '/jobs'
@@ -315,7 +317,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/resume'
     | '/settings'
-    | '/tools'
     | '/compare/devos-vs-notion'
     | '/compare/devos-vs-trello'
     | '/features/$slug'
@@ -337,6 +338,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/dashboard'
+    | '/dev-tools'
     | '/focus'
     | '/goals'
     | '/jobs'
@@ -347,7 +349,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/resume'
     | '/settings'
-    | '/tools'
     | '/compare/devos-vs-notion'
     | '/compare/devos-vs-trello'
     | '/features/$slug'
@@ -357,6 +358,7 @@ export interface FileRouteTypes {
     | '/tools/uuid-generator'
     | '/compare'
     | '/features'
+    | '/tools'
   id:
     | '__root__'
     | '/'
@@ -369,6 +371,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/calendar'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dev-tools'
     | '/_authenticated/focus'
     | '/_authenticated/goals'
     | '/_authenticated/jobs'
@@ -379,7 +382,6 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/resume'
     | '/_authenticated/settings'
-    | '/_authenticated/tools'
     | '/compare/devos-vs-notion'
     | '/compare/devos-vs-trello'
     | '/features/$slug'
@@ -483,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dev-tools': {
+      id: '/_authenticated/dev-tools'
+      path: '/dev-tools'
+      fullPath: '/dev-tools'
+      preLoaderRoute: typeof AuthenticatedDevToolsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/focus': {
       id: '/_authenticated/focus'
       path: '/focus'
@@ -551,13 +560,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/tools': {
-      id: '/_authenticated/tools'
-      path: '/tools'
-      fullPath: '/tools'
-      preLoaderRoute: typeof AuthenticatedToolsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/compare/': {
@@ -638,6 +640,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDevToolsRoute: typeof AuthenticatedDevToolsRoute
   AuthenticatedFocusRoute: typeof AuthenticatedFocusRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
@@ -648,7 +651,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedResumeRoute: typeof AuthenticatedResumeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -656,6 +658,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDevToolsRoute: AuthenticatedDevToolsRoute,
   AuthenticatedFocusRoute: AuthenticatedFocusRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
@@ -666,7 +669,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedResumeRoute: AuthenticatedResumeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedToolsRoute: AuthenticatedToolsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

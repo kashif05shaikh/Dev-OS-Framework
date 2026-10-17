@@ -48,7 +48,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Calendar", to: "/calendar", icon: CalendarDays },
   { label: "Goals", to: "/goals", icon: Target },
   { label: "Focus Timer", to: "/focus", icon: Timer },
-  { label: "Dev Tools", to: "/tools", icon: Wrench },
+  { label: "Dev Tools", to: "/dev-tools", icon: Wrench },
   { label: "Network", to: "/network", icon: Users },
   { label: "Analytics", to: "/analytics", icon: BarChart3 },
   { label: "Settings", to: "/settings", icon: Settings },
