@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   BadgeCheck,
   ExternalLink,
+  FolderGit2,
   Link2Off,
   MapPin,
   PencilLine,
@@ -588,12 +589,23 @@ function AccountCard({
   const extra = extraOf(profile);
   const manualCapable = MANUAL_PLATFORMS.has(account.platform);
   const isManual = Boolean(extra["manual"]);
+  const recentArticles = links(extra, "recentArticles");
+  const recentPosts = links(extra, "recentPosts");
+  const recentRepos = links(extra, "recentRepos");
+  const recentCommits = links(extra, "recentCommits");
   const activity = [
-    ...links(extra, "recentArticles"),
-    ...links(extra, "recentPosts"),
-    ...links(extra, "recentRepos"),
-    ...links(extra, "recentCommits"),
+    ...recentArticles,
+    ...recentPosts,
+    ...recentRepos,
+    ...recentCommits,
   ].slice(0, 4);
+  const activityTitle = (() => {
+    if (account.platform === "github" || recentRepos.length > 0) return "Repositories";
+    if (recentArticles.length > 0) return "Recent Articles";
+    if (recentPosts.length > 0) return "Recent Posts";
+    if (recentCommits.length > 0) return "Recent Commits";
+    return "Recent Activity";
+  })();
   const techStack = Array.isArray(extra["techStack"]) ? (extra["techStack"] as string[]) : [];
   const postsLabel = typeof extra["postsLabel"] === "string" ? extra["postsLabel"] : "Posts";
   const url = account.profile_url ?? meta?.profileUrl(account.username) ?? null;
@@ -690,20 +702,36 @@ function AccountCard({
       ) : null}
 
       {activity.length ? (
-        <ul className="space-y-1 border-t border-border/60 pt-2">
-          {activity.map((item) => (
-            <li key={`${item.url}-${item.title}`} className="truncate text-[11px]">
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground hover:underline"
+        <div className="space-y-1.5 border-t border-border/60 pt-2.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {account.platform === "github" || recentRepos.length > 0 ? (
+              <FolderGit2 className="size-3 text-muted-foreground" />
+            ) : null}
+            <span>{activityTitle}</span>
+          </div>
+          <ul className="space-y-1">
+            {activity.map((item) => (
+              <li
+                key={`${item.url}-${item.title}`}
+                className="flex items-center justify-between gap-2 truncate text-[11px]"
               >
-                {item.title}
-              </a>
-            </li>
-          ))}
-        </ul>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  {item.title}
+                </a>
+                {item.meta ? (
+                  <span className="shrink-0 text-[10px] font-mono text-muted-foreground/70">
+                    {item.meta}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {account.last_error ? (
