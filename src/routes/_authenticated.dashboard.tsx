@@ -414,13 +414,6 @@ function DashboardPage() {
       accent: "var(--chart-5)",
     },
     {
-      label: "Applications",
-      value: (jobs.data ?? []).length,
-      icon: Briefcase,
-      to: "/jobs" as const,
-      accent: "var(--chart-1)",
-    },
-    {
       label: "Contests",
       value: derived.contests,
       icon: Activity,
