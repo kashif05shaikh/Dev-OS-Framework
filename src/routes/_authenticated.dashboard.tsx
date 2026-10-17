@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   BookOpen,
   Braces,
-  Brain,
   Briefcase,
   CalendarDays,
   CheckCircle2,
@@ -22,7 +21,6 @@ import {
   Quote,
   RefreshCw,
   Rocket,
-  Sparkles,
   Star,
   Target,
   Timer,
@@ -54,12 +52,10 @@ import {
   ProgressBar,
   Reveal,
   Shimmer,
-  Typewriter,
   riseIn,
   stagger,
 } from "@/components/dashboard/ui";
 import { ErrorState } from "@/components/states";
-import { Button } from "@/components/ui/button";
 import { fetchCodingStats } from "@/lib/coding-profiles.functions";
 import {
   calendarEventsQuery,
@@ -136,18 +132,6 @@ function lastDays(n: number) {
     out.push(dayKey(d));
   }
   return out;
-}
-
-function relativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
 }
 
 function DashboardSkeleton() {
@@ -506,21 +490,6 @@ function DashboardPage() {
     { label: "Network", to: "/network" as const, icon: Users },
     { label: "Coding Profiles", to: "/profiles" as const, icon: Braces },
     { label: "Job Tracker", to: "/jobs" as const, icon: Briefcase },
-  ];
-
-  const insights = [
-    derived.problems < 100
-      ? "Push DSA volume — aim for 3 problems a day to lift your rating band."
-      : "Strong DSA base. Shift some reps toward system design depth.",
-    derived.totalRes && derived.completedRes / derived.totalRes < 0.5
-      ? "Learning Hub backlog is growing — finish two resources this week."
-      : "Learning pipeline is healthy. Queue one advanced resource.",
-    openJobs < 5
-      ? "Applications are light. Send 5 targeted applications this week."
-      : "Pipeline is active — prep interview stories for the top three.",
-    focusMinutes7 < 300
-      ? "Focus time is under 5h this week. Book two deep-work blocks."
-      : "Great focus streak — protect it with a recovery block.",
   ];
 
   return (
@@ -946,83 +915,6 @@ function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
               )}
-            </GlassCard>
-          </motion.div>
-        </div>
-
-        {/* ── AI insights + activity ───────────────────────────── */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <motion.div variants={riseIn} className="lg:col-span-2">
-            <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Recent activity</h2>
-                <span className="text-xs text-muted-foreground">Live across every module</span>
-              </div>
-              {derived.activity.length === 0 ? (
-                <EmptyLine to="/notes" label="Create your first note" text="No activity yet." />
-              ) : (
-                <ol className="relative mt-5 space-y-4 border-l border-border pl-5">
-                  {derived.activity.map((a, i) => (
-                    <motion.li
-                      key={a.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 * i, duration: 0.4 }}
-                      className="relative"
-                    >
-                      <span className="absolute -left-[27px] top-1 grid size-4 place-items-center rounded-full border border-border bg-background">
-                        <span className="size-1.5 rounded-full bg-primary" />
-                      </span>
-                      <Link
-                        to={a.to}
-                        className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <a.icon className="size-3.5 shrink-0 text-primary/80" />
-                        <span className="truncate">{a.label}</span>
-                        <span className="ml-auto shrink-0 text-[11px] tabular-nums">
-                          {relativeTime(a.at!)}
-                        </span>
-                      </Link>
-                    </motion.li>
-                  ))}
-                </ol>
-              )}
-            </GlassCard>
-          </motion.div>
-
-          <motion.div variants={riseIn}>
-            <GlassCard className="h-full p-6" tilt={false}>
-              <div className="flex items-center gap-2">
-                <motion.span
-                  animate={{ rotate: [0, 8, -8, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="grid size-8 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary"
-                >
-                  <Brain className="size-4" />
-                </motion.span>
-                <h2 className="text-sm font-semibold">AI insights</h2>
-              </div>
-              <p className="mt-4 min-h-12 text-sm leading-relaxed text-muted-foreground">
-                <Typewriter text={insights[0]!} />
-              </p>
-              <ul className="mt-4 space-y-2 border-t border-border pt-4">
-                {insights.slice(1).map((line) => (
-                  <li key={line} className="flex gap-2 text-xs text-muted-foreground">
-                    <Sparkles className="mt-0.5 size-3 shrink-0 text-primary" />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                asChild
-                size="sm"
-                className="mt-5 w-full rounded-xl transition-shadow hover:shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--primary)_75%,transparent)]"
-              >
-                <Link to="/ai">
-                  <Rocket className="size-3.5" />
-                  Open AI Workspace
-                </Link>
-              </Button>
             </GlassCard>
           </motion.div>
         </div>
