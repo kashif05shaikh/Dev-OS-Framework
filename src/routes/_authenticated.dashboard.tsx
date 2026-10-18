@@ -57,7 +57,6 @@ import {
   GlassCard,
   ProgressBar,
   Reveal,
-  Shimmer,
   riseIn,
   stagger,
 } from "@/components/dashboard/ui";
@@ -413,23 +412,6 @@ function lastDays(n: number) {
   return out;
 }
 
-function DashboardSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Shimmer className="h-44 w-full rounded-[22px]" />
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Shimmer key={i} className="h-32 rounded-[22px]" />
-        ))}
-      </div>
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Shimmer className="h-80 rounded-[22px] lg:col-span-2" />
-        <Shimmer className="h-80 rounded-[22px]" />
-      </div>
-    </div>
-  );
-}
-
 function DashboardPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -638,15 +620,6 @@ function DashboardPage() {
       profiles,
     };
   }, [focus.data, coding.data, jobs.data, resources.data, projects.data, notes.data, resumes.data]);
-
-  // Only show the skeleton on initial mount if core data is completely missing and still pending
-  const isColdStart =
-    (coding.isPending || notes.isPending || projects.isPending) &&
-    !coding.data &&
-    !notes.data &&
-    !projects.data;
-
-  if (isColdStart) return <DashboardSkeleton />;
 
   // Only show full page error if all core queries failed completely without any cached data
   const isFatalError =
