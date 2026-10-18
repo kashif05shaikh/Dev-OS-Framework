@@ -29,8 +29,22 @@ const UA = {
   Accept: "application/json, text/html;q=0.9,*/*;q=0.8",
 };
 
+async function fetchWithTimeout(url: string, init?: RequestInit, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: init?.signal ?? controller.signal,
+      headers: { ...UA, ...(init?.headers ?? {}) },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function getJson(url: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(url, { ...init, headers: { ...UA, ...(init?.headers ?? {}) } });
+  const response = await fetchWithTimeout(url, init);
   if (!response.ok) {
     throw new Error(`${new URL(url).hostname} returned ${response.status}`);
   }
@@ -301,9 +315,8 @@ async function fetchGitHub(username: string): Promise<FetchedStats> {
   stats.rank_label = `${user.followers ?? 0} followers`;
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://github.com/users/${encodeURIComponent(username)}/contributions`,
-      { headers: UA },
     );
     if (response.ok) {
       const html = await response.text();
@@ -339,7 +352,7 @@ async function fetchGitHub(username: string): Promise<FetchedStats> {
 
 async function fetchCodeChef(username: string): Promise<FetchedStats> {
   const url = `https://www.codechef.com/users/${encodeURIComponent(username)}`;
-  const response = await fetch(url, { headers: UA });
+  const response = await fetchWithTimeout(url);
   if (response.status === 404) throw new Error(`No CodeChef user called "${username}".`);
   if (!response.ok) throw new Error(`CodeChef returned ${response.status}`);
   const html = await response.text();
@@ -451,7 +464,7 @@ function readEmbeddedNumber(html: string, key: string): number | null {
 
 async function fetchGfg(username: string): Promise<FetchedStats> {
   const url = `https://www.geeksforgeeks.org/user/${encodeURIComponent(username)}/`;
-  const response = await fetch(url, { headers: UA, redirect: "follow" });
+  const response = await fetchWithTimeout(url, { redirect: "follow" });
   if (response.status === 404) throw new Error(`No GeeksforGeeks user called "${username}".`);
   if (!response.ok) throw new Error(`GeeksforGeeks returned ${response.status}`);
   const html = await response.text();
@@ -468,12 +481,11 @@ async function fetchGfg(username: string): Promise<FetchedStats> {
   if (rank) stats.rank_label = `Institute #${rank}`;
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       "https://practiceapi.geeksforgeeks.org/api/v1/user/problems/submissions/",
       {
         method: "POST",
         headers: {
-          ...UA,
           "content-type": "application/json",
           Referer: url,
           Origin: "https://www.geeksforgeeks.org",
@@ -548,7 +560,7 @@ async function fetchAtCoderHistory(handle: string): Promise<AtCoderHistory | nul
   ];
   for (const url of urls) {
     try {
-      const response = await fetch(url, { headers: UA });
+      const response = await fetchWithTimeout(url);
       if (!response.ok) continue;
       const history = parseAtCoderHistory(await response.text());
       if (history) return history;

@@ -17,17 +17,22 @@ export function isSyncable(platform: string): boolean {
 /** Rows whose stats have never been fetched or are older than one hour. */
 export function staleCodingProfiles(rows: CodingProfile[]): CodingProfile[] {
   const cutoff = Date.now() - CODING_STALE_MS;
+  const hasExplicitVerified = rows.some(isProfileVerified);
   return rows.filter((row) => {
     if (!isSyncable(row.platform)) return false;
-    if (!isProfileVerified(row)) return false;
+    if (hasExplicitVerified) {
+      if (!isProfileVerified(row)) return false;
+    } else {
+      if (row.verified_at === null) return false;
+    }
     const at = row.last_synced_at ? Date.parse(row.last_synced_at) : NaN;
     return !Number.isFinite(at) || at < cutoff;
   });
 }
 
 /**
- * Silently refreshes stale coding profiles (on mount and once an hour) so the
- * Dashboard streak/titles show real numbers without a manual "Sync all".
+ * Silently refreshes stale coding profiles (on mount after 2.5s and once an hour)
+ * so the Dashboard streak/titles show real numbers without a manual "Sync all".
  */
 export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = true) {
   const qc = useQueryClient();
@@ -35,6 +40,7 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
   const running = useRef(false);
   const rowsRef = useRef<CodingProfile[]>([]);
   rowsRef.current = rows ?? [];
+  const rowsKey = (rows ?? []).map((r) => `${r.id}:${r.last_synced_at}`).join(",");
 
   useEffect(() => {
     if (!enabled) return;
@@ -82,9 +88,12 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
       }
     };
 
-    void run();
-    const timer = setInterval(() => void run(), CODING_STALE_MS);
-    return () => clearInterval(timer);
-    // rowsRef keeps the latest rows without restarting the hourly timer.
-  }, [enabled, fetchStats, qc]);
+    // Delay 2.5s after mount / row changes so initial UI render finishes first
+    const delayTimer = setTimeout(() => void run(), 2500);
+    const intervalTimer = setInterval(() => void run(), CODING_STALE_MS);
+    return () => {
+      clearTimeout(delayTimer);
+      clearInterval(intervalTimer);
+    };
+  }, [enabled, rowsKey, fetchStats, qc]);
 }

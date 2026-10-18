@@ -97,10 +97,48 @@ export async function startVerification(
   const challengeCode = generateChallengeCode();
   const expiresAt = new Date(Date.now() + EXPIRATION_MS).toISOString();
 
-  // 4. Store or update challenge: Try DB table first, fall back to in-memory store
-  let savedInDb = false;
+  // 4. Store or update challenge: Try coding_profiles activity first (works across serverless lambdas), then verification_challenges table, then in-memory
   try {
-    const { error: upsertErr } = await supabaseAdmin
+    const { data: existingRows } = await db
+      .from("coding_profiles")
+      .select("id, activity")
+      .eq("user_id", userId)
+      .eq("platform", platform);
+
+    const challengePayload = {
+      challenge_code: challengeCode,
+      attempts: 0,
+      expires_at: expiresAt,
+      handle,
+    };
+
+    if (existingRows && existingRows.length > 0) {
+      const existingAct =
+        existingRows[0]?.activity && typeof existingRows[0]?.activity === "object"
+          ? (existingRows[0]!.activity as Record<string, unknown>)
+          : {};
+      await db
+        .from("coding_profiles")
+        .update({
+          username: handle,
+          activity: { ...existingAct, verification_challenge: challengePayload } as never,
+        })
+        .eq("id", existingRows[0]!.id);
+    } else {
+      await db.from("coding_profiles").insert({
+        user_id: userId,
+        platform,
+        username: handle,
+        sync_status: "idle",
+        activity: { verification_challenge: challengePayload } as never,
+      });
+    }
+  } catch (err) {
+    console.warn("Could not persist challenge in coding_profiles:", err);
+  }
+
+  try {
+    await supabaseAdmin
       .from("verification_challenges")
       .upsert(
         {
@@ -113,15 +151,11 @@ export async function startVerification(
         },
         { onConflict: "user_id,platform" },
       );
-
-    if (!upsertErr) {
-      savedInDb = true;
-    }
   } catch {
-    savedInDb = false;
+    /* table may not exist yet */
   }
 
-  // Always keep in memory cache as well for instant, fail-safe lookup
+  // Always keep in memory cache as well for instant local lookup
   memoryChallenges.set(challengeKey(userId, platform), {
     id: crypto.randomUUID(),
     user_id: userId,
@@ -155,20 +189,56 @@ export async function checkVerification(
   const key = challengeKey(userId, platform);
   const db = userClient ?? supabaseAdmin;
 
-  // 1. Fetch challenge from DB or memory fallback
+  // 1. Fetch challenge from coding_profiles activity, DB table, or memory fallback
   let challenge: InMemChallenge | null = null;
+  let challengeRowId: string | null = null;
+
   try {
-    const { data: challenges } = await (userClient ?? supabaseAdmin)
-      .from("verification_challenges")
-      .select("*")
+    const { data: profileRows } = await db
+      .from("coding_profiles")
+      .select("id, activity")
       .eq("user_id", userId)
       .eq("platform", platform);
 
-    if (challenges && challenges.length > 0) {
-      challenge = challenges[0] as unknown as InMemChallenge;
+    const profileAct =
+      profileRows?.[0]?.activity && typeof profileRows[0]?.activity === "object"
+        ? (profileRows[0]!.activity as Record<string, unknown>)
+        : null;
+
+    if (
+      profileAct?.["verification_challenge"] &&
+      typeof profileAct["verification_challenge"] === "object"
+    ) {
+      const c = profileAct["verification_challenge"] as Record<string, unknown>;
+      challengeRowId = profileRows![0]!.id;
+      challenge = {
+        id: String(profileRows![0]!.id),
+        user_id: userId,
+        platform,
+        handle: String(c["handle"] ?? handle),
+        challenge_code: String(c["challenge_code"] ?? ""),
+        attempts: Number(c["attempts"] ?? 0),
+        expires_at: String(c["expires_at"] ?? ""),
+      };
     }
   } catch {
-    // DB table might not exist yet, fallback to memory
+    /* fallback */
+  }
+
+  if (!challenge) {
+    try {
+      const { data: challenges } = await (userClient ?? supabaseAdmin)
+        .from("verification_challenges")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("platform", platform);
+
+      if (challenges && challenges.length > 0) {
+        challenge = challenges[0] as unknown as InMemChallenge;
+      }
+    } catch {
+      // DB table might not exist yet, fallback to memory
+    }
   }
 
   if (!challenge) {
@@ -220,6 +290,25 @@ export async function checkVerification(
   const newAttempts = challenge.attempts + 1;
   challenge.attempts = newAttempts;
   memoryChallenges.set(key, challenge);
+
+  if (challengeRowId) {
+    try {
+      const { data: pRows } = await db
+        .from("coding_profiles")
+        .select("id, activity")
+        .eq("id", challengeRowId);
+      if (pRows?.[0]?.activity && typeof pRows[0].activity === "object") {
+        const act = { ...(pRows[0].activity as Record<string, unknown>) };
+        if (act["verification_challenge"]) {
+          act["verification_challenge"] = {
+            ...(act["verification_challenge"] as Record<string, unknown>),
+            attempts: newAttempts,
+          };
+          await db.from("coding_profiles").update({ activity: act as never }).eq("id", challengeRowId);
+        }
+      }
+    } catch {}
+  }
 
   try {
     await (userClient ?? supabaseAdmin)

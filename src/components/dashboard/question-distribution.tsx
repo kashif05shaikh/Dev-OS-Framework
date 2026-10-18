@@ -4,6 +4,7 @@ import { Code2, Trophy, Layers, Sparkles, CheckCircle2 } from "lucide-react";
 
 import { GlassCard } from "@/components/dashboard/ui";
 import { CODING_PLATFORM_LABEL, type CodingProfile } from "@/lib/devos-types";
+import { isProfileVerified } from "@/lib/coding-activity";
 import { cn } from "@/lib/utils";
 
 export type QuestionDistributionProps = {
@@ -124,9 +125,25 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
   const [activeTab, setActiveTab] = useState<"all" | "dsa" | "cp">("all");
 
   const { dsa, cp, totalSolved } = useMemo(() => {
+    // Mirror summariseCodingProfiles: prioritize verified profiles and deduplicate per platform
+    const hasExplicitVerified = profiles.some(isProfileVerified);
+    const map = new Map<string, CodingProfile>();
+    for (const p of profiles) {
+      if (hasExplicitVerified) {
+        if (!isProfileVerified(p)) continue;
+      } else {
+        if (p.verified_at === null) continue;
+      }
+      const existing = map.get(p.platform);
+      if (!existing || (p.problems_solved ?? 0) > (existing.problems_solved ?? 0)) {
+        map.set(p.platform, p);
+      }
+    }
+    const activeProfiles = Array.from(map.values());
+
     // 1. Competitive Programming (ONLY Codeforces & CodeChef)
-    const codeforcesProfile = profiles.find((p) => p.platform === "codeforces");
-    const codechefProfile = profiles.find((p) => p.platform === "codechef");
+    const codeforcesProfile = activeProfiles.find((p) => p.platform === "codeforces");
+    const codechefProfile = activeProfiles.find((p) => p.platform === "codechef");
 
     const cfSolved = codeforcesProfile?.problems_solved ?? 0;
     const ccSolved = codechefProfile?.problems_solved ?? 0;
@@ -139,13 +156,13 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
     const ccContests = codechefProfile?.contests_attended ?? 0;
 
     // 2. Data Structures & Algorithms (ALL remaining platforms)
-    const dsaProfiles = profiles.filter(
+    const dsaProfiles = activeProfiles.filter(
       (p) => p.platform !== "codeforces" && p.platform !== "codechef",
     );
-    const leetcodeProfile = profiles.find((p) => p.platform === "leetcode");
-    const gfgProfile = profiles.find((p) => p.platform === "gfg");
-    const hackerrankProfile = profiles.find((p) => p.platform === "hackerrank");
-    const atcoderProfile = profiles.find((p) => p.platform === "atcoder");
+    const leetcodeProfile = activeProfiles.find((p) => p.platform === "leetcode");
+    const gfgProfile = activeProfiles.find((p) => p.platform === "gfg");
+    const hackerrankProfile = activeProfiles.find((p) => p.platform === "hackerrank");
+    const atcoderProfile = activeProfiles.find((p) => p.platform === "atcoder");
 
     const dsaTotal = dsaProfiles.reduce((sum, p) => sum + (p.problems_solved ?? 0), 0);
 

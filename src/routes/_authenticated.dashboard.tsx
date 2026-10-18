@@ -639,12 +639,12 @@ function DashboardPage() {
     };
   }, [focus.data, coding.data, jobs.data, resources.data, projects.data, notes.data, resumes.data]);
 
-  // Only show the skeleton on initial mount if all core data is completely missing and still pending
+  // Only show the skeleton on initial mount if core data is completely missing and still pending
   const isColdStart =
-    !profile.data &&
-    notes.isPending &&
-    coding.isPending &&
-    projects.isPending;
+    (coding.isPending || notes.isPending || projects.isPending) &&
+    !coding.data &&
+    !notes.data &&
+    !projects.data;
 
   if (isColdStart) return <DashboardSkeleton />;
 
