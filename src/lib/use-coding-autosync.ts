@@ -38,6 +38,7 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
   const qc = useQueryClient();
   const fetchStats = useServerFn(fetchCodingStats);
   const running = useRef(false);
+  const attemptedInSession = useRef<Set<string>>(new Set());
   const rowsRef = useRef<CodingProfile[]>([]);
   rowsRef.current = rows ?? [];
   const rowsKey = (rows ?? []).map((r) => `${r.id}:${r.last_synced_at}`).join(",");
@@ -45,11 +46,17 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
   useEffect(() => {
     if (!enabled) return;
 
-    const run = async () => {
+    const run = async (forceRetry = false) => {
       if (running.current) return;
-      const stale = staleCodingProfiles(rowsRef.current);
+      const allStale = staleCodingProfiles(rowsRef.current);
+      const stale = forceRetry
+        ? allStale
+        : allStale.filter((p) => !attemptedInSession.current.has(p.id));
       if (stale.length === 0) return;
       running.current = true;
+      stale.forEach((p) => attemptedInSession.current.add(p.id));
+
+      let hasSuccess = false;
       try {
         await Promise.allSettled(
           stale.map(async (profile) => {
@@ -74,6 +81,7 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
                 sync_status: "success",
                 sync_error: null,
               });
+              hasSuccess = true;
             } catch (error) {
               await updateRow("coding_profiles", profile, {
                 sync_status: "error",
@@ -82,15 +90,17 @@ export function useCodingAutoSync(rows: CodingProfile[] | undefined, enabled = t
             }
           }),
         );
-        await qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+        if (hasSuccess) {
+          await qc.invalidateQueries({ queryKey: ["coding_profiles"] });
+        }
       } finally {
         running.current = false;
       }
     };
 
-    // Delay 2.5s after mount / row changes so initial UI render finishes first
-    const delayTimer = setTimeout(() => void run(), 2500);
-    const intervalTimer = setInterval(() => void run(), CODING_STALE_MS);
+    // Delay 3s after mount / row changes so initial UI render finishes first
+    const delayTimer = setTimeout(() => void run(), 3000);
+    const intervalTimer = setInterval(() => void run(true), CODING_STALE_MS);
     return () => {
       clearTimeout(delayTimer);
       clearInterval(intervalTimer);

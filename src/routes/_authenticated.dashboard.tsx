@@ -416,18 +416,19 @@ function DashboardPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
 
-  const profile = useQuery(profileQuery());
-  const notes = useQuery(notesQuery());
-  const resources = useQuery(learningResourcesQuery());
-  const projects = useQuery(projectsQuery());
-  const jobs = useQuery(jobApplicationsQuery());
-  const goals = useQuery(goalsQuery());
-  const events = useQuery(calendarEventsQuery());
-  const focus = useQuery(focusSessionsQuery(30));
-  const coding = useQuery(codingProfilesQuery());
+  const isReady = Boolean(user?.id);
+  const profile = useQuery({ ...profileQuery(), enabled: isReady });
+  const notes = useQuery({ ...notesQuery(), enabled: isReady });
+  const resources = useQuery({ ...learningResourcesQuery(), enabled: isReady });
+  const projects = useQuery({ ...projectsQuery(), enabled: isReady });
+  const jobs = useQuery({ ...jobApplicationsQuery(), enabled: isReady });
+  const goals = useQuery({ ...goalsQuery(), enabled: isReady });
+  const events = useQuery({ ...calendarEventsQuery(), enabled: isReady });
+  const focus = useQuery({ ...focusSessionsQuery(30), enabled: isReady });
+  const coding = useQuery({ ...codingProfilesQuery(), enabled: isReady });
   // Keeps streak/titles live: refreshes stale platforms on load and hourly.
-  useCodingAutoSync(coding.data);
-  const resumes = useQuery(resumesQuery());
+  useCodingAutoSync(coding.data, isReady);
+  const resumes = useQuery({ ...resumesQuery(), enabled: isReady });
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {

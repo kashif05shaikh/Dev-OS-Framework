@@ -24,27 +24,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+    let initialized = false;
+
+    const handleSession = (sess: Session | null) => {
+      setSession(sess);
       setLoading(false);
+      if (sess?.user?.id) {
+        // Refetch queries so newly authenticated token is used instead of any pre-auth empty cache
+        void queryClient.invalidateQueries();
+      }
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      handleSession(nextSession);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setSession(data.session);
-      }
-      const hasOAuthParams =
-        typeof window !== "undefined" &&
-        (window.location.search.includes("code=") ||
-          window.location.hash.includes("access_token="));
-
-      if (!hasOAuthParams || data.session) {
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!initialized) {
+          initialized = true;
+          handleSession(data.session);
+        }
+      })
+      .catch((err) => {
+        console.error("[useAuth] Failed to get session:", err);
         setLoading(false);
-      }
-    });
+      });
 
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    // Safety timeout: Ensure loading never remains true indefinitely if network hangs
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3500);
+
+    return () => {
+      clearTimeout(timer);
+      sub.subscription.unsubscribe();
+    };
+  }, [queryClient]);
 
   const value = useMemo<AuthState>(
     () => ({
