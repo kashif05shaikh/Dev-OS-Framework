@@ -20,11 +20,7 @@ export function staleCodingProfiles(rows: CodingProfile[]): CodingProfile[] {
   const hasExplicitVerified = rows.some(isProfileVerified);
   return rows.filter((row) => {
     if (!isSyncable(row.platform)) return false;
-    if (hasExplicitVerified) {
-      if (!isProfileVerified(row)) return false;
-    } else {
-      if (row.verified_at === null) return false;
-    }
+    if (hasExplicitVerified && !isProfileVerified(row)) return false;
     const at = row.last_synced_at ? Date.parse(row.last_synced_at) : NaN;
     return !Number.isFinite(at) || at < cutoff;
   });

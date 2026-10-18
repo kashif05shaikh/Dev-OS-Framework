@@ -129,10 +129,8 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
     const hasExplicitVerified = profiles.some(isProfileVerified);
     const map = new Map<string, CodingProfile>();
     for (const p of profiles) {
-      if (hasExplicitVerified) {
-        if (!isProfileVerified(p)) continue;
-      } else {
-        if (p.verified_at === null) continue;
+      if (hasExplicitVerified && !isProfileVerified(p)) {
+        continue;
       }
       const existing = map.get(p.platform);
       if (!existing || (p.problems_solved ?? 0) > (existing.problems_solved ?? 0)) {

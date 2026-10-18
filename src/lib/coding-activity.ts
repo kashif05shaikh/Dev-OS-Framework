@@ -233,10 +233,8 @@ export function summariseCodingProfiles(rows: CodingProfileRow[], userTimeZone?:
   const hasExplicitVerified = rows.some(isProfileVerified);
   const verifiedMap = new Map<string, CodingProfileRow>();
   for (const row of rows) {
-    if (hasExplicitVerified) {
-      if (!isProfileVerified(row)) continue;
-    } else {
-      if (row.verified_at === null) continue;
+    if (hasExplicitVerified && !isProfileVerified(row)) {
+      continue;
     }
     const existing = verifiedMap.get(row.platform);
     if (!existing || (row.problems_solved ?? 0) > (existing.problems_solved ?? 0)) {
