@@ -246,7 +246,7 @@ export function CodingActivityHeatmap({
           <button
             type="button"
             onClick={scrollToStart}
-            className="flex size-7 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground transition-colors"
+            className="flex size-7 items-center justify-center rounded-lg border border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors shadow-xs"
             title="Scroll to earliest submissions (first submission)"
             aria-label="Scroll to earliest submission"
           >
@@ -255,7 +255,7 @@ export function CodingActivityHeatmap({
           <button
             type="button"
             onClick={scrollToEnd}
-            className="flex size-7 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground transition-colors"
+            className="flex size-7 items-center justify-center rounded-lg border border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors shadow-xs"
             title="Scroll to current submissions"
             aria-label="Scroll to current submission"
           >

@@ -161,18 +161,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-hidden={collapsed}
         >
           <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border/40">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white border border-white/15 shadow-[0_0_16px_-3px_rgba(255,255,255,0.12)]">
-              <Terminal className="size-4 text-white" />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+              <Terminal className="size-4 text-primary" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-medium tracking-tight text-white">DevOS</p>
-              <p className="text-[10px] tracking-[0.14em] uppercase text-white/40 font-medium">Studio Hub</p>
+              <p className="text-sm font-semibold tracking-tight text-sidebar-foreground">DevOS</p>
+              <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium">Studio Hub</p>
             </div>
             <button
               type="button"
               onClick={toggle}
               title="Hide sidebar"
-              className="ml-auto rounded-lg p-1.5 text-muted-foreground transition-all duration-150 hover:bg-white/[0.06] hover:text-foreground"
+              className="ml-auto rounded-lg p-1.5 text-muted-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <PanelLeftClose className="size-4" />
             </button>
@@ -195,8 +195,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150",
                       active
-                        ? "bg-white/[0.08] text-white border border-white/[0.1] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)]"
-                        : "text-white/60 hover:bg-white/[0.05] hover:text-white",
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border border-sidebar-border shadow-xs"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                     )}
                   >
                     <item.icon className="size-4" />
@@ -236,7 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={toggle}
                   title="Show sidebar"
-                  className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+                  className="flex size-9 items-center justify-center rounded-xl border border-border bg-card/60 text-muted-foreground transition-all duration-200 hover:border-border hover:bg-accent hover:text-foreground active:scale-95 shadow-xs"
                 >
                   <PanelLeftOpen className="size-4" />
                 </button>
@@ -247,14 +247,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={toggleTheme}
                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+                className="flex size-9 items-center justify-center rounded-xl border border-border bg-card/60 text-muted-foreground transition-all duration-200 hover:border-border hover:bg-accent hover:text-foreground active:scale-95 shadow-xs"
               >
                 {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
               </button>
               <Link
                 to="/settings"
                 title="Settings"
-                className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+                className="flex size-9 items-center justify-center rounded-xl border border-border bg-card/60 text-muted-foreground transition-all duration-200 hover:border-border hover:bg-accent hover:text-foreground active:scale-95 shadow-xs"
               >
                 <Settings className="size-4" />
               </Link>

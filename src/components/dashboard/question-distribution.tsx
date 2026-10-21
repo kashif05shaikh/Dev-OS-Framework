@@ -62,7 +62,7 @@ function DonutGauge({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-white/[0.05]"
+          className="text-border/50"
         />
 
         {/* Donut segments */}
@@ -257,14 +257,14 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
         </div>
 
         {/* View switcher tabs */}
-        <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-1 text-xs backdrop-blur-md">
+        <div className="flex items-center rounded-full border border-border bg-secondary/60 p-1 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
             className={cn(
               "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "all"
-                ? "bg-white text-black shadow-sm font-semibold"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -276,7 +276,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
             className={cn(
               "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "dsa"
-                ? "bg-white text-black shadow-sm font-semibold"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -288,7 +288,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
             className={cn(
               "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "cp"
-                ? "bg-white text-black shadow-sm font-semibold"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -306,7 +306,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
       >
         {/* ── CARD 1: DSA (Data Structures & Algorithms) ──────────────────── */}
         {(activeTab === "all" || activeTab === "dsa") && (
-          <div className="flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.03]">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/60 p-4 sm:p-5 transition-all duration-200 hover:border-border hover:bg-card">
             <div>
               {/* Card Header */}
               <div className="flex items-center justify-between pb-3">
@@ -323,7 +323,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                <span className="rounded-full border border-border bg-secondary/60 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                   {dsa.total}
                 </span>
               </div>
@@ -339,7 +339,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
 
                 <div className="flex flex-1 w-full flex-col gap-2.5">
                   {/* Easy */}
-                  <div className="rounded-xl border border-border/60 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 transition-colors hover:bg-secondary/50">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
@@ -350,7 +350,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                         <span className="text-[11px] text-muted-foreground">({dsa.easyPct}%)</span>
                       </div>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${dsa.easyPct}%` }}
@@ -361,7 +361,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                   </div>
 
                   {/* Medium / Mid */}
-                  <div className="rounded-xl border border-border/60 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 transition-colors hover:bg-secondary/50">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
@@ -374,7 +374,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                         </span>
                       </div>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${dsa.mediumPct}%` }}
@@ -385,7 +385,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                   </div>
 
                   {/* Hard */}
-                  <div className="rounded-xl border border-border/60 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 transition-colors hover:bg-secondary/50">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50" />
@@ -396,7 +396,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                         <span className="text-[11px] text-muted-foreground">({dsa.hardPct}%)</span>
                       </div>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${dsa.hardPct}%` }}
@@ -415,7 +415,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                 Platforms:
               </span>
               {dsa.platforms.leetcode > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-white/[0.03] px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2 py-0.5">
                   <span className="font-medium text-foreground">LeetCode</span>
                   <span className="tabular-nums text-primary font-semibold">
                     {dsa.platforms.leetcode}
@@ -423,7 +423,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                 </span>
               )}
               {dsa.platforms.gfg > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-white/[0.03] px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2 py-0.5">
                   <span className="font-medium text-foreground">GeeksforGeeks</span>
                   <span className="tabular-nums text-primary font-semibold">
                     {dsa.platforms.gfg}
@@ -431,7 +431,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                 </span>
               )}
               {dsa.platforms.hackerrank > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-white/[0.03] px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2 py-0.5">
                   <span className="font-medium text-foreground">HackerRank</span>
                   <span className="tabular-nums text-primary font-semibold">
                     {dsa.platforms.hackerrank}
@@ -439,7 +439,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                 </span>
               )}
               {dsa.platforms.atcoder > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-white/[0.03] px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary/50 px-2 py-0.5">
                   <span className="font-medium text-foreground">AtCoder</span>
                   <span className="tabular-nums text-primary font-semibold">
                     {dsa.platforms.atcoder}
@@ -453,7 +453,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
 
         {/* ── CARD 2: Competitive Programming (CP) ────────────────────────── */}
         {(activeTab === "all" || activeTab === "cp") && (
-          <div className="flex flex-col justify-between rounded-2xl border border-border/80 bg-white/[0.02] p-4 sm:p-5 transition-all hover:border-primary/30">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/60 p-4 sm:p-5 transition-all duration-200 hover:border-border hover:bg-card">
             <div>
               {/* Card Header */}
               <div className="flex items-center justify-between pb-3">
@@ -470,7 +470,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                <span className="rounded-full border border-border bg-secondary/60 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                   {cp.total}
                 </span>
               </div>
@@ -481,7 +481,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
 
                 <div className="flex flex-1 w-full flex-col gap-2.5">
                   {/* Codeforces */}
-                  <div className="rounded-xl border border-border/60 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 transition-colors hover:bg-secondary/50">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50" />
@@ -492,7 +492,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                         <span className="text-[11px] text-muted-foreground">({cp.cfPct}%)</span>
                       </div>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${cp.cfPct}%` }}
@@ -509,7 +509,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                   </div>
 
                   {/* CodeChef */}
-                  <div className="rounded-xl border border-border/60 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 transition-colors hover:bg-secondary/50">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
@@ -520,7 +520,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                         <span className="text-[11px] text-muted-foreground">({cp.ccPct}%)</span>
                       </div>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${cp.ccPct}%` }}

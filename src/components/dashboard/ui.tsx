@@ -161,7 +161,7 @@ export function Sparkline({
 /** Animated progress bar. */
 export function ProgressBar({ value, className }: { value: number; className?: string }) {
   return (
-    <div className={cn("h-1.5 w-full overflow-hidden rounded-full bg-white/8", className)}>
+    <div className={cn("h-1.5 w-full overflow-hidden rounded-full bg-muted", className)}>
       <motion.div
         className="h-full rounded-full"
         style={{

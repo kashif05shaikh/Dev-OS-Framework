@@ -273,7 +273,7 @@ function ProfilePhotoOption({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.25 }}
-      className="relative flex w-full flex-col items-center justify-center rounded-2xl border border-border/70 bg-white/[0.02] p-6 shadow-sm backdrop-blur-sm sm:w-80 sm:h-72"
+      className="relative flex w-full flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm backdrop-blur-sm sm:w-80 sm:h-72"
     >
       {/* Top right edit button with dropdown matching Image 2 */}
       <div className="absolute top-3.5 right-3.5 z-10">
@@ -281,7 +281,7 @@ function ProfilePhotoOption({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition-all duration-200 hover:border-white/25 hover:bg-white/[0.08] hover:text-foreground active:scale-95 focus:outline-none"
+              className="flex size-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all duration-200 hover:border-border hover:bg-secondary hover:text-foreground active:scale-95 focus:outline-none shadow-xs"
               title="Edit profile photo"
               aria-label="Edit profile photo"
             >
@@ -320,8 +320,8 @@ function ProfilePhotoOption({
       </div>
 
       {/* Prominent Circular Avatar matching Image 2 */}
-      <div className="relative size-44 sm:size-48 select-none rounded-full ring-1 ring-white/10 shadow-xl">
-        <div className="relative size-full overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-white/[0.05] via-background to-muted/20 shadow-inner flex items-center justify-center">
+      <div className="relative size-44 sm:size-48 select-none rounded-full ring-1 ring-border/50 shadow-md">
+        <div className="relative size-full overflow-hidden rounded-full border border-border bg-gradient-to-br from-secondary/50 via-background to-muted/30 shadow-inner flex items-center justify-center">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -772,9 +772,9 @@ function DashboardPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1 text-[11px] font-medium tracking-[0.1em] text-white/90 uppercase backdrop-blur-md"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1 text-[11px] font-medium tracking-[0.1em] text-foreground uppercase backdrop-blur-md"
                 >
-                  <Zap className="size-3 text-white" />
+                  <Zap className="size-3 text-primary" />
                   DevOS · Developer Operating System
                 </motion.div>
 
@@ -810,14 +810,14 @@ function DashboardPage() {
                 <motion.span
                   whileHover={{ rotate: 12, scale: 1.15 }}
                   transition={{ type: "spring", stiffness: 400, damping: 12 }}
-                  className="mb-2.5 grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white shadow-sm"
+                  className="mb-2.5 grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-secondary/60 text-foreground shadow-xs"
                 >
                   <m.icon className="size-4" />
                 </motion.span>
                 <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-medium">
                   {m.label}
                 </span>
-                <p className="mt-1.5 text-3xl font-medium tracking-tight font-mono text-white">
+                <p className="mt-1.5 text-3xl font-medium tracking-tight font-mono text-foreground">
                   <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
                 </p>
               </GlassCard>
@@ -866,7 +866,7 @@ function DashboardPage() {
                         e.stopPropagation();
                         syncAllCoding.mutate();
                       }}
-                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+                      className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-secondary/50 text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
                       aria-label="Sync coding profiles"
                       title="Sync coding profiles"
                     >
@@ -874,7 +874,7 @@ function DashboardPage() {
                         className={cn("size-4", syncAllCoding.isPending && "animate-spin")}
                       />
                     </button>
-                    <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-border bg-secondary/50 text-primary">
                       <Trophy className="size-4" />
                     </span>
                   </div>
@@ -888,7 +888,7 @@ function DashboardPage() {
                     {titleRows.map((row) => (
                       <li
                         key={row.platform}
-                        className="flex min-h-[110px] w-full flex-col items-center justify-center rounded-xl border border-border bg-white/[0.03] px-3 py-4 text-center"
+                        className="flex min-h-[110px] w-full flex-col items-center justify-center rounded-xl border border-border bg-secondary/30 px-3 py-4 text-center"
                       >
                         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                           {row.label}
@@ -1021,7 +1021,7 @@ function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => toggleEvent.mutate(event)}
-                          className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm transition-colors hover:bg-white/[0.05]"
+                          className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm transition-colors hover:bg-accent/60"
                         >
                           {event.completed ? (
                             <CheckCircle2 className="size-4 shrink-0 text-primary" />
@@ -1165,7 +1165,7 @@ function DashboardPage() {
                       <Link
                         to="/notes"
                         search={{ note: note.id }}
-                        className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
+                        className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                       >
                         {note.pinned ? (
                           <Star className="size-3.5 shrink-0 fill-primary text-primary" />
@@ -1192,7 +1192,7 @@ function DashboardPage() {
                     <li key={p.id}>
                       <Link
                         to="/projects"
-                        className="block rounded-xl px-2 py-1.5 hover:bg-white/[0.05]"
+                        className="block rounded-xl px-2 py-1.5 hover:bg-accent/60"
                       >
                         <div className="flex items-center gap-2">
                           <FolderKanban className="size-3.5 shrink-0 text-primary" />

@@ -42,7 +42,7 @@ export function LandingNavbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-black/80 backdrop-blur-2xl border-b border-white/[0.08] py-3 shadow-2xl shadow-black/80"
+          ? "bg-background/85 backdrop-blur-2xl border-b border-border py-3 shadow-xs"
           : "bg-transparent py-5"
       }`}
     >
@@ -50,16 +50,16 @@ export function LandingNavbar() {
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] border border-white/15 text-white group-hover:bg-white/[0.12] group-hover:border-white/30 transition-all shadow-[0_0_16px_-4px_rgba(255,255,255,0.2)]">
-              <Terminal className="size-4 text-white" />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/25 text-primary group-hover:bg-primary/20 transition-all shadow-xs">
+              <Terminal className="size-4 text-primary" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-medium tracking-tight text-white group-hover:text-white/80 transition-colors">
+                <span className="text-lg font-medium tracking-tight text-foreground transition-colors">
                   DevOS
                 </span>
               </div>
-              <span className="text-[10px] tracking-[0.14em] uppercase text-white/40 -mt-0.5 font-medium">
+              <span className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground -mt-0.5 font-medium">
                 Studio Workspace
               </span>
             </div>
@@ -71,7 +71,7 @@ export function LandingNavbar() {
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm font-medium text-white/60 hover:text-white transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
               </a>
@@ -83,7 +83,7 @@ export function LandingNavbar() {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-95"
+              className="flex size-9 items-center justify-center rounded-xl border border-border bg-card/60 text-muted-foreground hover:text-foreground hover:bg-accent hover:border-border transition-all active:scale-95 shadow-xs"
               aria-label="Toggle theme"
             >
               {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -91,7 +91,7 @@ export function LandingNavbar() {
 
             {user ? (
               <Link to="/dashboard">
-                <Button className="rounded-full bg-white hover:bg-neutral-200 text-black font-semibold shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] gap-2 transition-all hover:scale-[1.02]">
+                <Button className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs gap-2 transition-all hover:scale-[1.02]">
                   <LayoutDashboard className="size-4" />
                   Open DevOS
                   <ArrowRight className="size-4" />
@@ -100,12 +100,12 @@ export function LandingNavbar() {
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" className="rounded-full text-white/70 hover:text-white hover:bg-white/[0.08]">
+                  <Button variant="ghost" className="rounded-full text-muted-foreground hover:text-foreground hover:bg-accent">
                     Sign in
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button className="rounded-full bg-white hover:bg-neutral-200 text-black font-semibold shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] gap-2 transition-all hover:scale-[1.02]">
+                  <Button className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs gap-2 transition-all hover:scale-[1.02]">
                     Get Started
                     <ArrowRight className="size-4" />
                   </Button>

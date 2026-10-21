@@ -24,7 +24,6 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { ACCENTS, applyAccent, cacheAccent, resolveAccent } from "@/lib/accent";
 import { applyTheme, cacheTheme, cachedTheme, resolveTheme, type ThemeKey } from "@/lib/theme";
 import { describeError, profileQuery, updateRow } from "@/lib/devos-queries";
 import { cn } from "@/lib/utils";
@@ -249,7 +248,6 @@ function SettingsPage() {
     );
   }
 
-  const currentAccent = resolveAccent(profile.data?.accent_color);
   const nameDirty = displayName.trim() !== (profile.data?.display_name ?? "").trim();
 
   return (
@@ -284,7 +282,7 @@ function SettingsPage() {
       <Section
         icon={Palette}
         title="Appearance"
-        description="Pick the accent used for highlights, charts and active states."
+        description="Choose between dark and light appearance."
       >
         <div className="flex flex-wrap gap-2">
           {(
@@ -304,9 +302,9 @@ function SettingsPage() {
                   cacheTheme(option.key);
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
+                  "flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-all duration-150",
                   active
-                    ? "border-white/30 bg-white/10 text-white shadow-sm"
+                    ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs ring-1 ring-primary/30"
                     : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
@@ -317,38 +315,8 @@ function SettingsPage() {
             );
           })}
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {ACCENTS.map((accent) => {
-            const active = accent.key === currentAccent.key;
-            return (
-              <button
-                key={accent.key}
-                type="button"
-                onClick={() => {
-                  applyAccent(accent.key);
-                  cacheAccent(accent.key);
-                  saveProfile.mutate({ accent_color: accent.key });
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
-                  active
-                    ? "border-white/30 bg-white/10 text-white shadow-sm"
-                    : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                <span
-                  className="size-4 rounded-full ring-1 ring-white/20"
-                  style={{ backgroundColor: accent.swatch }}
-                />
-                {accent.label}
-                {active ? <Check className="size-3.5 text-primary" /> : null}
-              </button>
-            );
-          })}
-        </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Dark is the DevOS default; light keeps the same layout with bright surfaces. Accents apply
-          to both.
+          Dark is the Visuvate pitch-black default; light switches to a crisp studio gallery aesthetic.
         </p>
       </Section>
 

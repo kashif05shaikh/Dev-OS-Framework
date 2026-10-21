@@ -18,10 +18,10 @@ export const ACCENTS: AccentOption[] = [
   { key: "cyan", label: "Cyan", primary: "oklch(0.7 0.13 210)", swatch: "#06b6d4" },
 ];
 
-export const DEFAULT_ACCENT: AccentKey = "studio";
+export const DEFAULT_ACCENT: AccentKey = "blue";
 
 export function resolveAccent(value: string | null | undefined): AccentOption {
-  return ACCENTS.find((a) => a.key === value) ?? ACCENTS[0]!;
+  return ACCENTS.find((a) => a.key === "blue")!;
 }
 
 /** Paint the chosen accent onto the live CSS custom properties. */
