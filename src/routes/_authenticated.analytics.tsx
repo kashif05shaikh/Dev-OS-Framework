@@ -202,6 +202,16 @@ function AnalyticsPage() {
     color: "var(--foreground)",
   } as const;
 
+  const tooltipItemStyle = {
+    color: "var(--foreground)",
+    fontWeight: 500,
+  } as const;
+
+  const tooltipLabelStyle = {
+    color: "var(--foreground)",
+    fontWeight: 600,
+  } as const;
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -259,7 +269,12 @@ function AnalyticsPage() {
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)" }} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipItemStyle}
+                labelStyle={tooltipLabelStyle}
+                cursor={{ fill: "var(--muted)" }}
+              />
               <Bar dataKey="minutes" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -286,7 +301,11 @@ function AnalyticsPage() {
                       <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
+                    labelStyle={tooltipLabelStyle}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -326,7 +345,12 @@ function AnalyticsPage() {
                     tickLine={false}
                     axisLine={false}
                   />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)" }} />
+                  <Tooltip
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipItemStyle}
+                labelStyle={tooltipLabelStyle}
+                cursor={{ fill: "var(--muted)" }}
+              />
                   <Bar dataKey="value" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

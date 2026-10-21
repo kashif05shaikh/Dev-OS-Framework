@@ -958,6 +958,16 @@ function DashboardPage() {
                         border: "1px solid var(--border)",
                         borderRadius: 14,
                         fontSize: 12,
+                        color: "var(--popover-foreground)",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.4)",
+                      }}
+                      itemStyle={{
+                        color: "var(--popover-foreground)",
+                        fontWeight: 500,
+                      }}
+                      labelStyle={{
+                        color: "var(--popover-foreground)",
+                        fontWeight: 600,
                       }}
                     />
                     <Area
@@ -1141,6 +1151,16 @@ function DashboardPage() {
                           border: "1px solid var(--border)",
                           borderRadius: 14,
                           fontSize: 12,
+                          color: "var(--popover-foreground)",
+                          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.4)",
+                        }}
+                        itemStyle={{
+                          color: "var(--popover-foreground)",
+                          fontWeight: 500,
+                        }}
+                        labelStyle={{
+                          color: "var(--popover-foreground)",
+                          fontWeight: 600,
                         }}
                       />
                     </PieChart>

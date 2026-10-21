@@ -283,28 +283,30 @@ function NetworkPage() {
     onError: (error: unknown) => toast.error(describeError(error)),
   });
 
+  const performSync = async (account: SocialAccount): Promise<SocialSnapshot> => {
+    const userId = await requireUserId();
+    try {
+      const snapshot = await loadSnapshot(account.platform, account.username);
+      await persistSnapshot(userId, snapshot);
+      await updateRow("social_accounts", account, {
+        status: "connected",
+        last_error: null,
+        last_synced: new Date().toISOString(),
+        profile_url: snapshot.profile_url ?? account.profile_url,
+      });
+      return snapshot;
+    } catch (error) {
+      const message = describeError(error);
+      await updateRow("social_accounts", account, {
+        status: "error",
+        last_error: message,
+      });
+      throw new Error(message);
+    }
+  };
+
   const sync = useMutation({
-    mutationFn: async (account: SocialAccount) => {
-      const userId = await requireUserId();
-      try {
-        const snapshot = await loadSnapshot(account.platform, account.username);
-        await persistSnapshot(userId, snapshot);
-        await updateRow("social_accounts", account, {
-          status: "connected",
-          last_error: null,
-          last_synced: new Date().toISOString(),
-          profile_url: snapshot.profile_url ?? account.profile_url,
-        });
-        return snapshot;
-      } catch (error) {
-        const message = describeError(error);
-        await updateRow("social_accounts", account, {
-          status: "error",
-          last_error: message,
-        });
-        throw new Error(message);
-      }
-    },
+    mutationFn: (account: SocialAccount) => performSync(account),
     onMutate: (account) => setSyncing(account.id),
     onSuccess: (snapshot, account) => {
       void qc.invalidateQueries({ queryKey: ["social_accounts"] });
@@ -358,14 +360,39 @@ function NetworkPage() {
 
   const syncAll = useMutation({
     mutationFn: async () => {
-      for (const account of connected) {
+      const accountsToSync = accounts.data ?? [];
+      const results: { account: SocialAccount; success: boolean; error?: string }[] = [];
+
+      for (const account of accountsToSync) {
+        setSyncing(account.id);
         try {
-          await sync.mutateAsync(account);
-        } catch {
-          /* individual failures already surface a toast */
+          await performSync(account);
+          results.push({ account, success: true });
+        } catch (err) {
+          results.push({ account, success: false, error: describeError(err) });
         }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      void qc.invalidateQueries({ queryKey: ["social_accounts"] });
+      void qc.invalidateQueries({ queryKey: ["social_profile_cache"] });
+      const succeeded = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success);
+
+      if (failed.length === 0) {
+        toast.success("All accounts synced successfully");
+      } else if (succeeded > 0) {
+        const failedLabels = failed
+          .map((f) => socialPlatform(f.account.platform)?.label ?? f.account.platform)
+          .join(", ");
+        toast.warning(`Synced ${succeeded} account(s). Could not sync: ${failedLabels}`);
+      } else {
+        toast.error("Could not sync accounts. Please try again.");
       }
     },
+    onSettled: () => setSyncing(null),
   });
 
   const toggleAutoSync = useMutation({
@@ -515,12 +542,18 @@ function NetworkPage() {
                       onClick={() => setDraft({ platform: platform.id, handle: "" })}
                       className="flex items-center gap-3 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-left transition hover:border-primary/40 hover:bg-card"
                     >
-                      <img
-                        src={socialLogo(platform)}
-                        alt={`${platform.label} logo`}
-                        loading="lazy"
-                        className="size-5"
-                      />
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary/60 p-1.5 shadow-xs">
+                        <img
+                          src={socialLogo(platform)}
+                          alt={`${platform.label} logo`}
+                          loading="lazy"
+                          className={cn(
+                            "size-4 shrink-0",
+                            (platform.id === "github" || platform.id === "twitter") &&
+                              "brightness-0 dark:brightness-100",
+                          )}
+                        />
+                      </div>
                       <div className="min-w-0">
                         <p className="text-xs font-medium">{platform.label}</p>
                         <p className="truncate text-[11px] text-muted-foreground">
@@ -627,11 +660,17 @@ function AccountCard({
             </div>
           )}
           {meta ? (
-            <img
-              src={socialLogo(meta)}
-              alt={`${meta.label} badge`}
-              className="absolute -bottom-1 -right-1 size-4 rounded-full bg-background p-0.5"
-            />
+            <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border border-border bg-card p-0.5 shadow-xs">
+              <img
+                src={socialLogo(meta)}
+                alt={`${meta.label} badge`}
+                className={cn(
+                  "size-3.5",
+                  (meta.id === "github" || meta.id === "twitter") &&
+                    "brightness-0 dark:brightness-100",
+                )}
+              />
+            </div>
           ) : null}
         </div>
         <div className="min-w-0 flex-1">
@@ -956,7 +995,15 @@ function ConnectDialog({
                           : "border-border hover:border-primary/40"
                       }`}
                     >
-                      <img src={socialLogo(platform)} alt={`${platform.label} logo`} className="size-4" />
+                      <img
+                        src={socialLogo(platform)}
+                        alt={`${platform.label} logo`}
+                        className={cn(
+                          "size-4",
+                          (platform.id === "github" || platform.id === "twitter") &&
+                            "brightness-0 dark:brightness-100",
+                        )}
+                      />
                       <span className="truncate">{platform.label}</span>
                     </button>
                   );

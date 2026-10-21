@@ -158,47 +158,69 @@ export function resolveToolIcon(tool: Service | Editor): {
 export function EditorIcon({ editor, className }: { editor: Editor; className?: string }) {
   const [failed, setFailed] = useState(false);
   const Fallback = editor.icon ?? Code2;
+  const isMonochrome = editor.name === "Cursor" || editor.name === "Codex";
 
   if (failed || !editor.logo) {
     return (
-      <Fallback
-        className={cn("size-5 shrink-0 text-primary", className)}
-        aria-label={`${editor.name} icon`}
-      />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/60 p-1.5 shadow-xs">
+        <Fallback
+          className={cn("size-5 shrink-0 text-primary", className)}
+          aria-label={`${editor.name} icon`}
+        />
+      </div>
     );
   }
 
   return (
-    <img
-      src={editor.logo}
-      alt={`${editor.name} logo`}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={cn("size-5 shrink-0 object-contain", className)}
-    />
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/60 p-1.5 shadow-xs">
+      <img
+        src={editor.logo}
+        alt={`${editor.name} logo`}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={cn(
+          "size-5 shrink-0 object-contain",
+          isMonochrome && "dark:invert dark:brightness-100",
+          className,
+        )}
+      />
+    </div>
   );
 }
 
 export function ServiceIcon({ service, className }: { service: Service; className?: string }) {
   const [failed, setFailed] = useState(false);
+  const isMonochrome =
+    service.color.toLowerCase() === "ffffff" ||
+    service.slug === "github" ||
+    service.slug === "vercel" ||
+    service.slug === "railway";
 
   if (failed || !service.slug) {
     return (
-      <Code2
-        className={cn("size-6 shrink-0 text-muted-foreground", className)}
-        aria-label={`${service.name} icon`}
-      />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/60 p-1.5 shadow-xs">
+        <Code2
+          className={cn("size-5 shrink-0 text-muted-foreground", className)}
+          aria-label={`${service.name} icon`}
+        />
+      </div>
     );
   }
 
   return (
-    <img
-      src={iconUrl(service.slug, service.color)}
-      alt={`${service.name} logo`}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={cn("size-6 shrink-0", className)}
-    />
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary/60 p-1.5 shadow-xs">
+      <img
+        src={iconUrl(service.slug, isMonochrome ? "ffffff" : service.color)}
+        alt={`${service.name} logo`}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={cn(
+          "size-5 shrink-0 transition-all",
+          isMonochrome ? "brightness-0 dark:brightness-100" : "",
+          className,
+        )}
+      />
+    </div>
   );
 }
 

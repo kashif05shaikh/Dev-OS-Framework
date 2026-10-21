@@ -173,6 +173,8 @@ async function fetchGithub(handle: string): Promise<SocialSnapshot> {
 
 async function fetchTwitter(handle: string): Promise<SocialSnapshot> {
   type Payload = {
+    code?: number;
+    message?: string;
     user?: {
       screen_name: string;
       name: string;
@@ -188,9 +190,36 @@ async function fetchTwitter(handle: string): Promise<SocialSnapshot> {
       website?: { url: string } | null;
     };
   };
-  const payload = await getJson<Payload>(`https://api.fxtwitter.com/${encodeURIComponent(handle)}`);
-  const user = payload.user;
-  if (!user) fail("That X account could not be read — it may be suspended or private.");
+
+  const cleanHandle = handle
+    .replace(/^@/, "")
+    .replace(/^https?:\/\/(?:twitter\.com|x\.com)\//, "")
+    .split("/")[0]!
+    .split("?")[0]!
+    .trim();
+
+  let payload: Payload | null = null;
+  let lastErr: unknown = null;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      payload = await getJson<Payload>(`https://api.fxtwitter.com/${encodeURIComponent(cleanHandle)}`);
+      if (payload?.user) break;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 600));
+      }
+    }
+  }
+
+  const user = payload?.user;
+  if (!user) {
+    if (lastErr instanceof Error && lastErr.message) {
+      fail(lastErr.message);
+    }
+    fail("That X account could not be read — it may be suspended or private.");
+  }
 
   return {
     ...empty("twitter", user.screen_name, user.url),

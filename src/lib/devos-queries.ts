@@ -69,6 +69,19 @@ export function describeError(error: unknown): string {
   if (lower.includes("row-level security") || lower.includes("permission denied")) {
     return "You don't have permission to change this item.";
   }
+
+  // Preserve clear user-facing messages (e.g. from PlatformError) while suppressing internals
+  if (
+    raw &&
+    raw.length < 250 &&
+    !raw.includes("\n") &&
+    !raw.includes("    at ") &&
+    !lower.includes("cannot read properties") &&
+    !lower.includes("undefined")
+  ) {
+    return raw;
+  }
+
   return "Something went wrong. Please try again.";
 }
 
