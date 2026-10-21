@@ -48,9 +48,9 @@ export function GlassCard({
   return (
     <div
       data-interactive={interactive ? "true" : undefined}
-      className={cn("dash-card group relative overflow-hidden", className)}
+      className={cn("dash-card group relative min-w-0 max-w-full overflow-hidden", className)}
     >
-      <div className="relative">{children}</div>
+      <div className="relative min-w-0 max-w-full">{children}</div>
     </div>
   );
 }

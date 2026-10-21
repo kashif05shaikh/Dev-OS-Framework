@@ -42,7 +42,7 @@ export function LandingNavbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-background/80 backdrop-blur-xl border-b border-border/60 py-3 shadow-2xl shadow-emerald-950/10"
+          ? "bg-black/80 backdrop-blur-2xl border-b border-white/[0.08] py-3 shadow-2xl shadow-black/80"
           : "bg-transparent py-5"
       }`}
     >
@@ -50,17 +50,17 @@ export function LandingNavbar() {
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 group-hover:bg-emerald-500/20 group-hover:border-emerald-500/50 transition-all">
-              <Terminal className="size-5" />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] border border-white/15 text-white group-hover:bg-white/[0.12] group-hover:border-white/30 transition-all shadow-[0_0_16px_-4px_rgba(255,255,255,0.2)]">
+              <Terminal className="size-4 text-white" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold tracking-tight text-foreground group-hover:text-emerald-400 transition-colors">
+                <span className="text-lg font-medium tracking-tight text-white group-hover:text-white/80 transition-colors">
                   DevOS
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-muted-foreground -mt-0.5">
-                Developer OS
+              <span className="text-[10px] tracking-[0.14em] uppercase text-white/40 -mt-0.5 font-medium">
+                Studio Workspace
               </span>
             </div>
           </Link>
@@ -71,7 +71,7 @@ export function LandingNavbar() {
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-medium text-white/60 hover:text-white transition-colors"
               >
                 {link.label}
               </a>
@@ -83,7 +83,7 @@ export function LandingNavbar() {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="flex size-9 items-center justify-center rounded-lg border border-border/60 bg-background/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-95"
               aria-label="Toggle theme"
             >
               {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -91,7 +91,7 @@ export function LandingNavbar() {
 
             {user ? (
               <Link to="/dashboard">
-                <Button className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold shadow-lg shadow-emerald-500/20 gap-2">
+                <Button className="rounded-full bg-white hover:bg-neutral-200 text-black font-semibold shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] gap-2 transition-all hover:scale-[1.02]">
                   <LayoutDashboard className="size-4" />
                   Open DevOS
                   <ArrowRight className="size-4" />
@@ -100,12 +100,12 @@ export function LandingNavbar() {
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" className="rounded-full text-white/70 hover:text-white hover:bg-white/[0.08]">
                     Sign in
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold shadow-lg shadow-emerald-500/20 gap-2 transition-all hover:scale-[1.02]">
+                  <Button className="rounded-full bg-white hover:bg-neutral-200 text-black font-semibold shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] gap-2 transition-all hover:scale-[1.02]">
                     Get Started
                     <ArrowRight className="size-4" />
                   </Button>

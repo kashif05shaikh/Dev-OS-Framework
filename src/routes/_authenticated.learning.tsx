@@ -361,7 +361,7 @@ function LearningPage() {
   if (error) return <ErrorState error={error} onRetry={() => invalidate()} />;
 
   return (
-    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden md:h-screen md:flex-row">
+    <div className="flex min-h-[calc(100dvh-var(--app-header-height))] w-full max-w-full flex-col overflow-x-hidden md:h-[calc(100dvh-var(--app-header-height))] md:flex-row">
       {/* Mobile subject & folder header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2.5 md:hidden">
         <div className="flex min-w-0 items-center gap-2">
@@ -725,7 +725,7 @@ function LearningPage() {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="grid grid-cols-1 gap-3 p-3 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-3 sm:p-5 xl:grid-cols-2 2xl:grid-cols-3">
             {visible.length === 0 ? (
               <div className="col-span-full">
                 <EmptyState
@@ -1085,9 +1085,7 @@ function ResourceDialog({
               <Select
                 value={value?.folder_id ?? "none"}
                 onValueChange={(folder) =>
-                  setValue((v) =>
-                    v ? { ...v, folder_id: folder === "none" ? null : folder } : v,
-                  )
+                  setValue((v) => (v ? { ...v, folder_id: folder === "none" ? null : folder } : v))
                 }
               >
                 <SelectTrigger>

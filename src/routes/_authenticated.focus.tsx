@@ -410,8 +410,8 @@ function FocusPage() {
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-xl border border-border bg-card p-6">
+        <div className="grid grid-cols-1 gap-4 p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6">
             <div className="mb-6 flex flex-wrap gap-2">
               {FOCUS_MODES.map((m) => (
                 <Button
@@ -429,7 +429,7 @@ function FocusPage() {
             <div className="flex flex-col items-center gap-4 py-6">
               <p
                 className={cn(
-                  "font-mono text-6xl font-semibold tabular-nums sm:text-7xl",
+                  "font-mono text-5xl font-semibold tabular-nums sm:text-7xl",
                   MODE_ACCENT[mode],
                 )}
               >

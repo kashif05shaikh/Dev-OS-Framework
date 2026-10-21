@@ -13,18 +13,18 @@ export function LandingHero() {
         {/* Hero Copy */}
         <div className="text-center space-y-6 max-w-5xl mx-auto">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-mono font-medium text-emerald-400">
-            <Sparkles className="size-3.5 text-emerald-400" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase text-white/90 backdrop-blur-md">
+            <Sparkles className="size-3.5 text-white/80" />
             <span>LEARN • BUILD • TRACK • SHIP</span>
           </div>
 
           {/* Main Title - Single Line */}
-          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground break-words sm:whitespace-nowrap">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-[-0.045em] text-white break-words">
             Your Developer Operating System.
           </h1>
 
           {/* Description */}
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="text-base sm:text-lg text-white/60 leading-relaxed max-w-2xl mx-auto font-normal">
             DevOS unifies your learning hub, technical notes, projects, coding profiles, goals, job
             pipeline, and focus stats into one clean developer workspace.
           </p>
@@ -34,7 +34,7 @@ export function LandingHero() {
             <Link to={user ? "/dashboard" : "/auth"}>
               <Button
                 size="lg"
-                className="h-12 px-8 text-base bg-emerald-500 hover:bg-emerald-600 text-black font-semibold shadow-md gap-2 transition-all hover:scale-[1.02] w-full sm:w-auto"
+                className="h-12 px-8 text-sm md:text-base rounded-full bg-white hover:bg-neutral-200 text-black font-semibold shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] gap-2 transition-all hover:scale-[1.02] w-full sm:w-auto"
               >
                 {user ? "Open DevOS Workspace" : "Get Started"}
                 <ArrowRight className="size-5" />
@@ -45,7 +45,7 @@ export function LandingHero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 px-8 text-base border-border/60 hover:bg-muted/40 w-full sm:w-auto"
+                className="h-12 px-8 text-sm md:text-base rounded-full border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.1] hover:border-white/25 transition-all w-full sm:w-auto"
               >
                 Explore DevOS ↓
               </Button>
@@ -53,13 +53,13 @@ export function LandingHero() {
           </div>
 
           {/* Micro text */}
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground font-mono pt-1">
-            <span className="flex items-center gap-1">
-              <Zap className="size-3.5 text-emerald-400" /> Zero fluff
+          <div className="flex items-center justify-center gap-4 text-xs text-white/50 pt-2">
+            <span className="flex items-center gap-1.5">
+              <Zap className="size-3.5 text-white/80" /> Zero fluff
             </span>
             <span>•</span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="size-3.5 text-emerald-400" /> Built for engineers
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-white/80" /> Built for engineers
             </span>
             <span>•</span>
             <span>One workspace for your entire journey</span>

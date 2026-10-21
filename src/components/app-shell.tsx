@@ -27,6 +27,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -63,6 +64,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const sidebarNavRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMobileMenuOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
 
   // Sync sidebar scroll with page scroll so it moves dynamically down the page
   useEffect(() => {
@@ -140,171 +150,170 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background w-full">
-      {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 md:flex",
-          collapsed ? "w-0 -translate-x-full border-r-0" : "w-60 translate-x-0",
-        )}
-        aria-hidden={collapsed}
-      >
-        <div className="flex items-center gap-3 px-5 py-5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-            <Terminal className="size-4" />
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-tight">DevOS</p>
-            <p className="text-[11px] text-muted-foreground">Developer OS</p>
-          </div>
-          <button
-            type="button"
-            onClick={toggle}
-            title="Hide sidebar"
-            className="ml-auto rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-          >
-            <PanelLeftClose className="size-4" />
-          </button>
-        </div>
-
-        <div
-          ref={sidebarNavRef}
-          className="flex-1 min-h-0 overflow-y-auto px-3 overscroll-contain"
+    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+      <div className="min-h-dvh bg-background w-full [--app-header-height:4rem] lg:[--app-header-height:3rem]">
+        {/* Desktop Sidebar */}
+        <aside
+          className={cn(
+            "fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur-2xl transition-all duration-200 lg:flex",
+            collapsed ? "w-0 -translate-x-full border-r-0" : "w-60 translate-x-0",
+          )}
+          aria-hidden={collapsed}
         >
-          <nav className="space-y-1 pb-4">
-            {PRIMARY_NAV.map((item) => {
-              const active =
-                item.to === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.to!);
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to!}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="size-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+          <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border/40">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white border border-white/15 shadow-[0_0_16px_-3px_rgba(255,255,255,0.12)]">
+              <Terminal className="size-4 text-white" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-sm font-medium tracking-tight text-white">DevOS</p>
+              <p className="text-[10px] tracking-[0.14em] uppercase text-white/40 font-medium">Studio Hub</p>
+            </div>
+            <button
+              type="button"
+              onClick={toggle}
+              title="Hide sidebar"
+              className="ml-auto rounded-lg p-1.5 text-muted-foreground transition-all duration-150 hover:bg-white/[0.06] hover:text-foreground"
+            >
+              <PanelLeftClose className="size-4" />
+            </button>
+          </div>
 
-        <div className="border-t border-sidebar-border p-3">
-          <div className="mb-2 truncate px-2 text-xs text-muted-foreground">{user?.email}</div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start"
-            onClick={() => void signOut()}
+          <div
+            ref={sidebarNavRef}
+            className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 overscroll-contain"
           >
-            <LogOut className="size-4" />
-            Sign out
-          </Button>
-        </div>
-      </aside>
+            <nav className="space-y-1 pb-4">
+              {PRIMARY_NAV.map((item) => {
+                const active =
+                  item.to === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(item.to!);
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to!}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150",
+                      active
+                        ? "bg-white/[0.08] text-white border border-white/[0.1] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)]"
+                        : "text-white/60 hover:bg-white/[0.05] hover:text-white",
+                    )}
+                  >
+                    <item.icon className="size-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-      {/* Main Container */}
-      <div
-        className={cn(
-          "flex min-w-0 flex-1 flex-col w-full max-w-full transition-[padding-left] duration-200",
-          collapsed ? "md:pl-0" : "md:pl-60",
-        )}
-      >
-        {/* Top bar — desktop only */}
-        <div className="hidden items-center justify-between gap-2 border-b border-border bg-background/80 px-4 py-2 backdrop-blur-sm md:flex">
-          <div>
-            {collapsed && (
+          <div className="border-t border-sidebar-border/50 p-3">
+            <div className="mb-2 truncate px-2 text-xs text-muted-foreground/80">{user?.email}</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start rounded-xl text-muted-foreground hover:text-foreground"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="size-4" />
+              Sign out
+            </Button>
+          </div>
+        </aside>
+
+        {/* Main Container */}
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col w-full max-w-full transition-[padding-left] duration-200",
+            collapsed ? "lg:pl-0" : "lg:pl-60",
+          )}
+        >
+          {/* Top bar — desktop only */}
+          <div className="hidden h-14 items-center justify-between gap-2 border-b border-border bg-background/80 px-6 backdrop-blur-xl lg:flex">
+            <div>
+              {collapsed && (
+                <button
+                  type="button"
+                  onClick={toggle}
+                  title="Show sidebar"
+                  className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+                >
+                  <PanelLeftOpen className="size-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={toggle}
-                title="Show sidebar"
-                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                onClick={toggleTheme}
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
               >
-                <PanelLeftOpen className="size-4" />
+                {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
               </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-            >
-              {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </button>
-            <Link
-              to="/settings"
-              title="Settings"
-              className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-            >
-              <Settings className="size-4" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Mobile Header Bar */}
-        <header className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-              <Terminal className="size-4" />
+              <Link
+                to="/settings"
+                title="Settings"
+                className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+              >
+                <Settings className="size-4" />
+              </Link>
             </div>
-            <span className="text-sm font-semibold tracking-tight">DevOS</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </button>
-            <Link
-              to="/settings"
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Settings className="size-4" />
-            </Link>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
-          </div>
-        </header>
+          {/* Mobile Header Bar */}
+          <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-4 lg:hidden">
+            <div className="flex items-center gap-2">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
+                <Terminal className="size-4" />
+              </div>
+              <span className="text-sm font-semibold tracking-tight">DevOS</span>
+            </div>
 
-        {/* Mobile Navigation Drawer Overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-background/98 backdrop-blur-2xl md:hidden animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Toggle theme"
+              >
+                {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              </button>
+              <Link
+                to="/settings"
+                aria-label="Settings"
+                className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Settings className="size-4" />
+              </Link>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Toggle navigation menu"
+                >
+                  {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                </button>
+              </SheetTrigger>
+            </div>
+          </header>
+
+          {/* Mobile Navigation Drawer Overlay */}
+          <SheetContent
+            side="left"
+            aria-describedby={undefined}
+            className="flex h-dvh w-full max-w-sm flex-col gap-0 p-0 [&>button]:right-3 [&>button]:top-3 [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center"
+          >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
                   <Terminal className="size-4" />
                 </div>
-                <span className="text-sm font-semibold">DevOS Workspace</span>
+                <SheetTitle className="text-sm font-semibold">DevOS Workspace</SheetTitle>
               </div>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-md p-2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="size-5" />
-              </button>
             </div>
 
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="min-h-0 flex-1 p-4">
               <nav className="space-y-1">
                 {PRIMARY_NAV.map((item) => {
                   const active =
@@ -331,7 +340,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </nav>
             </ScrollArea>
 
-            <div className="border-t border-border p-4">
+            <div className="shrink-0 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="mb-2 truncate text-xs text-muted-foreground">{user?.email}</div>
               <Button
                 variant="ghost"
@@ -346,23 +355,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Sign out
               </Button>
             </div>
-          </div>
-        )}
+          </SheetContent>
 
-        <main className="relative min-w-0 flex-1 w-full max-w-full overflow-x-hidden">
-          {collapsed && (
-            <button
-              type="button"
-              onClick={toggle}
-              title="Show sidebar"
-              className="fixed left-3 top-14 z-40 hidden rounded-md border border-border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground md:block"
-            >
-              <PanelLeftOpen className="size-4" />
-            </button>
-          )}
-          {children}
-        </main>
+          <main className="workspace-content relative min-w-0 flex-1 w-full max-w-full">
+            {collapsed && (
+              <button
+                type="button"
+                onClick={toggle}
+                title="Show sidebar"
+                className="fixed left-3 top-14 z-40 hidden rounded-md border border-border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground lg:block"
+              >
+                <PanelLeftOpen className="size-4" />
+              </button>
+            )}
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

@@ -624,10 +624,7 @@ function DashboardPage() {
 
   // Only show full page error if all core queries failed completely without any cached data
   const isFatalError =
-    queries.every((q) => q.isError) &&
-    !notes.data &&
-    !coding.data &&
-    !projects.data;
+    queries.every((q) => q.isError) && !notes.data && !coding.data && !projects.data;
 
   if (isFatalError && error)
     return <ErrorState error={error} onRetry={() => queries.forEach((q) => void q.refetch())} />;
@@ -747,6 +744,25 @@ function DashboardPage() {
         animate="show"
         className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
       >
+        {queries.some((query) => query.isPending) ? (
+          <p role="status" className="mb-4 text-sm text-muted-foreground">
+            Loading your workspace data — totals will update when it arrives.
+          </p>
+        ) : null}
+        {error ? (
+          <div role="alert" className="mb-4 rounded-xl border border-destructive/30 p-4 text-sm">
+            <p>Some workspace data could not load. Totals may be incomplete.</p>
+            <button
+              type="button"
+              className="mt-2 font-medium underline"
+              onClick={() =>
+                queries.filter((query) => query.isError).forEach((query) => void query.refetch())
+              }
+            >
+              Retry failed requests
+            </button>
+          </div>
+        ) : null}
         {/* ── Hero ─────────────────────────────────────────────── */}
         <Reveal>
           <GlassCard className="p-6 sm:p-8" tilt={false}>
@@ -756,21 +772,20 @@ function DashboardPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-medium tracking-wide text-primary"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1 text-[11px] font-medium tracking-[0.1em] text-white/90 uppercase backdrop-blur-md"
                 >
-                  <Zap className="size-3" />
+                  <Zap className="size-3 text-white" />
                   DevOS · Developer Operating System
                 </motion.div>
 
-                <h1 className="dash-gradient-text mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
+                <h1 className="dash-gradient-text mt-4 text-3xl font-medium tracking-[-0.04em] sm:text-5xl">
                   {greeting(now.getHours())}, {name} 👋
                 </h1>
-                <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+                <p className="mt-3 max-w-xl text-sm text-muted-foreground/90 leading-relaxed sm:text-base">
                   {todayEvents.filter((e) => !e.completed).length
                     ? `${todayEvents.filter((e) => !e.completed).length} item(s) left on today's schedule. Let's clear them.`
                     : "Nothing scheduled today — pick a goal and make measurable progress."}
                 </p>
-
               </div>
 
               <ProfilePhotoOption
@@ -787,22 +802,22 @@ function DashboardPage() {
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
         >
           {metrics.map((m) => (
-            <motion.div key={m.label} variants={riseIn}>
+            <motion.div key={m.label} variants={riseIn} className="min-w-0">
               <GlassCard className="flex flex-col items-center justify-center p-5 text-center">
                 <motion.span
                   whileHover={{ rotate: 12, scale: 1.15 }}
                   transition={{ type: "spring", stiffness: 400, damping: 12 }}
-                  className="mb-2.5 grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-white/[0.04] text-primary"
+                  className="mb-2.5 grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white shadow-sm"
                 >
                   <m.icon className="size-4" />
                 </motion.span>
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-medium">
                   {m.label}
                 </span>
-                <p className="mt-1.5 text-3xl font-semibold tracking-tight">
+                <p className="mt-1.5 text-3xl font-medium tracking-tight font-mono text-white">
                   <Counter value={m.value} decimals={m.decimals ?? 0} suffix={m.suffix ?? ""} />
                 </p>
               </GlassCard>
@@ -810,12 +825,12 @@ function DashboardPage() {
           ))}
 
           {/* Question Distribution (DSA & CP) */}
-          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+          <motion.div variants={riseIn} className="col-span-full min-w-0">
             <QuestionDistribution profiles={coding.data ?? []} />
           </motion.div>
 
           {/* Coding Activity Heatmap */}
-          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+          <motion.div variants={riseIn} className="col-span-full min-w-0">
             <GlassCard className="p-5">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -835,7 +850,7 @@ function DashboardPage() {
             </GlassCard>
           </motion.div>
 
-          <motion.div variants={riseIn} className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+          <motion.div variants={riseIn} className="col-span-full min-w-0">
             <Link to="/profiles" className="block">
               <GlassCard className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -910,14 +925,12 @@ function DashboardPage() {
         </motion.div>
 
         {/* ── Charts + right rail ──────────────────────────────── */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <motion.div variants={riseIn} className="lg:col-span-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <motion.div variants={riseIn} className="min-w-0 lg:col-span-2">
             <GlassCard className="p-6" tilt={false}>
               <div>
                 <h2 className="text-sm font-semibold">Focus trend</h2>
-                <p className="text-xs text-muted-foreground">
-                  Minutes of deep work, last 14 days
-                </p>
+                <p className="text-xs text-muted-foreground">Minutes of deep work, last 14 days</p>
               </div>
               <div className="mt-5 h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -988,7 +1001,7 @@ function DashboardPage() {
         </div>
 
         {/* ── Productivity row ─────────────────────────────────── */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
               <h2 className="text-sm font-semibold">Today&apos;s focus</h2>
@@ -1139,7 +1152,7 @@ function DashboardPage() {
         </div>
 
         {/* ── Notes / projects / learning ──────────────────────── */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <motion.div variants={riseIn}>
             <GlassCard className="h-full p-6" tilt={false}>
               <h2 className="text-sm font-semibold">Quick notes</h2>

@@ -6,7 +6,7 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
-function createSupabaseFetch(supabaseKey: string): typeof fetch {
+export function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
       typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
@@ -25,7 +25,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
-    return fetch(input, { ...init, headers });
+    // Bound auth and data requests so a stalled connection cannot leave every
+    // workspace page loading forever. Preserve cancellation from the caller.
+    const callerSignal =
+      init?.signal ??
+      (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
+    const deadline = AbortSignal.timeout(30_000);
+    const signal = callerSignal ? AbortSignal.any([callerSignal, deadline]) : deadline;
+    return fetch(input, { ...init, headers, signal });
   };
 }
 
@@ -54,7 +61,8 @@ function createSupabaseClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      lock: async (_name, _timeout, fn) => fn(),
+      // Use the SDK's default lockless coordination. Even a no-op custom lock
+      // enables its legacy queue, making getUser block unrelated data requests.
     },
   });
 }

@@ -34,6 +34,18 @@ export function describeError(error: unknown): string {
 
   const lower = raw.toLowerCase();
 
+  // Fetch errors can include the Supabase URL. Classify connectivity before
+  // redacting database details, otherwise they become misleading DB errors.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "You appear to be offline. Reconnect and try again — your changes are kept until the save succeeds.";
+  }
+  if (lower.includes("timeout") || lower.includes("timed out") || lower.includes("aborted")) {
+    return "The request timed out. Please try again.";
+  }
+  if (looksLikeNetworkFailure(raw) || lower.includes("cannot reach the database")) {
+    return "Cannot reach the database. Check your connection and try again.";
+  }
+
   if (
     lower.includes("postgresql://") ||
     lower.includes("postgres://") ||
@@ -51,25 +63,11 @@ export function describeError(error: unknown): string {
     return "A database error occurred. Please try again later.";
   }
 
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    return "You appear to be offline. Reconnect and try again — your changes are kept until the save succeeds.";
-  }
-  if (
-    lower.includes("failed to fetch") ||
-    lower.includes("networkerror") ||
-    lower.includes("load failed") ||
-    lower.includes("network request failed")
-  ) {
-    return "Cannot reach the database. This is usually a network issue or a browser extension / ad-blocker blocking the request — disable it for this site and try again.";
-  }
   if (lower.includes("jwt") || lower.includes("401") || lower.includes("not authenticated")) {
     return "Your session expired. Please sign in again.";
   }
   if (lower.includes("row-level security") || lower.includes("permission denied")) {
     return "You don't have permission to change this item.";
-  }
-  if (lower.includes("timeout") || lower.includes("aborted")) {
-    return "The request timed out. Please try again.";
   }
   return "Something went wrong. Please try again.";
 }
@@ -213,9 +211,7 @@ export async function ensureSubjectsSeparated(userId: string): Promise<void> {
 
     if (subErr || !allSubjects) return;
 
-    const unmigrated = allSubjects.filter(
-      (s) => s.icon !== "notes" && s.icon !== "learning",
-    );
+    const unmigrated = allSubjects.filter((s) => s.icon !== "notes" && s.icon !== "learning");
     if (unmigrated.length === 0) return;
 
     const [{ data: lrData }, { data: lfData }, { data: nData }, { data: nfData }] =
@@ -280,7 +276,8 @@ export const profileQuery = () =>
   queryOptions({
     queryKey: ["profile"],
     queryFn: async (): Promise<Profile | null> => {
-      const { data: auth } = await supabase.auth.getUser();
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      assertOk(authError);
       const userId = auth.user?.id;
       if (!userId) return null;
       const { data, error } = await supabase

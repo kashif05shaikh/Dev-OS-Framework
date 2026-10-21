@@ -323,7 +323,7 @@ function NotesPage() {
   const searching = search.trim().length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-0px)] min-h-screen w-full max-w-full overflow-x-hidden md:h-screen md:min-h-0">
+    <div className="flex h-[calc(100dvh-var(--app-header-height))] min-h-0 w-full max-w-full overflow-hidden">
       {/* Tree */}
       <div
         className={cn(
@@ -930,7 +930,9 @@ function NoteEditor({
 
         <div className="flex items-center gap-1 sm:gap-2">
           <Button
-            variant={status === "unsaved" ? "default" : status === "error" ? "destructive" : "outline"}
+            variant={
+              status === "unsaved" ? "default" : status === "error" ? "destructive" : "outline"
+            }
             size="sm"
             disabled={status === "saving"}
             onClick={() => void save()}

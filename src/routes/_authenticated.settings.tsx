@@ -304,10 +304,10 @@ function SettingsPage() {
                   cacheTheme(option.key);
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors",
+                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
                   active
-                    ? "border-primary/60 bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground hover:bg-secondary",
+                    ? "border-white/30 bg-white/10 text-white shadow-sm"
+                    : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
                 <option.icon className="size-3.5" />
@@ -330,10 +330,10 @@ function SettingsPage() {
                   saveProfile.mutate({ accent_color: accent.key });
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors",
+                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
                   active
-                    ? "border-primary/60 bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground hover:bg-secondary",
+                    ? "border-white/30 bg-white/10 text-white shadow-sm"
+                    : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
                 <span

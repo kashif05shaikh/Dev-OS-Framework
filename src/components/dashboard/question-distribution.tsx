@@ -53,10 +53,7 @@ function DonutGauge({
       className="relative flex shrink-0 items-center justify-center select-none"
       style={{ width: size, height: size }}
     >
-      <svg
-        viewBox="0 0 120 120"
-        className="size-full -rotate-90 transform overflow-visible"
-      >
+      <svg viewBox="0 0 120 120" className="size-full -rotate-90 transform overflow-visible">
         {/* Track background */}
         <circle
           cx="60"
@@ -172,7 +169,10 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
     let medium = 0;
     let hard = 0;
 
-    if (storedLeetcodeDiff && storedLeetcodeDiff.easy + storedLeetcodeDiff.medium + storedLeetcodeDiff.hard > 0) {
+    if (
+      storedLeetcodeDiff &&
+      storedLeetcodeDiff.easy + storedLeetcodeDiff.medium + storedLeetcodeDiff.hard > 0
+    ) {
       easy = storedLeetcodeDiff.easy;
       medium = storedLeetcodeDiff.medium;
       hard = storedLeetcodeDiff.hard;
@@ -242,7 +242,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Layers className="size-4 text-primary" />
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Question Distribution
@@ -257,14 +257,14 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
         </div>
 
         {/* View switcher tabs */}
-        <div className="flex items-center rounded-xl border border-border bg-white/[0.03] p-1 text-xs">
+        <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-1 text-xs backdrop-blur-md">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
             className={cn(
-              "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "all"
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-white text-black shadow-sm font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -274,9 +274,9 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
             type="button"
             onClick={() => setActiveTab("dsa")}
             className={cn(
-              "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "dsa"
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-white text-black shadow-sm font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -286,9 +286,9 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
             type="button"
             onClick={() => setActiveTab("cp")}
             className={cn(
-              "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-1 text-xs font-medium transition-all duration-200",
               activeTab === "cp"
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-white text-black shadow-sm font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -306,7 +306,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
       >
         {/* ── CARD 1: DSA (Data Structures & Algorithms) ──────────────────── */}
         {(activeTab === "all" || activeTab === "dsa") && (
-          <div className="flex flex-col justify-between rounded-2xl border border-border/80 bg-white/[0.02] p-4 sm:p-5 transition-all hover:border-primary/30">
+          <div className="flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.03]">
             <div>
               {/* Card Header */}
               <div className="flex items-center justify-between pb-3">
@@ -323,7 +323,7 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                     </p>
                   </div>
                 </div>
-                <span className="rounded-md border border-border bg-white/[0.04] px-2 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                   {dsa.total}
                 </span>
               </div>
@@ -369,7 +369,9 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                       </div>
                       <div className="flex items-baseline gap-1.5 tabular-nums">
                         <span className="font-semibold text-foreground">{dsa.medium}</span>
-                        <span className="text-[11px] text-muted-foreground">({dsa.mediumPct}%)</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          ({dsa.mediumPct}%)
+                        </span>
                       </div>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
@@ -468,19 +470,14 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
                     </p>
                   </div>
                 </div>
-                <span className="rounded-md border border-border bg-white/[0.04] px-2 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                   {cp.total}
                 </span>
               </div>
 
               {/* Card Body: Donut + Platform Bars */}
               <div className="mt-4 flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-                <DonutGauge
-                  total={cp.total}
-                  label="CP Solved"
-                  segments={cpSegments}
-                  size={124}
-                />
+                <DonutGauge total={cp.total} label="CP Solved" segments={cpSegments} size={124} />
 
                 <div className="flex flex-1 w-full flex-col gap-2.5">
                   {/* Codeforces */}
@@ -558,4 +555,3 @@ export function QuestionDistribution({ profiles, className }: QuestionDistributi
     </GlassCard>
   );
 }
-
