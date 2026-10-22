@@ -164,10 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
               <Terminal className="size-4 text-primary" />
             </div>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-tight text-sidebar-foreground">DevOS</p>
-              <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium">Studio Hub</p>
-            </div>
+            <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">DevOS</span>
             <button
               type="button"
               onClick={toggle}
