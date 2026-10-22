@@ -7,6 +7,7 @@ function isNewSupabaseApiKey(value: string): boolean {
 }
 
 export function createSupabaseFetch(supabaseKey: string): typeof fetch {
+  const cleanKey = supabaseKey ? String(supabaseKey).replace(/^["']|["']$/g, "").trim() : "";
   return (input, init) => {
     const headers = new Headers(
       typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
@@ -18,13 +19,13 @@ export function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
     // New Supabase API keys are opaque strings, not bearer JWTs.
     if (
-      isNewSupabaseApiKey(supabaseKey) &&
-      headers.get("Authorization") === `Bearer ${supabaseKey}`
+      isNewSupabaseApiKey(cleanKey) &&
+      headers.get("Authorization") === `Bearer ${cleanKey}`
     ) {
       headers.delete("Authorization");
     }
 
-    headers.set("apikey", supabaseKey);
+    headers.set("apikey", cleanKey);
     // Bound auth and data requests so a stalled connection cannot leave every
     // workspace page loading forever. Preserve cancellation from the caller.
     const callerSignal =
@@ -39,9 +40,12 @@ export function createSupabaseFetch(supabaseKey: string): typeof fetch {
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
-  const SUPABASE_PUBLISHABLE_KEY =
+  const rawUrl = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  const rawKey =
     import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+
+  const SUPABASE_URL = rawUrl ? String(rawUrl).replace(/^["']|["']$/g, "").trim() : "";
+  const SUPABASE_PUBLISHABLE_KEY = rawKey ? String(rawKey).replace(/^["']|["']$/g, "").trim() : "";
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
@@ -61,8 +65,6 @@ function createSupabaseClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      // Use the SDK's default lockless coordination. Even a no-op custom lock
-      // enables its legacy queue, making getUser block unrelated data requests.
     },
   });
 }

@@ -69,6 +69,12 @@ export function describeError(error: unknown): string {
   if (lower.includes("row-level security") || lower.includes("permission denied")) {
     return "You don't have permission to change this item.";
   }
+  if (lower.includes("bad request") || lower.includes("pgrst") || lower.includes("failed to parse filter")) {
+    return "Unable to load data. Please refresh the page.";
+  }
+  if (lower.includes("bad gateway") || lower.includes("502") || lower.includes("503") || lower.includes("504")) {
+    return "Service is temporarily unavailable. Please try again in a moment.";
+  }
 
   // Preserve clear user-facing messages (e.g. from PlatformError) while suppressing internals
   if (

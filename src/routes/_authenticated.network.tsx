@@ -430,8 +430,8 @@ function NetworkPage() {
     };
   }, [cache.data]);
 
-  const isLoading = accounts.isLoading || cache.isLoading;
-  const error = accounts.error ?? cache.error;
+  const isLoading = accounts.isLoading;
+  const error = accounts.error;
 
   return (
     <div className="flex h-full min-h-0 flex-col">

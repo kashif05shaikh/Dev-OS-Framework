@@ -25,21 +25,27 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
 export const socialAccountsQuery = () =>
   queryOptions({
     queryKey: ["social_accounts"],
-    queryFn: async (): Promise<SocialAccount[]> =>
-      unwrap(
-        await supabase
-          .from("social_accounts")
-          .select("*")
-          // Retired platforms stay in the DB but are hidden from the Network tab.
-          .not("platform", "in", `(${RETIRED_SOCIAL_PLATFORMS.join(",")})`)
-          .order("position", { ascending: true })
-          .order("created_at", { ascending: true }),
-      ),
+    queryFn: async (): Promise<SocialAccount[]> => {
+      const { data, error } = await supabase
+        .from("social_accounts")
+        .select("*")
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(describeError(error));
+      const retired = new Set(RETIRED_SOCIAL_PLATFORMS);
+      return (data ?? []).filter((account) => !retired.has(account.platform));
+    },
   });
 
 export const socialProfileCacheQuery = () =>
   queryOptions({
     queryKey: ["social_profile_cache"],
-    queryFn: async (): Promise<SocialProfileCache[]> =>
-      unwrap(await supabase.from("social_profile_cache").select("*")),
+    queryFn: async (): Promise<SocialProfileCache[]> => {
+      const { data, error } = await supabase.from("social_profile_cache").select("*");
+      if (error) {
+        console.warn("[SocialProfileCache] Non-critical cache read:", error);
+        return [];
+      }
+      return data ?? [];
+    },
   });
