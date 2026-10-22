@@ -63,7 +63,15 @@ export function describeError(error: unknown): string {
     return "A database error occurred. Please try again later.";
   }
 
-  if (lower.includes("jwt") || lower.includes("401") || lower.includes("not authenticated")) {
+  if (
+    lower.includes("jwt") ||
+    lower.includes("401") ||
+    lower.includes("not authenticated") ||
+    lower.includes("refresh token") ||
+    lower.includes("session missing") ||
+    lower.includes("session_not_found") ||
+    lower.includes("invalid claim")
+  ) {
     return "Your session expired. Please sign in again.";
   }
   if (lower.includes("row-level security") || lower.includes("permission denied")) {

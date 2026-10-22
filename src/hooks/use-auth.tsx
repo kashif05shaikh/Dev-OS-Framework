@@ -35,13 +35,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      handleSession(nextSession);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "SIGNED_OUT") {
+        handleSession(null);
+      } else {
+        handleSession(nextSession);
+      }
     });
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(async ({ data, error }) => {
+        if (error || !data.session) {
+          if (!initialized) {
+            initialized = true;
+            handleSession(null);
+          }
+          return;
+        }
+
+        // Proactively check if the access token has expired
+        const expiresAt = data.session.expires_at;
+        const isExpired = expiresAt ? expiresAt * 1000 < Date.now() : false;
+
+        if (isExpired) {
+          try {
+            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError || !refreshed.session) {
+              console.warn("[useAuth] Session expired and cannot be refreshed, signing out:", refreshError);
+              await supabase.auth.signOut().catch(() => {});
+              if (!initialized) {
+                initialized = true;
+                handleSession(null);
+              }
+              return;
+            }
+            if (!initialized) {
+              initialized = true;
+              handleSession(refreshed.session);
+            }
+            return;
+          } catch (err) {
+            console.error("[useAuth] Token refresh failed:", err);
+            await supabase.auth.signOut().catch(() => {});
+            if (!initialized) {
+              initialized = true;
+              handleSession(null);
+            }
+            return;
+          }
+        }
+
         if (!initialized) {
           initialized = true;
           handleSession(data.session);

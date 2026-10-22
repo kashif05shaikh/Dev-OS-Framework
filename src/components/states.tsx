@@ -14,11 +14,27 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const message = error instanceof Error ? error.message : "Something went wrong.";
+  const isAuthError =
+    message.toLowerCase().includes("session expired") ||
+    message.toLowerCase().includes("sign in again") ||
+    message.toLowerCase().includes("not authenticated");
+
   return (
     <div className="flex h-full min-h-40 flex-col items-center justify-center gap-3 px-6 text-center">
       <AlertTriangle className="size-5 text-destructive" />
       <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
-      {onRetry ? (
+      {isAuthError ? (
+        <Button
+          size="sm"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.href = "/auth";
+            }
+          }}
+        >
+          Sign in again
+        </Button>
+      ) : onRetry ? (
         <Button variant="outline" size="sm" onClick={onRetry}>
           Try again
         </Button>

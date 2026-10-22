@@ -31,9 +31,14 @@ export function createSupabaseFetch(supabaseKey: string): typeof fetch {
     const callerSignal =
       init?.signal ??
       (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
-    const deadline = AbortSignal.timeout(30_000);
-    const signal = callerSignal ? AbortSignal.any([callerSignal, deadline]) : deadline;
-    return fetch(input, { ...init, headers, signal });
+    const fetchInit: RequestInit = { ...init, headers };
+    try {
+      const deadline = AbortSignal.timeout(30_000);
+      fetchInit.signal = callerSignal ? AbortSignal.any([callerSignal, deadline]) : deadline;
+    } catch {
+      if (callerSignal) fetchInit.signal = callerSignal;
+    }
+    return fetch(input, fetchInit);
   };
 }
 
