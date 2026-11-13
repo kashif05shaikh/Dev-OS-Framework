@@ -8,7 +8,6 @@ import {
 import { CODING_PLATFORM_LABEL } from "@/lib/devos-types";
 import { cn } from "@/lib/utils";
 
-const DAY = 86_400_000;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function key(ms: number): string {
@@ -19,16 +18,41 @@ function level(count: number): number {
   if (count <= 0) return 0;
   if (count <= 2) return 1;
   if (count <= 5) return 2;
-  if (count <= 10) return 3;
+  if (count <= 9) return 3;
   return 4;
 }
 
-const LEVEL_BG = [
-  "color-mix(in srgb, var(--muted) 60%, transparent)",
-  "color-mix(in srgb, var(--accent-color, #22c55e) 28%, transparent)",
-  "color-mix(in srgb, var(--accent-color, #22c55e) 50%, transparent)",
-  "color-mix(in srgb, var(--accent-color, #22c55e) 75%, transparent)",
-  "var(--accent-color, #22c55e)",
+const LEVEL_CONFIG = [
+  // Level 0: No activity - crisp slate-gray tile with distinct border so empty days are clearly visible
+  {
+    bg: "#27272a",
+    border: "#3a3d45",
+    label: "0 submissions",
+  },
+  // Level 1: Low activity (1-2) - deep forest green
+  {
+    bg: "#0e4429",
+    border: "#165835",
+    label: "1-2 submissions",
+  },
+  // Level 2: Medium activity (3-5) - rich emerald green
+  {
+    bg: "#006d32",
+    border: "#0f8546",
+    label: "3-5 submissions",
+  },
+  // Level 3: High activity (6-9) - vibrant emerald green
+  {
+    bg: "#26a641",
+    border: "#30ba4d",
+    label: "6-9 submissions",
+  },
+  // Level 4: Peak activity (10+) - bright luminous lime green
+  {
+    bg: "#39d353",
+    border: "#56e36d",
+    label: "10+ submissions",
+  },
 ];
 
 function formatDate(date: string): string {
@@ -48,12 +72,13 @@ export type CodingActivityHeatmapProps = {
   className?: string;
 };
 
-const GAP = 3.5;
-const MIN_SQUARE_SIZE = 17; // Generous, crisp square size
+const GAP = 3;
+const MONTH_GAP = 18;
+const MIN_SQUARE_SIZE = 18;
 
 /**
- * Interactive coding activity heatmap with perfectly square day boxes,
- * zero empty space on the right, and smooth horizontal scrolling from the user's first submission till date.
+ * Interactive coding activity heatmap with month-wise separated blocks,
+ * high-contrast color grading, and smooth horizontal scrolling.
  */
 export function CodingActivityHeatmap({
   days,
@@ -96,101 +121,148 @@ export function CodingActivityHeatmap({
     };
   }, []);
 
-  // Compute the full timeline from the earliest recorded submission to today
-  const { columns, months, weeks, totalSubmissions, calculatedMaxStreak, calculatedCurrentStreak } =
-    useMemo(() => {
-      const now = new Date();
-      const todayEnd = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-      const endOfWeek = todayEnd + (6 - new Date(todayEnd).getUTCDay()) * DAY;
+  // Compute month-wise grouped timeline from earliest submission to today
+  const {
+    monthsData,
+    totalColumns,
+    totalSubmissions,
+    calculatedMaxStreak,
+    calculatedCurrentStreak,
+  } = useMemo(() => {
+    const now = new Date();
+    const todayEnd = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 
-      // Earliest submission date across all verified platforms
-      const activeDates = Array.from(days.entries())
-        .filter(([_, d]) => d.count > 0)
-        .map(([date]) => date)
-        .sort();
+    // Earliest submission date across all verified platforms
+    const activeDates = Array.from(days.entries())
+      .filter(([_, d]) => d.count > 0)
+      .map(([date]) => date)
+      .sort();
 
-      const earliestDate = activeDates[0] ?? null;
+    const earliestDate = activeDates[0] ?? null;
 
-      // Default to 53 weeks (1 year) or extend back to earliest submission
-      const min53WeeksStart = endOfWeek - (53 * 7 - 1) * DAY;
-      let rangeStartMs = min53WeeksStart;
+    const endYear = now.getUTCFullYear();
+    const endMonth = now.getUTCMonth(); // 0..11
 
-      if (earliestDate) {
-        const earliestMs = Date.parse(`${earliestDate}T00:00:00Z`);
-        const earliestWeekStart = earliestMs - new Date(earliestMs).getUTCDay() * DAY;
-        rangeStartMs = Math.min(earliestWeekStart, min53WeeksStart);
+    // Default to at least 12 months (or extend back to earliest recorded submission month)
+    let startYear = endYear;
+    let startMonth = endMonth - 11;
+    if (startMonth < 0) {
+      startYear -= 1;
+      startMonth += 12;
+    }
+
+    if (earliestDate) {
+      const parts = earliestDate.split("-");
+      const ey = Number(parts[0]);
+      const em = Number(parts[1]) - 1;
+      if (!Number.isNaN(ey) && !Number.isNaN(em)) {
+        if (ey < startYear || (ey === startYear && em < startMonth)) {
+          startYear = ey;
+          startMonth = em;
+        }
       }
+    }
 
-      const totalWeeks = Math.max(53, Math.round((endOfWeek - rangeStartMs + DAY) / (7 * DAY)));
+    let subCount = 0;
+    const activeDateSet = new Set<string>();
 
-      const cols: { date: string; day: CombinedDay | null; future: boolean }[][] = [];
-      const monthLabels: { index: number; label: string }[] = [];
-      let seenMonth = -1;
-      let seenYear = -1;
+    type MonthCell = {
+      date: string;
+      col: number;
+      row: number;
+      day: CombinedDay | null;
+      future: boolean;
+    };
 
-      let subCount = 0;
-      const activeDateSet = new Set<string>();
+    type MonthGroup = {
+      year: number;
+      month: number;
+      label: string;
+      colCount: number;
+      days: MonthCell[];
+    };
 
-      for (let w = 0; w < totalWeeks; w += 1) {
-        const col: { date: string; day: CombinedDay | null; future: boolean }[] = [];
-        for (let d = 0; d < 7; d += 1) {
-          const ms = rangeStartMs + (w * 7 + d) * DAY;
-          const id = key(ms);
-          const isFuture = ms > todayEnd;
-          const dayData = days.get(id) ?? null;
-          col.push({ date: id, day: dayData, future: isFuture });
+    const groups: MonthGroup[] = [];
+    let curY = startYear;
+    let curM = startMonth;
+    let sumCols = 0;
 
-          if (dayData && dayData.count > 0 && !isFuture) {
-            subCount += dayData.count;
-            activeDateSet.add(id);
-          }
+    while (curY < endYear || (curY === endYear && curM <= endMonth)) {
+      const daysInMonth = new Date(Date.UTC(curY, curM + 1, 0)).getUTCDate();
+      const firstDayOfWeek = new Date(Date.UTC(curY, curM, 1)).getUTCDay(); // 0 (Sun) .. 6 (Sat)
+      const colCount = Math.ceil((firstDayOfWeek + daysInMonth) / 7);
+      sumCols += colCount;
 
-          if (d === 0) {
-            const dt = new Date(ms);
-            const m = dt.getUTCMonth();
-            const y = dt.getUTCFullYear();
-            if (m !== seenMonth || y !== seenYear) {
-              seenMonth = m;
-              seenYear = y;
-              const label =
-                totalWeeks > 56 && m === 0 ? `${MONTHS[m]} '${String(y).slice(2)}` : MONTHS[m]!;
-              monthLabels.push({ index: w, label });
+      const monthDays: MonthCell[] = [];
+
+      for (let col = 0; col < colCount; col += 1) {
+        for (let row = 0; row < 7; row += 1) {
+          const dayNum = col * 7 + row - firstDayOfWeek + 1;
+          if (dayNum >= 1 && dayNum <= daysInMonth) {
+            const ms = Date.UTC(curY, curM, dayNum);
+            const dateId = key(ms);
+            const isFuture = ms > todayEnd;
+            const dayData = days.get(dateId) ?? null;
+
+            if (dayData && dayData.count > 0 && !isFuture) {
+              subCount += dayData.count;
+              activeDateSet.add(dateId);
             }
+
+            monthDays.push({
+              date: dateId,
+              col,
+              row,
+              day: dayData,
+              future: isFuture,
+            });
           }
         }
-        cols.push(col);
       }
 
-      const streaks = calculateCodingStreaks(activeDateSet);
+      // Add year to January label or whenever timeline spans years
+      const label =
+        curM === 0
+          ? `${MONTHS[curM]} '${String(curY).slice(2)}`
+          : MONTHS[curM]!;
 
-      return {
-        columns: cols,
-        months: monthLabels,
-        weeks: totalWeeks,
-        totalSubmissions: subCount,
-        calculatedMaxStreak: streaks.maxStreak,
-        calculatedCurrentStreak: streaks.currentStreak,
-      };
-    }, [days]);
+      groups.push({
+        year: curY,
+        month: curM,
+        label,
+        colCount,
+        days: monthDays,
+      });
 
-  // Compute square size dynamically so that it fills the entire width without leaving any empty space on the right,
-  // or uses generous MIN_SQUARE_SIZE if timeline overflows
-  const squareSize = useMemo(() => {
-    if (!containerWidth || weeks <= 0) return MIN_SQUARE_SIZE;
-    const available = containerWidth - 4;
-    const sizeToFill = Math.ceil((available - (weeks - 1) * GAP) / weeks);
-    return Math.max(MIN_SQUARE_SIZE, sizeToFill);
-  }, [containerWidth, weeks]);
-
-  const rows = useMemo(() => {
-    const r: (typeof columns)[number][] = [];
-    for (let d = 0; d < 7; d += 1) {
-      r.push(columns.map((col) => col[d]!));
+      curM += 1;
+      if (curM > 11) {
+        curM = 0;
+        curY += 1;
+      }
     }
-    return r;
-  }, [columns]);
 
-  // Automatically scroll to the right edge (most recent activity) on mount
+    const streaks = calculateCodingStreaks(activeDateSet);
+
+    return {
+      monthsData: groups,
+      totalColumns: sumCols,
+      totalSubmissions: subCount,
+      calculatedMaxStreak: streaks.maxStreak,
+      calculatedCurrentStreak: streaks.currentStreak,
+    };
+  }, [days]);
+
+  // Compute square size dynamically so that it fills container width gracefully or scrolls smoothly
+  const squareSize = useMemo(() => {
+    if (!containerWidth || totalColumns <= 0 || monthsData.length === 0) return MIN_SQUARE_SIZE;
+    const totalMonthGaps = (monthsData.length - 1) * MONTH_GAP;
+    const totalColGaps = (totalColumns - monthsData.length) * GAP;
+    const available = containerWidth - totalMonthGaps - totalColGaps - 8;
+    const sizeToFill = Math.floor(available / totalColumns);
+    return Math.max(MIN_SQUARE_SIZE, Math.min(22, sizeToFill));
+  }, [containerWidth, totalColumns, monthsData.length]);
+
+  // Automatically scroll to the right edge (most recent activity) on mount / updates
   useEffect(() => {
     if (scrollRef.current) {
       requestAnimationFrame(() => {
@@ -199,7 +271,7 @@ export function CodingActivityHeatmap({
         }
       });
     }
-  }, [weeks, squareSize]);
+  }, [totalColumns, squareSize]);
 
   const scrollToStart = () => {
     scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
@@ -264,7 +336,7 @@ export function CodingActivityHeatmap({
         </div>
       </div>
 
-      {/* Sideways Scrollable Heatmap with Visible Horizontal Scrollbar below */}
+      {/* Sideways Scrollable Month-Wise Heatmap */}
       <div
         ref={scrollRef}
         className="relative w-full overflow-x-auto overflow-y-hidden pb-3 pt-1 scrollbar-thin scrollbar-track-white/[0.03] scrollbar-thumb-white/20 hover:scrollbar-thumb-white/35"
@@ -273,46 +345,67 @@ export function CodingActivityHeatmap({
         aria-label="Scrollable coding activity heatmap timeline"
       >
         <div
-          className="grid select-none"
+          className="flex items-start select-none"
           style={{
-            gridTemplateColumns: `repeat(${weeks}, ${squareSize}px)`,
-            gridTemplateRows: `repeat(7, ${squareSize}px) auto`,
-            gap: `${GAP}px`,
+            gap: `${MONTH_GAP}px`,
             width: "max-content",
+            minWidth: "100%",
           }}
         >
-          {rows.map((row, rowIndex) =>
-            row.map((cell, colIndex) => (
-              <span
-                key={cell.date}
-                onMouseEnter={() =>
-                  setHover(cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] })
-                }
-                onMouseLeave={() => setHover(null)}
-                className="rounded-[3px] shrink-0 transition-transform hover:scale-125"
-                style={{
-                  gridColumn: colIndex + 1,
-                  gridRow: rowIndex + 1,
-                  width: `${squareSize}px`,
-                  height: `${squareSize}px`,
-                  backgroundColor: cell.future
-                    ? "transparent"
-                    : LEVEL_BG[level(cell.day?.count ?? 0)],
-                }}
-              />
-            )),
-          )}
+          {monthsData.map((m) => {
+            const monthWidth = m.colCount * squareSize + (m.colCount - 1) * GAP;
+            return (
+              <div
+                key={`${m.year}-${m.month}`}
+                className="flex flex-col items-center shrink-0"
+                style={{ width: `${monthWidth}px` }}
+              >
+                {/* 7-row month grid */}
+                <div
+                  className="grid select-none"
+                  style={{
+                    gridTemplateColumns: `repeat(${m.colCount}, ${squareSize}px)`,
+                    gridTemplateRows: `repeat(7, ${squareSize}px)`,
+                    gap: `${GAP}px`,
+                    width: `${monthWidth}px`,
+                    height: `${7 * squareSize + 6 * GAP}px`,
+                  }}
+                >
+                  {m.days.map((cell) => {
+                    const lvl = level(cell.day?.count ?? 0);
+                    const cfg = LEVEL_CONFIG[lvl]!;
+                    return (
+                      <span
+                        key={cell.date}
+                        onMouseEnter={() => {
+                          if (!cell.future) {
+                            setHover(
+                              cell.day ?? { date: cell.date, count: 0, solved: 0, byPlatform: [] },
+                            );
+                          }
+                        }}
+                        onMouseLeave={() => setHover(null)}
+                        className="rounded-[3.5px] shrink-0 transition-all hover:ring-1 hover:ring-foreground/50 hover:brightness-110"
+                        style={{
+                          gridColumn: cell.col + 1,
+                          gridRow: cell.row + 1,
+                          width: `${squareSize}px`,
+                          height: `${squareSize}px`,
+                          backgroundColor: cell.future ? "transparent" : cfg.bg,
+                          border: cell.future ? "1px solid transparent" : `1px solid ${cfg.border}`,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
 
-          {/* Month labels placed beneath the squares */}
-          {months.map((m) => (
-            <span
-              key={`${m.label}-${m.index}`}
-              className="pt-1.5 text-[11px] leading-none text-muted-foreground whitespace-nowrap font-medium"
-              style={{ gridColumn: m.index + 1, gridRow: 8 }}
-            >
-              {m.label}
-            </span>
-          ))}
+                {/* Centered month label placed underneath each month's block */}
+                <span className="pt-2 text-[11px] leading-none text-muted-foreground whitespace-nowrap font-medium select-none text-center">
+                  {m.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -336,10 +429,18 @@ export function CodingActivityHeatmap({
             "Hover a day for the platform breakdown"
           )}
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5 select-none">
           Less
-          {LEVEL_BG.map((bg, i) => (
-            <span key={i} className="size-[10px] rounded-[2px]" style={{ backgroundColor: bg }} />
+          {LEVEL_CONFIG.map((cfg, i) => (
+            <span
+              key={i}
+              className="size-3 rounded-[2.5px] shrink-0"
+              style={{
+                backgroundColor: cfg.bg,
+                border: `1px solid ${cfg.border}`,
+              }}
+              title={cfg.label}
+            />
           ))}
           More
         </span>
